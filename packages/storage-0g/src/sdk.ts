@@ -1,5 +1,6 @@
 import { Indexer, MemData } from "@0gfoundation/0g-storage-ts-sdk";
 import { ethers } from "ethers";
+import { normalizePrivateKey } from "./private-key.ts";
 import { GALILEO, StorageRoundTripError, type StorageTransport, type StorageUploadReceipt } from "./types.ts";
 
 export interface ZeroGSdkTransportOptions {
@@ -16,18 +17,11 @@ export class ZeroGSdkTransport implements StorageTransport {
   readonly indexer: Indexer;
 
   constructor(options: ZeroGSdkTransportOptions) {
-    if (!/^0x[0-9a-fA-F]{64}$/.test(options.privateKey)) {
-      throw new StorageRoundTripError(
-        "INVALID_PRIVATE_KEY",
-        "configuration",
-        "ZEROG_STORAGE_PRIVATE_KEY must be a 0x-prefixed 32-byte private key",
-        false,
-      );
-    }
+    const privateKey = normalizePrivateKey(options.privateKey);
     this.rpcUrl = options.rpcUrl ?? GALILEO.rpcUrl;
     this.indexerUrl = options.indexerUrl ?? GALILEO.indexerUrl;
     this.provider = new ethers.JsonRpcProvider(this.rpcUrl);
-    this.signer = new ethers.Wallet(options.privateKey, this.provider);
+    this.signer = new ethers.Wallet(privateKey, this.provider);
     this.indexer = new Indexer(this.indexerUrl);
   }
 
