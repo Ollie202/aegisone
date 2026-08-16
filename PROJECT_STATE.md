@@ -31,7 +31,7 @@ not merely "hash + blockchain".
 - Offline tests prove SHA-256 known vectors, byte-stable canonical manifests, genuine `MATCH`, one-byte `MISMATCH`, invalid-revision rejection, and output-size enforcement.
 - The M1 local runner is deliberately fixture-oriented. It restricts executable names, time, environment, checkout revision, paths, and artifact size, but it is not an OS-level network/CPU/disk sandbox and must not be used for arbitrary untrusted repositories.
 - No smart-contract deployment, real 0G Storage proof, or real 0G Sandbox build exists yet.
-- Repository is currently private and must become public before submission.
+- Repository is public.
 
 ## Highest-risk unknowns
 

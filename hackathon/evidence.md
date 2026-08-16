@@ -4,7 +4,7 @@ Record real proof here immediately when created. Do not paste secrets.
 
 ## Repository
 - Repository: https://github.com/Ollie202/proofrail-0g
-- Visibility: PRIVATE — must be changed to public before submission
+- Visibility: PUBLIC
 - Foundation completion commit: `f7d1d9a010c8067b7a719fe97d1042c00a611ff4`
 
 ## 0G Storage
