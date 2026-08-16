@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-16  
-**Phase:** M1 — local independent-reproduction kernel  
+**Phase:** M1 complete — M2 0G Storage round-trip next
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -26,7 +26,11 @@ not merely "hash + blockchain".
 - Agentic ID / ERC-8004 are a later network identity/reputation direction, not a Wave 3 dependency.
 - An LLM is explicitly outside the core MATCH/MISMATCH decision. 0G Compute may later explain divergence.
 - Public repositories only for the first build path.
-- No production implementation, smart-contract deployment, 0G Storage proof, or 0G Sandbox build exists yet.
+- The provider-independent M1 kernel now exists in `packages/core`, with a constrained fixture runner in `packages/runner-local` and stable JSON through `packages/cli`.
+- `hello-proofrail` is a deterministic committed fixture. Tests create its reproducible Git commit (`85ce179a7487605112dd3e36129896082cc2cff0`), independently clone/check out that exact SHA, and rebuild its publisher artifact.
+- Offline tests prove SHA-256 known vectors, byte-stable canonical manifests, genuine `MATCH`, one-byte `MISMATCH`, invalid-revision rejection, and output-size enforcement.
+- The M1 local runner is deliberately fixture-oriented. It restricts executable names, time, environment, checkout revision, paths, and artifact size, but it is not an OS-level network/CPU/disk sandbox and must not be used for arbitrary untrusted repositories.
+- No smart-contract deployment, real 0G Storage proof, or real 0G Sandbox build exists yet.
 - Repository is currently private and must become public before submission.
 
 ## Highest-risk unknowns
@@ -39,18 +43,15 @@ not merely "hash + blockchain".
 
 ## Current objective
 
-Complete M1 before product polish:
+Execute M2 without weakening the completed M1 truth path:
 
-- create a tiny deterministic fixture with a known "publisher artifact";
-- model an explicit source/release claim;
-- rebuild the exact source locally;
-- compare publisher and reproduced SHA-256 digests;
-- prove MATCH for the genuine artifact;
-- prove MISMATCH after a one-byte change;
-- expose the result as stable machine-readable JSON;
-- keep all 0G SDKs out of `packages/core`.
+- select and pin the current official 0G Storage TypeScript SDK;
+- upload canonical M1 provenance bytes to the appropriate 0G test environment;
+- retrieve identical bytes with proof verification where supported;
+- record real root/transaction evidence and structured failures;
+- keep all 0G-specific code in `packages/storage-0g`.
 
-Then execute the 0G Storage, registry, and Sandbox spikes.
+M2 requires the relevant 0G endpoint plus a minimally funded test wallet if the live SDK path charges test tokens. No wallet secret may enter source, logs, fixtures, or provenance.
 
 ## Kill / rethink criteria
 

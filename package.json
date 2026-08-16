@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "echo 'Implementation not scaffolded yet'",
-    "test": "echo 'Implementation not scaffolded yet'"
+    "check": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts",
+    "test": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts"
   }
 }

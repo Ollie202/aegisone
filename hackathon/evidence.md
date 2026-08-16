@@ -12,6 +12,7 @@ Record real proof here immediately when created. Do not paste secrets.
 - Provenance root: PENDING
 - Upload transaction: PENDING
 - Retrieval proof: PENDING
+- Current blocker: no test-funded signer is configured; no live upload has been claimed
 
 ## 0G Chain
 - Network: Aristotle mainnet
@@ -29,7 +30,7 @@ Record real proof here immediately when created. Do not paste secrets.
 ## Product
 - Live verifier URL: PENDING
 - CLI release/version: PENDING
-- Passing tests: PENDING
+- Passing tests: M1 local suite 12/12 on 2026-08-16; remote commit/CI evidence pending
 - Demo video: PENDING
 
 ## External validation
