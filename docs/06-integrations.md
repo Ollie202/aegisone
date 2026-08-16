@@ -25,6 +25,8 @@ Wave 3 spike:
 4. enable proof verification where supported;
 5. record evidence in `hackathon/evidence.md`.
 
+M2 version pin selected from the official repository on 2026-08-16: `@0gfoundation/0g-storage-ts-sdk@1.2.9` with its exact peer `ethers@6.13.1`. Current official Galileo examples use `https://evmrpc-testnet.0g.ai` and `https://indexer-storage-testnet-turbo.0g.ai`; proof-enabled retrieval is requested by passing `true` to `Indexer.download`. Upload requires a test-funded signer. These are implementation inputs, not completion evidence; roots and transactions remain pending until the live round trip succeeds.
+
 References:
 - https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
 - https://github.com/0gfoundation/0g-storage-ts-sdk

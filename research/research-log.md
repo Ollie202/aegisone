@@ -4,9 +4,15 @@
 
 **Finding:** Official documentation exposes TypeScript/Go SDK paths. TypeScript supports file and in-memory uploads, Merkle root calculation, downloads, and proof-enabled retrieval. Current documented package: `@0gfoundation/0g-storage-ts-sdk` with `ethers` peer dependency.
 
-**Impact:** Storage technical spike is low-risk enough to begin early.
+**Version check:** The official repository's current `package.json` is `@0gfoundation/0g-storage-ts-sdk@1.2.9` and declares the exact peer `ethers@6.13.1`. The repository has no GitHub “latest release” object, so M2 should pin the package version rather than infer stability from a release tag.
 
-**Source:** https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
+**Current Galileo path:** Official examples use EVM RPC `https://evmrpc-testnet.0g.ai` and turbo indexer `https://indexer-storage-testnet-turbo.0g.ai`. `Indexer.upload` requires an ethers signer with enough test balance to pay storage/gas fees. `Indexer.download(root, output, true)` requests proof-enabled retrieval.
+
+**Impact:** The code path is identified, but a real M2 completion is blocked until a test-only wallet is supplied through a secret environment variable and funded. No signer exists in the current workspace. Do not commit the key or replace the live round trip with a mock.
+
+**Sources:**
+- https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
+- https://github.com/0gfoundation/0g-storage-ts-sdk
 
 ---
 

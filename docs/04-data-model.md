@@ -116,6 +116,6 @@ Stable machine-facing output containing:
 - checks/warnings
 - final status
 
-## Canonicalization requirement
+## Canonicalization
 
-The exact canonical serialization format must be selected and tested before any on-chain provenance commitment is treated as stable. Record that choice in an ADR.
+M1 uses the deterministic canonical JSON subset recorded in ADR-007: object keys are recursively sorted, array order is preserved, UTF-8 bytes are hashed, and ambiguous/unsupported values fail instead of being silently coerced. No timestamp or runtime-generated identifier enters the canonical M1 manifest. The encoding is covered by stability and rejection tests.

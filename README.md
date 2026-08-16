@@ -2,7 +2,7 @@
 
 > Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
 
-**Status:** M1 technical feasibility  
+**Status:** M1 local independent-reproduction kernel complete
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
@@ -77,7 +77,12 @@ See `research/competitors.md` and `research/prior-art.md`.
 Wave 3 exposes deterministic CLI/JSON output. An agent does not need an MCP server to consume ProofRail initially:
 
 ```bash
-proofrail verify wallet-linux.tar.gz --json
+proofrail verify \
+  --claim claim.json \
+  --recipe recipe.json \
+  --artifact wallet-linux.tar.gz \
+  --source-repository /path/to/explicit/repository \
+  --json
 ```
 
 Later interfaces can include REST, SDK, and MCP without changing the cryptographic core.
@@ -100,6 +105,21 @@ Verification is cheap; rebuilding is expensive. ProofRail should rebuild a relea
 10. Label every guarantee according to the evidence actually available.
 
 No mocked 0G integration counts as completion.
+
+## M1 implementation
+
+M1 is fully offline and has no third-party runtime dependency. `packages/core` owns explicit claim validation, SHA-256 hashing, canonical manifests, and deterministic comparison. `packages/runner-local` clones and checks out an exact commit before rebuilding the controlled fixture. `packages/cli` exposes the versioned JSON result.
+
+Run the complete M1 suite on Node.js 22 or newer:
+
+```bash
+node --experimental-strip-types --test \
+  packages/core/test/core.test.ts \
+  packages/runner-local/test/runner.test.ts \
+  packages/cli/test/cli.test.ts
+```
+
+The suite proves the genuine publisher artifact returns `MATCH`, a one-byte substitution returns `MISMATCH`, and logically identical manifests produce identical commitment bytes. The local runner is not an arbitrary-code sandbox; real 0G execution and its precise attestation boundary remain M4 work.
 
 ## Start here
 
