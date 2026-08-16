@@ -8,6 +8,8 @@
 
 **Current Galileo path:** Official examples use EVM RPC `https://evmrpc-testnet.0g.ai` and turbo indexer `https://indexer-storage-testnet-turbo.0g.ai`. `Indexer.upload` requires an ethers signer with enough test balance to pay storage/gas fees. `Indexer.download(root, output, true)` requests proof-enabled retrieval.
 
+**Implementation recheck:** Galileo remains chain ID `16602`; the official faucet currently offers up to `0.1 0G` per wallet per day. The TypeScript SDK source confirms `downloadToBlob(root, { proof: true })` passes proof verification into the downloader, and `Indexer.upload` returns root hash, transaction hash, and transaction sequence for a single small payload. `packages/storage-0g` checks all three and refuses a receipt whose returned root differs from the locally calculated Merkle root.
+
 **Impact:** The code path is identified, but a real M2 completion is blocked until a test-only wallet is supplied through a secret environment variable and funded. No signer exists in the current workspace. Do not commit the key or replace the live round trip with a mock.
 
 **Sources:**

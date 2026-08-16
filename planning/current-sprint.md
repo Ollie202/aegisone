@@ -21,8 +21,10 @@ Preserve the completed local independent-reproduction kernel while proving the f
 
 ## M2 active tasks
 
-- [ ] Reconfirm the current official 0G Storage TypeScript SDK and test environment.
-- [ ] Pin the SDK/package version in `packages/storage-0g` only.
+- [x] Reconfirm the current official 0G Storage TypeScript SDK and Galileo test environment.
+- [x] Pin `@0gfoundation/0g-storage-ts-sdk@1.2.9` and `ethers@6.13.1` in `packages/storage-0g` only.
+- [x] Implement real SDK upload/download adapter and proof-enabled round-trip command.
+- [x] Add deterministic structured-error, receipt, wrong-network, and byte-mismatch tests.
 - [ ] Upload canonical M1 provenance bytes using a minimally funded test wallet.
 - [ ] Record root and upload transaction evidence in `hackathon/evidence.md`.
 - [ ] Retrieve identical bytes with proof verification where the SDK supports it.

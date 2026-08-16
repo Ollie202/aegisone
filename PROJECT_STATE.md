@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-16  
-**Phase:** M1 complete — M2 0G Storage round-trip next
+**Phase:** M1 complete — M2 live 0G Storage round-trip in progress
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -31,6 +31,8 @@ not merely "hash + blockchain".
 - Offline tests prove SHA-256 known vectors, byte-stable canonical manifests, genuine `MATCH`, one-byte `MISMATCH`, invalid-revision rejection, and output-size enforcement.
 - The M1 local runner is deliberately fixture-oriented. It restricts executable names, time, environment, checkout revision, paths, and artifact size, but it is not an OS-level network/CPU/disk sandbox and must not be used for arbitrary untrusted repositories.
 - No smart-contract deployment, real 0G Storage proof, or real 0G Sandbox build exists yet.
+- `packages/storage-0g` now contains the pinned official SDK adapter, proof-enabled round-trip orchestration, exact-byte verification, structured errors, and a live Galileo command. Its offline contract/failure tests pass, but these tests are not live 0G evidence.
+- M2 remains incomplete until a funded Galileo test wallet runs the live command and produces real root, transaction, and proof-verified retrieval evidence.
 - Repository is public.
 
 ## Highest-risk unknowns
@@ -51,7 +53,7 @@ Execute M2 without weakening the completed M1 truth path:
 - record real root/transaction evidence and structured failures;
 - keep all 0G-specific code in `packages/storage-0g`.
 
-M2 requires the relevant 0G endpoint plus a minimally funded test wallet if the live SDK path charges test tokens. No wallet secret may enter source, logs, fixtures, or provenance.
+The current official Galileo endpoint and SDK path are implemented. Completing M2 now requires a minimally funded disposable Galileo test wallet. No wallet secret may enter source, logs, fixtures, provenance, or chat.
 
 ## Kill / rethink criteria
 

@@ -1,0 +1,15 @@
+{
+  "name": "@proofrail/storage-0g",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@0gfoundation/0g-storage-ts-sdk": "1.2.9",
+    "ethers": "6.13.1"
+  },
+  "scripts": {
+    "check": "node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:live": "node --experimental-strip-types scripts/live-roundtrip.ts"
+  }
+}

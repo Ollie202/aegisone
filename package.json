@@ -7,7 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts",
-    "test": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts"
+    "check": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts",
+    "test": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts",
+    "m2:live": "pnpm --filter @proofrail/storage-0g test:live"
   }
 }

@@ -1,11 +1,11 @@
+import { spawn } from "node:child_process";
 import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { spawn } from "node:child_process";
-import type { BuildRecipe, ReleaseClaim } from "../../core/src/model.ts";
-import { recipeDigest } from "../../core/src/verify.ts";
+import { join } from "node:path";
+import type { BuildRecipe, ReleaseClaim } from "../../packages/core/src/model.ts";
+import { recipeDigest } from "../../packages/core/src/verify.ts";
 
-const fixtureRoot = resolve(import.meta.dirname, "../../../examples/hello-proofrail");
+const fixtureRoot = import.meta.dirname;
 
 async function git(args: string[], cwd: string): Promise<string> {
   return await new Promise((resolvePromise, reject) => {
@@ -30,7 +30,7 @@ async function git(args: string[], cwd: string): Promise<string> {
   });
 }
 
-export async function makeFixture(): Promise<{
+export async function makeHelloProofRailFixture(): Promise<{
   cleanup: () => Promise<void>;
   repositoryPath: string;
   commitSha: string;
@@ -40,7 +40,10 @@ export async function makeFixture(): Promise<{
 }> {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "proofrail-fixture-"));
   const repositoryPath = join(temporaryRoot, "repository");
-  await cp(fixtureRoot, repositoryPath, { recursive: true, filter: (source) => !source.includes("/fixtures") });
+  await cp(fixtureRoot, repositoryPath, {
+    recursive: true,
+    filter: (source) => !source.includes("/fixtures") && !source.endsWith("/fixture.ts"),
+  });
   await git(["init", "--quiet"], repositoryPath);
   await git(["add", "package.json", "build.mjs", "src/message.txt"], repositoryPath);
   await git(["commit", "--quiet", "-m", "deterministic hello-proofrail fixture"], repositoryPath);
