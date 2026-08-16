@@ -1,0 +1,13 @@
+{
+  "name": "proofrail-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Working repository for an independent software build verification network.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "echo 'Implementation not scaffolded yet'",
+    "test": "echo 'Implementation not scaffolded yet'"
+  }
+}

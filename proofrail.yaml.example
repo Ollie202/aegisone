@@ -1,0 +1,12 @@
+version: 1
+
+source:
+  provider: github
+
+build:
+  runtime: node22
+  install: npm ci
+  command: npm run build
+
+artifacts:
+  - dist/app.tar.gz
