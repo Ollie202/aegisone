@@ -2,15 +2,13 @@
 
 **Last reviewed:** 2026-08-16
 
-External APIs evolve. Verify current official documentation before implementation.
+External APIs evolve. Verify current official docs before implementation.
 
 ## 0G Chain
 
-**Purpose:** public, tamper-evident registry of compact build/provenance commitments.
+**Purpose:** public, tamper-evident registry of compact release/reproduction commitments.
 
-Current official ecosystem references list Aristotle mainnet as chain ID `16661` and the public RPC as `https://evmrpc.0g.ai`. 0G contracts are EVM-compatible; official docs support familiar tools such as Hardhat/Foundry and document current EVM compatibility.
-
-Wave 3 policy: any Chain integration used for the competition should be real mainnet evidence once the local/testnet flow is proven.
+Wave 3 policy: prove locally/testnet first, then publish real mainnet evidence required by the Buildathon. Do not store large logs onchain.
 
 References:
 - https://docs.0g.ai/developer-hub/building-on-0g/contracts-on-0g/deploy-contracts
@@ -18,16 +16,14 @@ References:
 
 ## 0G Storage
 
-**Purpose:** store full provenance/evidence without putting large documents into the registry contract.
-
-The official TypeScript SDK currently supports file/in-memory uploads, Merkle root calculation, downloads, and proof-enabled retrieval. The documented TypeScript package is `@0gfoundation/0g-storage-ts-sdk` with `ethers` as a peer dependency.
+**Purpose:** preserve canonical provenance, build logs/evidence, and future SBOM/attestation bundles outside a private ProofRail database.
 
 Wave 3 spike:
-1. create a small provenance JSON file/in-memory payload;
-2. calculate root;
-3. upload to Galileo/test environment;
-4. retrieve with proof verification enabled;
-5. record transaction/root evidence.
+1. upload tiny canonical provenance bytes;
+2. capture root/transaction evidence;
+3. retrieve identical bytes;
+4. enable proof verification where supported;
+5. record evidence in `hackathon/evidence.md`.
 
 References:
 - https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
@@ -35,18 +31,18 @@ References:
 
 ## 0G Sandbox / Tapp
 
-**Purpose:** reduce trust in the machine executing the build.
+**Purpose:** run the independent reproduction in confidential/attestable execution and reduce trust in a normal ProofRail-controlled build server.
 
-The current 0G Sandbox repository describes a wallet-authenticated, metered sandbox service. 0G Tapp uses Intel TDX-backed trusted execution and exposes remote-attestation/evidence concepts. 0G's technical material states the Tapp SDK can embed report data in attestation quotes, but we must prove whether the consumer-facing Sandbox path lets this project bind our artifact/provenance digest directly to that evidence.
+The current official 0G Sandbox project combines 0G Tapp TEE execution with Daytona workspaces and exposes user/CLI flows suitable for scripted operation. We still must prove the exact consumer path required by ProofRail.
 
-Wave 3 spike questions:
-- Can we create/use the sandbox programmatically?
-- Can it clone a repo and execute a constrained build?
-- Can we retrieve the produced artifact bytes?
-- What exact attestation/evidence object can we retrieve?
-- Can artifact/provenance digest data be bound into the attestation quote using the available consumer path?
+Wave 3 questions:
+- Can the sandbox be created/accessed programmatically?
+- Can it clone an exact public commit and run a constrained Node build?
+- Can built artifact bytes be retrieved?
+- What exact Tapp/TDX evidence can we retrieve?
+- Can the artifact/provenance digest be bound directly into report data through the accessible path?
 
-If direct output binding is unavailable, Wave 3 must make the weaker claim accurately and promote stronger binding to a later milestone.
+If output binding is unavailable, the product must state the weaker guarantee accurately.
 
 References:
 - https://github.com/0gfoundation/0g-sandbox
@@ -56,16 +52,40 @@ References:
 
 ## GitHub
 
-**Purpose:** initial source provider and eventual CI integration.
+**Wave 3 role:** explicit source provider, not automatic truth oracle.
 
-Wave 3 supports public repositories only. Resolve tags/branches to immutable commit SHA before build. Do not make GitHub's mutable branch name part of the security claim.
+Public repositories can be cloned without an API key. The first version should accept explicit repository/release context and pin an immutable commit.
+
+Later source-claim assurance may use:
+- GitHub App/OAuth to prove repository permissions;
+- GitHub release/tag metadata;
+- GitHub Artifact Attestations as complementary evidence.
+
+GitHub Artifact Attestations already provide signed build provenance tying artifacts to repository/workflow/commit context. ProofRail's differentiation must therefore be independent reproduction and evidence/policy aggregation, not "we invented provenance."
+
+References:
+- https://docs.github.com/en/actions/concepts/security/artifact-attestations
+- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
+
+## 0G Agentic ID / ERC-8004
+
+**Wave 3:** not required.
+
+**Wave 4/5 direction:** independent builder/verifier agents can have portable identities and track records. 0G supports the ERC-8004 Identity and Reputation registries on its network. Treat identity/reputation as a way to reason about builders, not as proof that their build output is correct.
+
+Reference:
+- https://0g.ai/blog/0g-supports-erc-8004
 
 ## 0G Compute
 
-**Wave 3:** not required for the core verification path.
+**Wave 3:** not part of the core truth path.
 
-Potential later use: diagnose why independent rebuilds diverge. Do not add an LLM solely to increase the number of 0G products listed in the submission.
+Potential later use: when independent builders produce different hashes, analyze build logs/dependencies/environments and explain likely causes. The deterministic comparison remains authoritative; an LLM diagnosis is advisory.
 
-## 0G DA / Agentic ID
+## MCP / REST / SDK
 
-Not required by the current product architecture. Do not integrate unless a future requirement makes them functionally necessary.
+No MCP server is required for Wave 3. `proofrail verify --json` already gives agents a machine-readable interface. Add REST/SDK/MCP after the core evidence model is stable.
+
+## 0G DA
+
+Not currently load-bearing. Do not integrate decoratively.

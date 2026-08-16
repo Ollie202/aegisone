@@ -2,93 +2,108 @@
 
 ## Architecture goal
 
-Keep the verification model portable while using 0G for the parts where decentralization/confidential execution materially reduce trust.
+Keep the trust model provider-independent while using 0G where confidential execution, durable evidence, and public commitments materially reduce trust.
+
+## Wave 3 data flow
 
 ```mermaid
 flowchart TD
-  A[Public GitHub repository + exact commit] --> B[Build recipe parser]
-  B --> C[Runner interface]
-  C --> C1[Local runner]
-  C --> C2[0G runner / Sandbox-Tapp]
-  C2 --> D[Built artifact]
-  C1 --> D
-  D --> E[SHA-256 + canonical provenance]
-  E --> F[0G Storage adapter]
-  F --> G[Storage root / tx evidence]
-  E --> H[0G Registry adapter]
-  G --> H
-  H --> I[ProofRailRegistry on 0G mainnet]
-  I --> J[CLI / web verifier]
-  F --> J
-  D --> J
+  A["Explicit release/source claim"] --> B["Source resolver: pin immutable commit"]
+  A --> P["Publisher artifact bytes"]
+  B --> C["Constrained BuildRecipe"]
+  C --> D["Independent runner interface"]
+  D --> D1["Local runner"]
+  D --> D2["0G Sandbox / Tapp runner"]
+  D2 --> E["Reproduced artifact bytes"]
+  D1 --> E
+  P --> F["SHA-256 comparison engine"]
+  E --> F
+  F --> G["Canonical reproduction evidence"]
+  G --> H["0G Storage"]
+  H --> I["Storage root / evidence"]
+  G --> J["0G registry adapter"]
+  I --> J
+  J --> K["ProofRailRegistry on 0G mainnet"]
+  K --> L["CLI JSON / Web viewer / future agents"]
+  H --> L
 ```
+
+## Two independent trust questions
+
+### 1. Source identity / declaration
+Who says this repository+commit is the source for this release?
+
+Possible assurance levels evolve independently:
+- `DECLARED` — somebody supplied the mapping;
+- `REPOSITORY_AUTHENTICATED` — a GitHub identity with required repository permission registered it;
+- `SIGNED_RELEASE` — a recognized publisher key signed the mapping;
+- future domain/package/onchain bindings.
+
+Wave 3 may operate at `DECLARED` for the demo but must display that honestly.
+
+### 2. Build correspondence
+Does an independent rebuild of that exact source/recipe produce the same artifact bytes as the publisher distributes?
+
+This is the core Wave 3 proof.
 
 ## Component boundaries
 
 ### `packages/core`
 Owns:
-- artifact digest calculation;
-- canonical manifest representation;
-- verification result model;
-- trust/verification levels;
-- validation rules.
+- source/release claim schema;
+- artifact hashing;
+- canonical provenance/comparison representation;
+- verification statuses;
+- trust-policy primitives;
+- validation and resource-limit configuration models.
 
-Must **not** import 0G SDKs.
+Must not import 0G SDKs or LLM APIs.
 
 ### `packages/runner-local`
-A deterministic local runner used for development, tests, and comparison.
+Controlled deterministic runner used for development/tests and as a baseline independent reproducer.
 
 ### `packages/runner-0g`
-Adapter around the supported 0G confidential execution flow.
-
-It must return explicit evidence fields such as:
-- environment/provider identifier;
-- sandbox/build identifier;
-- available attestation evidence;
-- logs/retrieval metadata;
-- unsupported attestation fields as `null`/unavailable.
+Adapter around the proven 0G confidential execution flow. It returns explicit capabilities and raw evidence references; unsupported attestation properties remain unavailable.
 
 ### `packages/storage-0g`
-Uploads canonical provenance evidence and retrieves it with proof verification where supported.
+Stores canonical provenance/comparison evidence and retrieves it with proof verification where supported.
 
 ### `contracts/ProofRailRegistry.sol`
-Stores minimal commitments rather than full provenance documents.
+Stores compact commitments, not full logs.
 
-Candidate record fields:
-- project/source identifier hash;
-- source commit;
-- artifact digest;
+Candidate fields:
+- source/release claim commitment;
+- immutable commit identifier/hash;
+- publisher artifact digest;
+- reproduced artifact digest or reproduction-evidence root;
 - provenance/storage root;
 - builder/evidence commitment;
-- submitter;
-- timestamp/event.
+- submitter/event/timestamp.
 
 ### `packages/registry-0g`
-Typed client around the registry contract.
+Typed client for registry reads/writes.
 
 ### `packages/cli`
-Developer-facing `build`, `verify`, and `inspect` commands. Wave 3 only requires a minimal coherent subset.
+Human and agent interface. Stable JSON is a product requirement.
 
 ### `apps/web`
-Public human-readable verification interface. It must not become the source of truth; it visualizes evidence independently available elsewhere.
+Evidence visualization only. The UI must never become the sole source of verification truth.
 
-## Trust boundaries
+## Scaling architecture
 
-1. **Publisher/source control** — A malicious maintainer can publish malicious source. ProofRail does not solve this.
-2. **Builder** — A builder could claim an output it did not honestly build. TEE attestation and independent rebuilds progressively reduce this risk.
-3. **ProofRail backend** — Must not be trusted to rewrite evidence; commitments/evidence should remain independently checkable.
-4. **Storage** — Evidence retrieval/integrity should be verified against its cryptographic root.
-5. **Registry** — Historical commitments should be independently readable from 0G Chain.
-6. **Verifier UI** — The UI can lie; CLI/raw evidence should permit independent checking.
+**Rebuilding is expensive; verifying is cheap.** A release is rebuilt once per selected builder/policy. Many consumers then hash their local artifact and verify existing evidence.
 
-## Verification levels
+Wave 3 accepts only explicitly supported build targets and enforces resource limits. A huge monorepo may specify a target subdirectory/package; unsupported or excessive jobs fail instead of consuming unbounded compute.
 
-The UI must distinguish levels rather than show one vague `VERIFIED` badge:
+## Verification/assurance dimensions
 
-- **Integrity Verified** — local file digest matches a registered artifact digest.
-- **Source Attested** — a builder asserts the digest came from a specific source/recipe.
-- **TEE Attested** — verifiable evidence shows the build execution environment is hardware-attested.
-- **Reproduced** — multiple independent builders produced matching artifact digests.
-- **Consensus Verified** — an explicit N-of-M trust policy is satisfied.
+Do not collapse everything into one green badge.
 
-Wave 3 must only display levels actually supported by evidence.
+- **Source Declared** — mapping exists, publisher ownership not necessarily proven.
+- **Publisher Authenticated** — ownership/signature evidence for the source claim exists.
+- **Artifact Integrity Match** — local bytes match a registered publisher artifact digest.
+- **Independently Reproduced** — independent builder output matches publisher artifact bytes.
+- **TEE Attested Build** — supported attestation proves the measured execution environment; output binding is only claimed if actually proven.
+- **Consensus Verified** — explicit N-of-M independent-builder policy is satisfied.
+
+None of these means the source code is safe.

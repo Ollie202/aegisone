@@ -2,67 +2,120 @@
 
 ## Core entities
 
+### PublisherIdentity
+Optional identity evidence for who declared a release.
+
+- `type` (`anonymous`, `github`, `signature`, future types)
+- `subject`
+- `assuranceLevel`
+- evidence references
+
 ### SourceRef
 - `provider`
 - `repository`
 - `commitSha`
 - optional `tag`
+- optional `subdirectory`
 
-Invariant: the build always resolves to an immutable commit SHA.
+Invariant: build execution always uses an immutable commit SHA.
+
+### ReleaseClaim
+The publisher/declarant's statement connecting source and distributed artifact.
+
+- `claimVersion`
+- `projectId`
+- `publisherIdentity`
+- `source: SourceRef`
+- `recipeDigest`
+- `artifactName`
+- `artifactLocation` or submitted bytes reference
+- optional `releaseTag`
+- `claimAssuranceLevel`
+
+Invariant: ProofRail never silently upgrades a declared source into an authenticated publisher source.
 
 ### BuildRecipe
 - `version`
-- `runtime`
-- `installCommand`
-- `buildCommand`
-- `artifactPaths[]`
-- optional environment constraints
+- runtime/image identifier
+- working directory / target package
+- install command
+- build command
+- artifact paths
+- network policy
+- resource limits
+- environment constraints
 
 ### Artifact
 - `name`
-- `path`
 - `size`
 - `sha256`
+- `role` (`publisher`, `reproduced`)
+
+### ReproductionJob
+- `jobId`
+- source claim/reference
+- recipe digest
+- runner type
+- resource limits
+- start/end status
+- output artifacts
+- build logs/evidence references
 
 ### BuildEnvironment
-- `runnerType` (`local`, `0g`)
+- `runnerType` (`local`, `0g`, future adapters)
 - runtime/image identifier
-- provider/sandbox identifier when applicable
-- available measurement/attestation references
+- provider/sandbox identifier
+- available measurements/attestation references
+- capability flags
+
+### ComparisonResult
+- publisher digest
+- reproduced digest(s)
+- status (`MATCH`, `MISMATCH`, `DIVERGED`, `INSUFFICIENT_EVIDENCE`)
+- checks/warnings
 
 ### ProvenanceManifest
 - schema version
-- source
+- release/source claim
 - recipe digest
 - environment
-- artifacts
-- start/end timestamps
-- build result
+- publisher artifact
+- reproduced artifact(s)
+- comparison result
 - evidence references
 
 ### StorageEvidence
 - network
 - root hash/root hashes
 - upload transaction hash(es)
-- retrieval proof status
+- retrieval/proof status
 
 ### RegistryRecord
 - chain ID
 - contract address
 - transaction hash
-- artifact digest
-- provenance root/commitment
+- claim commitment
+- artifact/reproduction commitments
+- provenance root
 - submitter
 
+### VerificationPolicy
+Later versions:
+- minimum independent builders
+- required execution/identity capabilities
+- acceptable source-claim assurance
+- exact-match requirement
+
 ### VerificationResult
-- artifact digest calculated locally
-- expected digest
-- source/provenance/registry evidence
-- verification level
-- checks[]
-- warnings[]
-- final pass/fail status
+Stable machine-facing output containing:
+- source-claim assurance
+- local artifact digest
+- expected/publisher digest
+- independent reproduction evidence
+- policy result
+- checks/warnings
+- final status
 
 ## Canonicalization requirement
 
-The exact canonical serialization format must be decided and tested before any on-chain provenance commitment is treated as stable. This decision requires an ADR.
+The exact canonical serialization format must be selected and tested before any on-chain provenance commitment is treated as stable. Record that choice in an ADR.

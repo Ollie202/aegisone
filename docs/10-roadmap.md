@@ -1,50 +1,64 @@
 # Roadmap
 
-## v0.1 — Wave 3: Verifiable Release Foundation
+## v0.1 — Wave 3: Independent Release Reproduction
 
-Goal: prove a real source-to-artifact verification path with meaningful 0G dependencies.
+**Goal:** prove one extremely clear trust boundary with real 0G evidence.
 
 Capabilities:
-- exact source commit;
-- deterministic build recipe;
-- local + 0G runner path;
-- artifact hashing;
-- canonical provenance;
-- 0G Storage evidence;
-- 0G mainnet registry;
-- CLI/web verification;
-- tampered-artifact failure demo.
+- explicit publisher/release source claim;
+- exact commit pinning;
+- constrained reproducible Node build;
+- publisher artifact hashing;
+- one independent 0G rebuild;
+- deterministic publisher-vs-rebuild comparison;
+- canonical provenance/comparison evidence;
+- 0G Storage;
+- 0G mainnet commitment;
+- CLI + stable JSON + public evidence page;
+- tampered/substituted artifact failure demo.
 
-## v0.2 — Wave 4: Independent Reproduction
+Wave 3 does **not** need to authenticate every publisher or support arbitrary repositories. It must label source assurance accurately.
 
-Goal: remove more trust from a single builder.
+## v0.2 — Wave 4: Multiple Independent Verifiers
 
-Candidate capabilities:
-- second independent builder adapter;
-- N-of-M trust policy;
-- reproducibility comparison;
-- stronger TEE/output binding if not fully achieved in v0.1;
-- GitHub Action;
-- external repositories using the system.
-
-## v0.3 — Wave 5: Open Verification Network
-
-Goal: turn point verification into a network primitive.
+**Goal:** remove trust from a single reproducer and make agent participation real.
 
 Candidate capabilities:
-- multiple independent builders;
-- builder enrollment and explicit capabilities;
-- consensus/reproduction records;
-- policy-driven verification (`2-of-3`, `require-TEE`, etc.);
-- public project verification history;
-- initial builder/job economics only if security design is mature.
+- second/third genuinely independent builder adapter;
+- N-of-M verification policies;
+- reproduction comparison across builders;
+- GitHub App/OAuth publisher ownership proof;
+- first ProofRail builder/verifier agent;
+- Agentic ID / ERC-8004-compatible identity/reputation where technically appropriate;
+- stronger TEE artifact-output binding if not completed in Wave 3;
+- GitHub Action/CI integration;
+- real external repositories.
+
+## v0.3 — Wave 5: Open Software Verification Network
+
+**Goal:** make independent verification consumable as infrastructure by humans, CI, and autonomous agents.
+
+Candidate capabilities:
+- open/permissioned builder enrollment;
+- builder capabilities and diversity metadata;
+- policy-driven verification such as `2-of-3`, `require-TEE`, `minimum source assurance`;
+- public project/release verification history;
+- REST/SDK/MCP interfaces over the same deterministic core;
+- agent-to-agent verification jobs;
+- reputation/validation records only where they add real Sybil/accountability value;
+- optional 0G Compute divergence doctor.
 
 ## Post-Buildathon
 
-- package/container support beyond the first stack;
-- registry/package-manager integrations;
-- enterprise verification policies;
-- CI/CD integrations;
+- broader package/container ecosystems;
+- Sigstore/SLSA/in-toto/SBOM interoperability;
+- enterprise CI admission policies;
+- package-manager/registry integrations;
+- private-source workflows with controlled access;
 - sustainable builder economics;
 - provider-neutral attestation adapters;
-- broader security/reproducible-build ecosystem interoperability.
+- real adoption/network effects.
+
+## Long-term moat hypothesis
+
+Not novel hashing or TEE cryptography. The durable opportunity is **easy integration + independent builder network + policy/evidence interoperability + adoption**.

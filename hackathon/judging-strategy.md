@@ -2,38 +2,54 @@
 
 ## Judge thesis
 
-A strong submission should make three things obvious within seconds:
+Within seconds, a judge should understand:
 
-1. the software-distribution trust problem is real;
-2. the product actually works;
-3. removing 0G materially weakens the trust model.
+1. **the real failure:** public source can stay clean while distributed release bytes are substituted;
+2. **the proof:** ProofRail independently rebuilds the exact claimed commit and compares bytes;
+3. **the 0G fit:** execution, evidence preservation, and historical commitments become less dependent on ProofRail's own infrastructure;
+4. **the honesty:** the product never calls a build safe or an unauthenticated repository official.
 
 ## 0G story
 
-### 0G confidential execution
-**Question removed:** "Do I trust the machine that ran the build?"
+### 0G Sandbox / Tapp
+Reduce trust in a normal centralized build server for the independent reproduction.
 
 ### 0G Storage
-**Question removed:** "Do I trust ProofRail to preserve the evidence?"
+Keep full provenance/evidence independently retrievable rather than only in a ProofRail database.
 
 ### 0G Chain
-**Question removed:** "Do I trust ProofRail to rewrite historical verification records?"
+Anchor compact historical commitments so records cannot be silently rewritten.
+
+### Later agent layer
+Agentic ID / ERC-8004 can identify builder/verifier agents and expose track records, while reproduction evidence remains the proof of output.
+
+## Competitive differentiation
+
+Do not pitch "blockchain provenance." GitHub/Sigstore/SLSA already provide strong provenance primitives.
+
+Pitch:
+
+> **independent reproduction + portable evidence + policy enforcement for humans and autonomous agents**
 
 ## What the demo must prove
 
-- exact source commit;
-- real artifact generation;
-- real 0G evidence;
-- independent digest verification;
-- a genuine file passes;
-- a tampered file fails.
+- explicit source/release claim;
+- exact commit pinning;
+- real publisher artifact;
+- real independent build;
+- publisher/rebuild hash comparison;
+- real 0G Storage/mainnet evidence;
+- truthful TEE evidence level;
+- genuine artifact passes;
+- substituted/tampered artifact fails.
 
 ## What not to optimize for
 
 - number of contracts;
-- number of 0G logos;
+- number of 0G products mentioned;
 - fake users;
-- arbitrary AI feature;
-- inflated test count.
+- arbitrary AI features;
+- inflated test counts;
+- unsupported "official/safe/trustless" claims.
 
-Optimize for a compact system where every component has an obvious reason to exist.
+Optimize for one specific failure mode, a load-bearing sponsor integration, real execution, and evidence a judge can inspect.

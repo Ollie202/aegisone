@@ -1,47 +1,69 @@
 # Competitors & Alternatives
 
-ProofRail must not pretend the software-provenance category is empty.
+ProofRail must be built with the assumption that software provenance is a mature category.
 
 ## GitHub Artifact Attestations
 
-GitHub can generate and verify artifact attestations tying artifacts to repository/workflow/build context.
+GitHub creates cryptographically signed build provenance linking artifacts to repository, workflow/environment, commit SHA, and other build identity information. GitHub explicitly warns that attestations do not guarantee an artifact is secure.
 
-Reference: https://docs.github.com/en/actions/concepts/security/artifact-attestations
+References:
+- https://docs.github.com/en/actions/concepts/security/artifact-attestations
+- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
 
-**Implication:** "We sign a build from GitHub Actions" is not enough differentiation.
+**Implication:** publisher-side provenance is not sufficient differentiation. ProofRail should consume/interoperate with attestations where useful and focus on independent corroboration.
 
-## Sigstore / Cosign
+## Sigstore / Cosign / in-toto
 
-Open-source signing and transparency tooling for software artifacts and containers.
+Established signing, transparency, and supply-chain attestation tooling.
 
-Reference: https://docs.sigstore.dev/
+**Implication:** do not invent proprietary signatures/attestation formats unless necessary.
 
-**Implication:** ProofRail should interoperate with existing signing/provenance ecosystems rather than claim all signing is obsolete.
+References:
+- https://docs.sigstore.dev/
+- https://in-toto.io/
 
 ## SLSA
 
-Software supply-chain framework with formal provenance concepts and increasing assurance levels.
+SLSA formalizes software build provenance and verification. Its reproducible-build guidance distinguishes ordinary reproducibility from **verified reproducibility**, where two or more independent build systems corroborate provenance.
 
-Reference: https://slsa.dev/
+References:
+- https://slsa.dev/
+- https://slsa.dev/spec/v1.2/verifying-artifacts
+- https://slsa.dev/spec/v1.0-rc1/faq
 
-**Implication:** Build provenance is established prior art. Our angle is independent reproduction/trust-policy usability and the specific decentralized/confidential execution network.
+**Implication:** independent reproduction is legitimate security architecture, but not a complete solution and not our invention.
 
 ## Reproducible Builds
 
-Long-running ecosystem effort to make identical source/build inputs produce identical outputs.
+Long-running effort around deterministic source-to-binary builds and common nondeterminism such as timestamps, filesystem ordering, paths, locales, randomness, and toolchain differences.
 
-Reference: https://reproducible-builds.org/
+Reference:
+- https://reproducible-builds.org/
 
-**Implication:** Multi-builder agreement depends heavily on reproducible build discipline; many projects will not match automatically.
+**Implication:** arbitrary repositories will not automatically reproduce. Narrow supported build families and honest DIVERGED states are essential.
 
-## Kettle
+## Kettle / TEE-attested builds
 
-2026 research on TEE-backed software building/provenance.
+Recent work already demonstrates TEE-backed build provenance and binding build metadata/output digests to attestation.
 
-Reference: https://arxiv.org/abs/2605.08363
+**Implication:** "we build in a TEE" is not novel. 0G-specific product integration plus independent-network UX is the opportunity.
 
-**Implication:** TEE-attested builds themselves are not novel. ProofRail must differentiate on developer workflow, independent reproduction, explicit trust policies, network/adoption, and interoperability.
+## Trustix / Lila / decentralized rebuilders
 
-## Strategic differentiation
+Existing/recent systems explore comparing build results across providers or decentralized reproducibility monitoring.
 
-The intended moat is not "we use hashes" or "we use a TEE." It is a usable, provider-adaptable verification network where independent builders produce inspectable evidence and users choose what combination of evidence they require.
+**Implication:** multi-builder networks are also prior art. Our eventual differentiation must be usability, cross-environment adapters, policy evidence, agent consumption, and adoption.
+
+## Strategic position
+
+ProofRail should aim to be:
+
+> **the easy verification/policy layer that aggregates independent reproduction evidence for humans, CI, and agents**
+
+not:
+
+> "a new hash/signature/TEE primitive."
+
+## Kill condition
+
+If the Wave 3 implementation becomes only `publisher hash -> blockchain`, stop and rethink it. That is weaker than existing provenance tooling and does not justify the product.

@@ -1,41 +1,64 @@
 # 90-Second Demo Plan
 
-## 0-10s — Problem
+## 0–12s — The trust gap
 
-Show a public GitHub repo and a downloadable release artifact.
+Show a public GitHub repo beside its downloadable release artifact.
 
-Message: **Public source does not automatically prove the downloaded file was built from that source.**
+Message:
 
-## 10-30s — Build evidence
+> **Seeing the source does not prove these downloaded bytes came from that source.**
 
-Show the exact commit and the real ProofRail build/evidence path through 0G. Keep infrastructure labels visible but do not explain every protocol detail.
-
-## 30-50s — Independent verification
-
-Run:
-
-```bash
-proofrail verify demo-artifact.tar.gz
-```
+## 12–25s — Pin the claim
 
 Show:
-- source commit;
-- artifact SHA-256;
-- 0G Storage evidence;
-- 0G mainnet registry record;
-- available TEE evidence level;
-- PASS.
+- publisher/source claim;
+- exact immutable commit;
+- constrained build recipe;
+- publisher artifact SHA-256.
 
-## 50-70s — Tamper moment
+Label source assurance honestly (`DECLARED` unless stronger identity proof exists).
 
-Modify/replace one byte/file in the artifact and rerun verification.
+## 25–50s — Independent 0G reproduction
 
-Show a clear failure:
+Run/build the exact commit through the real 0G path.
 
-`ARTIFACT DIGEST MISMATCH — DO NOT TREAT THIS FILE AS THE REGISTERED BUILD`
+Show:
 
-## 70-90s — Scale
+```text
+Publisher artifact   ABC123
+0G rebuild           ABC123
+                     ------
+MATCH                ✓
+```
 
-One sentence on Wave 4/5:
+Briefly expose Storage/mainnet/TEE evidence links.
 
-**Today one verifiable build. Next, multiple independent builders reproduce the same source and ProofRail only upgrades trust when their outputs agree.**
+## 50–70s — Tamper/substitution moment
+
+Replace or mutate the published artifact and run verification again.
+
+```text
+Local/published file 999XYZ
+Verified reproduction ABC123
+                      ------
+MISMATCH              ✕
+```
+
+Message:
+
+> **The source can still look clean while the file users receive has changed.**
+
+## 70–90s — Network future
+
+Show one policy visual:
+
+```text
+Builder A  ABC ✓
+Builder B  ABC ✓
+Builder C  ABC ✓
+Policy: 3/3 + >=1 TEE -> PASS
+```
+
+Close:
+
+> **Wave 3 proves one independent reproduction. Waves 4–5 turn it into a verification network that humans and agents can enforce before executing software.**

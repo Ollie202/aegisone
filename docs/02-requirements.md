@@ -2,30 +2,35 @@
 
 ## Functional requirements
 
-- **FR-001** — The system must identify a source repository by immutable commit SHA before building.
-- **FR-002** — The system must accept a constrained build recipe rather than arbitrary undocumented manual steps.
-- **FR-003** — The system must produce at least one declared artifact from the build.
-- **FR-004** — The system must calculate a SHA-256 digest for each declared artifact.
-- **FR-005** — The system must generate a canonical provenance manifest containing source, recipe, environment, artifact, and evidence metadata.
-- **FR-006** — The verifier must independently recalculate a local artifact digest.
-- **FR-007** — Verification must fail when the local digest differs from the provenance/registry digest.
-- **FR-008** — Provenance evidence must be uploadable to 0G Storage.
-- **FR-009** — Stored evidence must be retrievable with verification enabled where supported by the SDK.
-- **FR-010** — A minimal build record must be registerable on 0G Chain mainnet for the Wave 3 submission.
-- **FR-011** — The public verifier must expose source commit, artifact digest, storage reference, registry transaction, and verification state.
-- **FR-012** — The CLI must support `verify <artifact>` for the Wave 3 demo.
-- **FR-013** — The system must preserve underlying evidence so verification is not dependent on a green badge from the web UI.
-- **FR-014** — The 0G runner adapter must expose evidence truthfully; unavailable attestation properties must be represented as unavailable, not inferred.
+- **FR-001** — Every verification must begin from an explicit source/release claim; the system must not infer an "official" repository without evidence.
+- **FR-002** — The source revision used for a build must resolve to an immutable Git commit SHA.
+- **FR-003** — The system must represent source-claim assurance separately from build-correspondence assurance.
+- **FR-004** — The system must accept a constrained build recipe rather than undocumented manual build steps.
+- **FR-005** — The system must accept or retrieve the artifact the publisher actually distributes.
+- **FR-006** — The system must independently rebuild at least one declared artifact from the exact source revision.
+- **FR-007** — The system must calculate SHA-256 for both publisher and reproduced artifacts.
+- **FR-008** — The core comparison must deterministically return `MATCH`, `MISMATCH`, `DIVERGED/NOT_REPRODUCIBLE`, or `INSUFFICIENT_EVIDENCE` as appropriate.
+- **FR-009** — A new Git commit/release must be represented as a new revision/claim; prior release evidence must remain immutable.
+- **FR-010** — The system must generate a canonical provenance/comparison manifest containing source claim, recipe, environment, artifact digests, and evidence references.
+- **FR-011** — The verifier must independently recalculate a local artifact digest.
+- **FR-012** — Provenance evidence must be uploadable to 0G Storage and retrievable with proof verification where supported.
+- **FR-013** — A compact build/reproduction commitment must be registerable on 0G Chain mainnet for Wave 3.
+- **FR-014** — The public verifier must expose source-claim level, commit, publisher digest, reproduced digest, Storage reference, registry transaction, and available execution evidence.
+- **FR-015** — The CLI must provide stable machine-readable JSON output for agent/automation consumption.
+- **FR-016** — The 0G runner must report unavailable attestation capabilities explicitly rather than infer them.
+- **FR-017** — Build requests must enforce configured time/CPU/disk/output limits and fail cleanly when unsupported.
 
 ## Non-functional requirements
 
-- **NFR-001 Security** — Private keys must never enter the browser bundle, repository, logs, or provenance output.
+- **NFR-001 Security** — Private keys/API credentials must never enter browser bundles, Git history, provenance, or logs.
 - **NFR-002 Determinism** — Manifest canonicalization must produce stable bytes for logically identical records.
-- **NFR-003 Portability** — Core hashing/provenance/verification logic must not depend directly on 0G SDKs.
-- **NFR-004 Cost** — Default development must use local/testnet/free-tier infrastructure. Any paid service requires explicit approval.
+- **NFR-003 Portability** — Core source-claim, hashing, comparison, and policy logic must not import 0G SDKs.
+- **NFR-004 Cost** — Development defaults to local/testnet/free-tier infrastructure; paid services require explicit approval.
 - **NFR-005 Testability** — Core verification logic must run fully offline in unit tests.
-- **NFR-006 Observability** — Every external step must return a structured success/failure result with evidence identifiers when available.
-- **NFR-007 Failure safety** — Missing evidence must degrade the verification level rather than silently pass.
-- **NFR-008 UX** — A judge should understand the success/failure state without blockchain expertise.
-- **NFR-009 Performance** — Local artifact verification should be dominated by file hashing, not remote network calls.
-- **NFR-010 Documentation** — Security claims and verification levels must match implementation reality.
+- **NFR-006 Observability** — Every external step returns structured success/failure and evidence identifiers when available.
+- **NFR-007 Failure safety** — Missing evidence can only lower assurance; it may never silently upgrade a result.
+- **NFR-008 UX** — A judge should understand the core MATCH/MISMATCH behavior without blockchain knowledge.
+- **NFR-009 Performance** — Consumer verification should normally be dominated by local hashing and evidence checks, not rebuilding.
+- **NFR-010 Resource safety** — Arbitrary repository size/complexity must never imply unbounded compute.
+- **NFR-011 Documentation** — Product copy must never conflate source ownership, artifact correspondence, reproducibility, TEE execution, or software safety.
+- **NFR-012 Agent stability** — JSON field semantics and status enums become versioned contracts once released.

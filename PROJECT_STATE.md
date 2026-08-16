@@ -1,38 +1,66 @@
 # Project State
 
 **Last updated:** 2026-08-16  
-**Phase:** M1 — technical feasibility spike  
+**Phase:** M1 — local independent-reproduction kernel  
 **Product name:** ProofRail *(working name only)*
+
+## Current product thesis
+
+ProofRail does **not** determine whether code is good or bad and does **not** magically identify an official source repository.
+
+The publisher supplies a source/release claim. ProofRail independently rebuilds the exact immutable commit under an explicit recipe, compares the reproduced artifact with the published artifact, and packages the resulting evidence for humans or AI agents.
+
+Wave 3's headline is now:
+
+> **publisher artifact vs independent 0G rebuild**
+
+not merely "hash + blockchain".
 
 ## What is true now
 
-- The GitHub repository is initialized with the project operating foundation, Wave 3 scope, architecture, security model, roadmap, risks, budget controls, research, hackathon evidence system, and coding-agent rules.
-- Foundation completion commit: `f7d1d9a010c8067b7a719fe97d1042c00a611ff4`.
-- 0G Chain, Storage, and confidential execution are intended as core integrations rather than decorative additions.
-- The repository is currently private; it must be made public before hackathon submission/public evidence review.
-- No production implementation exists yet.
-- No smart contract has been deployed yet.
-- No 0G Storage upload has been produced yet.
-- No 0G Sandbox build has been proven yet.
-- No artifact-level TEE attestation binding has been proven yet.
+- Repository foundation and project documentation exist.
+- Core trust model has been refined around two separate proofs: source-claim identity and source-to-artifact correspondence.
+- GitHub Artifact Attestations, Sigstore/SLSA, reproducible-build work, Kettle, Trustix, and Lila are acknowledged prior art; novelty is not claimed for provenance, TEEs, or reproducible builds themselves.
+- The intended differentiation is productization of independent reproduction, portable evidence, policy-driven verification, developer/agent UX, and an open builder network.
+- 0G Chain, Storage, and confidential execution remain meaningful candidate dependencies for Wave 3.
+- Agentic ID / ERC-8004 are a later network identity/reputation direction, not a Wave 3 dependency.
+- An LLM is explicitly outside the core MATCH/MISMATCH decision. 0G Compute may later explain divergence.
+- Public repositories only for the first build path.
+- No production implementation, smart-contract deployment, 0G Storage proof, or 0G Sandbox build exists yet.
+- Repository is currently private and must become public before submission.
 
-## Current blockers / unknowns
+## Highest-risk unknowns
 
-1. **Repository visibility:** the repository must be made public before submission.
-2. **Brand collision:** an active unrelated `ProofRail` project exists; final naming must be revisited before serious public brand commitment.
-3. **0G Sandbox execution:** confirm the exact programmatic flow for creating a sandbox, running a build, and retrieving the built artifact.
-4. **TEE artifact binding:** confirm whether the available 0G Sandbox/Tapp consumer path can bind our provenance/artifact digest directly into attestation report data.
-5. **Mainnet funding:** a small funded 0G mainnet wallet will be required for contract deployment/registrations. Do not fund until the local/testnet path works.
+1. Can the hosted/accessible 0G Sandbox path programmatically build an exact public commit and return artifact bytes?
+2. What exact Tapp/TEE evidence is retrievable?
+3. Can artifact/provenance digest data be directly bound into attestation report data through the accessible flow?
+4. Can supported Node.js builds be made deterministic enough for a strong demo?
+5. What canonical manifest encoding should become stable before on-chain commitments?
 
 ## Current objective
 
-Complete the technical feasibility milestones before polished frontend work:
+Complete M1 before product polish:
 
-- M1: local build -> digest -> canonical manifest -> verify;
-- M2: 0G Storage upload/download/proof round trip;
-- M3: minimal registry contract local/test deployment path;
-- M4: 0G Sandbox build/retrieval + exact attestation capability assessment.
+- create a tiny deterministic fixture with a known "publisher artifact";
+- model an explicit source/release claim;
+- rebuild the exact source locally;
+- compare publisher and reproduced SHA-256 digests;
+- prove MATCH for the genuine artifact;
+- prove MISMATCH after a one-byte change;
+- expose the result as stable machine-readable JSON;
+- keep all 0G SDKs out of `packages/core`.
+
+Then execute the 0G Storage, registry, and Sandbox spikes.
+
+## Kill / rethink criteria
+
+Reconsider the project if:
+
+- the basic independent-reproduction UX is confusing even on the controlled fixture;
+- the supported build cannot be made deterministic enough for a credible demo;
+- 0G execution cannot produce/retrieve the needed artifact/evidence without an impractical workaround;
+- Wave 3 collapses into merely storing a publisher-provided hash onchain.
 
 ## Wave 3 success signal
 
-A judge can watch a real repository get built, inspect real 0G evidence, verify the genuine artifact, then see a modified artifact fail verification deterministically.
+A judge sees a publisher-declared GitHub commit and release artifact, watches ProofRail independently rebuild the commit through real 0G infrastructure, sees both hashes agree, then watches a substituted artifact fail — with inspectable Storage/mainnet/evidence links and no hidden "trust us" step.
