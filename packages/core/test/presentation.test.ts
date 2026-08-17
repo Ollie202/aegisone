@@ -59,6 +59,6 @@ test("judgeable view reports substituted publisher bytes as MISMATCH", () => {
 test("judgeable view rejects a display-layer attempt to change the core verdict", () => {
   const verification = createVerification({ claim, recipe, publisherBytes: bytes("same"), reproducedBytes: bytes("same"), environment });
   const tampered = structuredClone(verification);
-  tampered.correspondence.status = "MISMATCH";
+  tampered.correspondence = { ...tampered.correspondence, status: "MISMATCH" };
   assert.throws(() => createVerificationView(tampered), /correspondence result/);
 });
