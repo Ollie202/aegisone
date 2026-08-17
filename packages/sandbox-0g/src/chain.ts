@@ -21,9 +21,7 @@ export const TAPP_ABI = [
 
 export async function requireGalileo(provider: JsonRpcProvider): Promise<void> {
   const network = await provider.getNetwork();
-  if (network.chainId !== GALILEO_CHAIN_ID) {
-    throw new Error(`Refusing sandbox chain write: expected Galileo ${GALILEO_CHAIN_ID}, got ${network.chainId}`);
-  }
+  if (network.chainId !== GALILEO_CHAIN_ID) throw new Error(`Refusing sandbox chain write: expected Galileo ${GALILEO_CHAIN_ID}, got ${network.chainId}`);
 }
 
 export function normalizePrivateKey(value: string): string {
@@ -34,13 +32,7 @@ export function normalizePrivateKey(value: string): string {
 }
 
 function isNodeLike(value: any): boolean {
-  return Boolean(value)
-    && typeof value === "object"
-    && value.teeUrl !== undefined
-    && value.addedAt !== undefined
-    && value.stakeAmount !== undefined
-    && value.composeHash !== undefined
-    && value.volumesHash !== undefined;
+  return Boolean(value) && typeof value === "object" && value.teeUrl !== undefined && value.addedAt !== undefined && value.stakeAmount !== undefined && value.composeHash !== undefined && value.volumesHash !== undefined;
 }
 
 export function unwrapNodeResult(value: any): any {
@@ -62,6 +54,8 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
   nodeComposeHash: string;
   nodeVolumesHash: string;
   serviceCreateFee: bigint;
+  servicePricePerCpuPerMin: bigint;
+  servicePricePerMemGbPerMin: bigint;
   appId: string;
 }> {
   if (BigInt(info.chainId) !== GALILEO_CHAIN_ID) throw new Error(`Sandbox broker is not Galileo: chain ${info.chainId}`);
@@ -97,6 +91,8 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
     nodeComposeHash: String(node.composeHash),
     nodeVolumesHash: String(node.volumesHash),
     serviceCreateFee: BigInt(service.createFee),
+    servicePricePerCpuPerMin: BigInt(service.pricePerCPUPerMin),
+    servicePricePerMemGbPerMin: BigInt(service.pricePerMemGBPerMin),
     appId,
   };
 }
