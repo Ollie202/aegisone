@@ -2,7 +2,7 @@
 
 > Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
 
-**Status:** M5 Galileo judgeable slice proven; Aristotle mainnet anchor pending explicit approval  
+**Status:** M5 end-to-end slice proven through 0G Aristotle mainnet  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
@@ -23,7 +23,7 @@ A tiny source change creates a new Git commit and therefore a new release claim.
 
 ## Proven Wave 3 slice
 
-The real M5 Galileo run now executes this path:
+The real M5 path is now:
 
 ```text
 explicit source claim
@@ -34,7 +34,7 @@ explicit source claim
   -> MATCH / MISMATCH
   -> canonical verification evidence
   -> proof-verified 0G Storage round trip
-  -> prepared Aristotle registry commitments
+  -> 0G Aristotle mainnet registry anchor
   -> shared CLI/web verification projection
 ```
 
@@ -58,7 +58,17 @@ Independent 0G rebuild SHA-256   9978d500...d9aa154
 
 The canonical genuine verification was `3080` bytes with SHA-256 `4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec`. 0G Storage returned root `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`, transaction `0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6`, and sequence `147016`; proof verification and exact-byte equality both passed.
 
-See `hackathon/m5-live-evidence.json` and `hackathon/evidence.md` for the durable evidence summary.
+Those commitments are now anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`:
+
+- deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
+- M5 registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
+- record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`;
+- exact contract read-back: `true`;
+- actual combined mainnet fee: `0.001843856003226748 0G`, below the approved cap of `0.002246628007863198 0G`.
+
+A separate GitHub Actions verifier with **no signer secret** independently confirmed contract code, deployment and registration receipts, the registration event, the exact stored commitments, submitter, and fee cap.
+
+See `hackathon/m5-live-evidence.json`, `hackathon/m5-aristotle-mainnet.json`, and `hackathon/evidence.md` for the durable evidence summary.
 
 ## TEE evidence: precise boundary
 
@@ -101,7 +111,7 @@ pnpm check
 pnpm test
 ```
 
-Those checks include core MATCH/MISMATCH behavior, Storage orchestration, registry commitments/contracts, Sandbox/Tapp parsing/live-ABI fixtures, the M5 genuine/substitution flow, CLI inspection, and the web renderer.
+Those checks include core MATCH/MISMATCH behavior, Storage orchestration, registry commitments/contracts, Sandbox/Tapp parsing/live-ABI fixtures, the M5 genuine/substitution flow, CLI inspection, web rendering, guarded Aristotle execution syntax, and secret-free Aristotle mainnet verification.
 
 ## CLI and web status share one core projection
 
@@ -123,27 +133,31 @@ The input must be a real canonical ProofRail verification object. `hackathon/m5-
 
 Do not run it casually; the successful evidence is already recorded in the repository.
 
-## Aristotle gate
+## Aristotle mainnet anchor
 
-The M5 live run has prepared these compact commitments but has **not** submitted them to Aristotle:
+M5's compact commitments were submitted only after a read-only balance/nonce/fee gate and explicit user approval of a maximum combined fee. The guarded write path enforced:
 
-- manifest: `0xb0ac39ac60df76f427311e3d1fce665b820b81a9c4b39481ce16843804419a54`
-- source claim: `0xfcb0a23bcdf13648437b160e5a6dbc04b24f2399460c030753e194606e4e611a`
-- publisher artifact: `0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`
-- reproduced artifact: `0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`
-- provenance root: `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`
+- Aristotle chain ID `16661`;
+- exact signer address;
+- nonce `0` before deployment;
+- exact compiled deployment bytecode hash;
+- exact M5 record ID and registration calldata hash;
+- predicted empty contract address;
+- final fee refresh immediately before signing;
+- a hard combined approval cap of `0.002246628007863198 0G`.
 
-Current status is `PREPARED_NOT_SUBMITTED`. The repository requires a fresh read-only mainnet fee/balance gate and explicit user approval before any Aristotle transaction.
+The two successful transactions consumed `0.001843856003226748 0G` total. Afterward, a secret-free verifier independently read the chain and confirmed the exact M5 commitments. Durable final evidence is in `hackathon/m5-aristotle-mainnet.json`.
 
 ## Start here
 
 1. `AGENTS.md`
 2. `PROJECT_STATE.md`
 3. `hackathon/m5-live-evidence.json`
-4. `hackathon/evidence.md`
-5. `docs/03-architecture.md`
-6. `docs/11-trust-model.md`
-7. `planning/current-sprint.md`
+4. `hackathon/m5-aristotle-mainnet.json`
+5. `hackathon/evidence.md`
+6. `docs/03-architecture.md`
+7. `docs/11-trust-model.md`
+8. `planning/current-sprint.md`
 
 ## License
 
