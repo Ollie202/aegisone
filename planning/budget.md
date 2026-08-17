@@ -22,38 +22,23 @@ Free/test resources should be used for development where possible. Mainnet trans
 
 ## Measured 0G Chain envelope — M3
 
-The successful Galileo registry dry-run measured:
+The successful Galileo registry dry-run measured deployment gas `299829` and first-registration gas `161123`. At the M3 read-only Aristotle fee snapshot (`4000000007` wei gas price), the estimated combined cost was `0.001843808003226664 0G`.
 
-- deployment gas: `299829`;
-- first registration gas: `161123`;
-- read-only Aristotle gas-price snapshot: `4000000007` wei;
-- estimated deployment cost at that snapshot: `1199316002098803` wei;
-- estimated registration cost at that snapshot: `644492001127861` wei;
-- estimated combined cost at that snapshot: `1843808003226664` wei / `0.001843808003226664 0G`.
+This was a point-in-time estimate, **not** an approved budget and not a mainnet spend. The Aristotle fee must be re-queried immediately before the M5 approval gate.
 
-This is a point-in-time estimate, **not** an approved budget and not a mainnet spend. No Aristotle mainnet transaction was sent during M3.
+## Measured 0G Sandbox envelope — M4/M5
 
-## Measured 0G Sandbox envelope — M4
+M4 established the authoritative live provider economics from the on-chain settlement contract:
 
-M4 used Galileo testnet tokens only; it did not incur or authorize a mainnet write.
+- create fee: `0.06 0G`;
+- CPU: `0.001 0G` per CPU-minute;
+- memory: `0.0005 0G` per GB-minute;
+- selected snapshot: 1 CPU / 1 GB / 3 GB;
+- one-minute CPU+memory rate: `0.0015 0G`.
 
-Live execution provider `0xa19C4E672576E186AF81548E950Bf74A736220C3` reported HTTP terms that differed from the settlement contract. ProofRail therefore treats the **on-chain service terms as authoritative**:
+M5 reused the same disposable Galileo execution wallet and the same provider. The successful M5 runner enforced a `0.07 0G` target and `0.07 0G` hard deposit-delta cap before any Sandbox write. Its funding record shows no new acknowledgement transaction and deposit transaction `0xd5ad54f0a7d7309fb1e2c4c28b8ff320d4bf07c1cf95db0829ade66fd2ec3094` for `0.07` Galileo testnet 0G. The successful sandbox was deleted after the Storage proof completed.
 
-- on-chain sandbox create fee: `60000000000000000` wei / `0.06 0G`;
-- CPU price: `1000000000000000` wei / `0.001 0G` per CPU-minute;
-- memory price: `500000000000000` wei / `0.0005 0G` per GB-minute;
-- selected snapshot: 1 CPU, 1 GB memory, 3 GB disk;
-- one-minute CPU+memory rate: `1500000000000000` wei / `0.0015 0G`.
-
-The technical spike included one deliberately contained failed diagnostic run and one successful exact-commit build. Both sandboxes were deleted. Across the two attempts:
-
-- first deposit: `0.08` Galileo testnet 0G;
-- successful retry deposit: `69999999999999720` wei (`~0.07 0G`), topping the provider balance to the runner's capped target;
-- total deposited to the provider during M4: `149999999999999720` wei (`~0.15 0G`);
-- read-only post-success snapshot at `2026-08-17T16:23:56Z`: provider balance `20000000000000160` wei (`~0.02 0G`);
-- cumulative provider settlement observed by that snapshot: `129999999999999560` wei (`~0.13 0G`) from the deposited testnet balance, excluding wallet gas.
-
-The provider settles through vouchers asynchronously, so this is an **observed testnet balance accounting snapshot**, not a fiat cost, a quoted production price, or a guarantee of final settlement timing. HTTP fee fields must not override on-chain terms when they disagree.
+These are testnet-token observations, not fiat costs or production-price guarantees.
 
 ## Cost discipline
 
@@ -62,4 +47,5 @@ The provider settles through vouchers asynchronously, so this is an **observed t
 - No GPU rental.
 - No paid monitoring suite.
 - No paid AI API solely for demo optics.
-- Sandbox execution services default back to read-only after a live spike; another paid/testnet-funded run requires an intentional config change.
+- Sandbox execution services default back to read-only after a live spike.
+- No Aristotle mainnet transaction until the current fee is queried, the exact proposed transaction sequence is known, and the user explicitly approves it.
