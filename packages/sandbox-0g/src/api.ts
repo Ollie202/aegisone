@@ -137,7 +137,13 @@ export async function discoverSandbox(apiUrl = DEFAULT_SANDBOX_API): Promise<{
 }
 
 export class SandboxApiClient {
-  constructor(readonly apiUrl: string, readonly wallet: Wallet) {}
+  readonly apiUrl: string;
+  readonly wallet: Wallet;
+
+  constructor(apiUrl: string, wallet: Wallet) {
+    this.apiUrl = apiUrl;
+    this.wallet = wallet;
+  }
 
   private async request(action: string, resourceId: string, path: string, init: RequestInit, payload: Record<string, unknown> = {}): Promise<unknown> {
     const headers = await buildSignedHeaders(this.wallet, action, resourceId, payload);
