@@ -21,6 +21,7 @@ export interface EvidenceSummary {
   quoteEncoding: string | null;
   quoteBytes: number | null;
   quoteVersion: number | null;
+  quoteReportDataOffset: number | null;
   quoteReportDataHex: string | null;
   expectedRuntimeDataSha512Hex: string | null;
   quoteMatchesExpectedRuntimeDataSha512: boolean;
@@ -197,14 +198,15 @@ function decodeQuote(value: unknown): { bytes: Buffer; encoding: string } | null
   return null;
 }
 
-export function extractTdxReportData(quote: Uint8Array): { version: number; reportData: Buffer } | null {
-  // Intel TDX quote v4/v5: 48-byte quote header + 584-byte TD10 report body;
-  // REPORTDATA is the final 64 bytes of that report body (quote offsets 568..631).
-  if (quote.length < 632) return null;
+export function extractTdxReportData(quote: Uint8Array): { version: number; offset: number; reportData: Buffer } | null {
   const bytes = Buffer.from(quote);
+  if (bytes.length < 48) return null;
   const version = bytes.readUInt16LE(0);
-  if (version < 4 || version > 5) return null;
-  return { version, reportData: bytes.subarray(568, 632) };
+  // Quote v4: 48-byte header followed immediately by the 584-byte TD10 report body.
+  // Quote v5: 48-byte header + uint16 body_type + uint32 body_size, then TD10 report body.
+  const offset = version === 4 ? 568 : version === 5 ? 574 : -1;
+  if (offset < 0 || bytes.length < offset + 64) return null;
+  return { version, offset, reportData: bytes.subarray(offset, offset + 64) };
 }
 
 function expectedCurrentRuntimeData(challengeHex: string, signer: string): string {
@@ -249,7 +251,6 @@ export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uin
     Buffer.from(expectedSigner.slice(2), "hex").copy(legacy);
     quoteMatchesLegacySignerPadding = extracted.reportData.equals(legacy);
   }
-
   const challengeBindingProven = challengeMatchesRuntimeData || quoteMatchesExpectedRuntimeDataSha512;
   return {
     teeType: response.teeType,
@@ -263,6 +264,7 @@ export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uin
     quoteEncoding: decodedQuote?.encoding ?? null,
     quoteBytes: decodedQuote?.bytes.length ?? null,
     quoteVersion: extracted?.version ?? null,
+    quoteReportDataOffset: extracted?.offset ?? null,
     quoteReportDataHex: extracted ? `0x${extracted.reportData.toString("hex")}` : null,
     expectedRuntimeDataSha512Hex,
     quoteMatchesExpectedRuntimeDataSha512,
