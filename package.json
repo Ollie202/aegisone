@@ -16,6 +16,6 @@
     "m4:discover": "pnpm --filter @proofrail/sandbox-0g discover:live",
     "m4:inspect": "pnpm --filter @proofrail/sandbox-0g inspect:live",
     "m4:live": "pnpm --filter @proofrail/sandbox-0g test:live",
-    "m5:live": "pnpm --filter @proofrail/m5-flow test:live"
+    "m5:live": "node --experimental-strip-types packages/m5-flow/scripts/run-live.ts"
   }
 }
