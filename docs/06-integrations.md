@@ -1,6 +1,6 @@
 # Integrations
 
-**Last reviewed:** 2026-08-16
+**Last reviewed:** 2026-08-17
 
 External APIs evolve. Verify current official docs before implementation.
 
@@ -18,18 +18,21 @@ References:
 
 **Purpose:** preserve canonical provenance, build logs/evidence, and future SBOM/attestation bundles outside a private ProofRail database.
 
-Wave 3 spike:
+Wave 3 path:
 1. upload tiny canonical provenance bytes;
 2. capture root/transaction evidence;
 3. retrieve identical bytes;
 4. enable proof verification where supported;
 5. record evidence in `hackathon/evidence.md`.
 
-M2 version pin selected from the official repository and rechecked on 2026-08-16: `@0gfoundation/0g-storage-ts-sdk@1.2.9` with its exact peer `ethers@6.13.1`. Current official Galileo details are chain ID `16602`, development RPC `https://evmrpc-testnet.0g.ai`, and Turbo indexer `https://indexer-storage-testnet-turbo.0g.ai`. The indexer auto-discovers the Flow contract. `downloadToBlob(..., { proof: true })` enables Merkle-proof verification in the implemented Node flow. Upload requires a test-funded signer. These are implementation inputs, not completion evidence; roots and transactions remain pending until the live round trip succeeds.
+M2 pins `@0gfoundation/0g-storage-ts-sdk@1.2.9` with exact peer `ethers@6.13.1`. Current official Galileo details are chain ID `16602`, development RPC `https://evmrpc-testnet.0g.ai`, and Turbo indexer `https://indexer-storage-testnet-turbo.0g.ai`. The indexer auto-discovers the Flow contract. `downloadToBlob(..., { proof: true })` enables Merkle-proof verification in the implemented Node flow.
+
+The live M2 run succeeded on 2026-08-17 from commit `d1b340fb2b7636e5b10b5c0720b1c59a07a7e89e`. It uploaded 1792 canonical provenance bytes, returned root `0x19f0e4b46fb16401a1fae25378084589fa1a32bf41fa312a4f83f2672a164310`, transaction `0xe2f4801e2dcb6dd45c6cf95ee2f2973aaec926e4e1133600c63ff7b85555e8dd`, and storage sequence `147010`; proof-enabled retrieval returned exactly the same bytes and SHA-256 `f922f7f7bc7e342526b9ae9becf3bbad1c9d5efba5417c798cbdbf98bb0f1594`. Durable public references are recorded in `hackathon/evidence.md`.
 
 References:
 - https://docs.0g.ai/developer-hub/building-on-0g/storage/sdk
 - https://github.com/0gfoundation/0g-storage-ts-sdk
+- https://build.0g.ai/chain
 
 ## 0G Sandbox / Tapp
 
