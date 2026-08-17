@@ -2,7 +2,7 @@
 
 ## Architecture goal
 
-Keep the trust model provider-independent while using 0G where confidential execution, durable evidence, and public commitments materially reduce trust.
+Keep the trust model provider-independent while using 0G where independent execution, durable evidence, and public commitments materially reduce trust.
 
 ## Wave 3 data flow
 
@@ -13,9 +13,10 @@ flowchart TD
   B --> C["Constrained BuildRecipe"]
   C --> D["Independent runner interface"]
   D --> D1["Local runner"]
-  D --> D2["0G Sandbox / Tapp runner"]
+  D --> D2["0G Sandbox toolbox runner"]
   D2 --> E["Reproduced artifact bytes"]
   D1 --> E
+  D2 --> T["Separate Tapp / TDX provider evidence"]
   P --> F["SHA-256 comparison engine"]
   E --> F
   F --> G["Canonical reproduction evidence"]
@@ -23,9 +24,10 @@ flowchart TD
   H --> I["Storage root / evidence"]
   G --> J["0G registry adapter"]
   I --> J
-  J --> K["ProofRailRegistry on 0G mainnet"]
+  J --> K["ProofRailRegistry"]
   K --> L["CLI JSON / Web viewer / future agents"]
   H --> L
+  T --> L
 ```
 
 ## Two independent trust questions
@@ -49,36 +51,31 @@ This is the core Wave 3 proof.
 ## Component boundaries
 
 ### `packages/core`
-Owns:
-- source/release claim schema;
-- artifact hashing;
-- canonical provenance/comparison representation;
-- verification statuses;
-- trust-policy primitives;
-- validation and resource-limit configuration models.
-
-Must not import 0G SDKs or LLM APIs.
+Owns source/release claim schema, artifact hashing, canonical evidence, verification statuses, trust-policy primitives, validation, and resource-limit models. It must not import 0G SDKs or LLM APIs.
 
 ### `packages/runner-local`
 Controlled deterministic runner used for development/tests and as a baseline independent reproducer.
 
-### `packages/runner-0g`
-Adapter around the proven 0G confidential execution flow. It returns explicit capabilities and raw evidence references; unsupported attestation properties remain unavailable.
+### `packages/sandbox-0g`
+Adapter for the live hosted 0G Sandbox/Tapp surfaces proven in M4.
+
+The currently proven public build path is:
+
+1. discover a non-sealed provider and active snapshot;
+2. authenticate requests with the disposable Galileo wallet;
+3. toolbox-clone an exact immutable commit;
+4. verify detached `.git/HEAD`;
+5. execute the constrained build;
+6. download the artifact bytes and hash them;
+7. delete the sandbox.
+
+M4 also reads TappRegistry metadata and obtains real TDX evidence from the provider's registered Tapp node. **These are separate evidence paths.** The live Tapp's quote v5 `report_data` is legacy provider-signer padding and does not bind the caller artifact digest. The public toolbox build is non-sealed, while the observed sealed-only provider rejects toolbox operations. Therefore the architecture must not describe the M4 build itself as confidential, sealed, TEE-computed, or output-attested.
 
 ### `packages/storage-0g`
 Stores canonical provenance/comparison evidence and retrieves it with proof verification where supported.
 
 ### `contracts/ProofRailRegistry.sol`
 Stores compact commitments, not full logs.
-
-Candidate fields:
-- source/release claim commitment;
-- immutable commit identifier/hash;
-- publisher artifact digest;
-- reproduced artifact digest or reproduction-evidence root;
-- provenance/storage root;
-- builder/evidence commitment;
-- submitter/event/timestamp.
 
 ### `packages/registry-0g`
 Typed client for registry reads/writes.
@@ -93,7 +90,7 @@ Evidence visualization only. The UI must never become the sole source of verific
 
 **Rebuilding is expensive; verifying is cheap.** A release is rebuilt once per selected builder/policy. Many consumers then hash their local artifact and verify existing evidence.
 
-Wave 3 accepts only explicitly supported build targets and enforces resource limits. A huge monorepo may specify a target subdirectory/package; unsupported or excessive jobs fail instead of consuming unbounded compute.
+Wave 3 accepts only explicitly supported build targets and enforces resource limits. Unsupported or excessive jobs fail instead of consuming unbounded compute.
 
 ## Verification/assurance dimensions
 
@@ -103,7 +100,8 @@ Do not collapse everything into one green badge.
 - **Publisher Authenticated** — ownership/signature evidence for the source claim exists.
 - **Artifact Integrity Match** — local bytes match a registered publisher artifact digest.
 - **Independently Reproduced** — independent builder output matches publisher artifact bytes.
-- **TEE Attested Build** — supported attestation proves the measured execution environment; output binding is only claimed if actually proven.
+- **TEE Provider Evidence** — real TEE evidence exists for the registered provider/runtime identity.
+- **TEE Attested Build** — reserve this stronger label for a future path where evidence actually proves the measured build execution and binds the relevant output/commitment. M4 does not satisfy it.
 - **Consensus Verified** — explicit N-of-M independent-builder policy is satisfied.
 
 None of these means the source code is safe.
