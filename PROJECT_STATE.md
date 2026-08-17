@@ -1,7 +1,7 @@
 # Project State
 
-**Last updated:** 2026-08-16  
-**Phase:** M1 complete — M2 0G Storage round-trip next
+**Last updated:** 2026-08-17  
+**Phase:** M2 complete — M3 0G registry contract/dry-run next
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -22,15 +22,17 @@ not merely "hash + blockchain".
 - Core trust model has been refined around two separate proofs: source-claim identity and source-to-artifact correspondence.
 - GitHub Artifact Attestations, Sigstore/SLSA, reproducible-build work, Kettle, Trustix, and Lila are acknowledged prior art; novelty is not claimed for provenance, TEEs, or reproducible builds themselves.
 - The intended differentiation is productization of independent reproduction, portable evidence, policy-driven verification, developer/agent UX, and an open builder network.
-- 0G Chain, Storage, and confidential execution remain meaningful candidate dependencies for Wave 3.
+- 0G Chain, Storage, and confidential execution remain meaningful dependencies/candidates for Wave 3.
 - Agentic ID / ERC-8004 are a later network identity/reputation direction, not a Wave 3 dependency.
 - An LLM is explicitly outside the core MATCH/MISMATCH decision. 0G Compute may later explain divergence.
 - Public repositories only for the first build path.
-- The provider-independent M1 kernel now exists in `packages/core`, with a constrained fixture runner in `packages/runner-local` and stable JSON through `packages/cli`.
+- The provider-independent M1 kernel exists in `packages/core`, with a constrained fixture runner in `packages/runner-local` and stable JSON through `packages/cli`.
 - `hello-proofrail` is a deterministic committed fixture. Tests create its reproducible Git commit (`85ce179a7487605112dd3e36129896082cc2cff0`), independently clone/check out that exact SHA, and rebuild its publisher artifact.
-- Offline tests prove SHA-256 known vectors, byte-stable canonical manifests, genuine `MATCH`, one-byte `MISMATCH`, invalid-revision rejection, and output-size enforcement.
+- Offline tests cover SHA-256 known vectors, byte-stable canonical manifests, genuine `MATCH`, one-byte `MISMATCH`, invalid-revision rejection, output-size enforcement, M2 orchestration failures, receipt validation, wrong-network handling, exact-byte mismatch handling, and private-key shape validation.
 - The M1 local runner is deliberately fixture-oriented. It restricts executable names, time, environment, checkout revision, paths, and artifact size, but it is not an OS-level network/CPU/disk sandbox and must not be used for arbitrary untrusted repositories.
-- No smart-contract deployment, real 0G Storage proof, or real 0G Sandbox build exists yet.
+- `packages/storage-0g` contains the pinned official SDK adapter, proof-enabled round-trip orchestration, exact-byte verification, structured errors, and the live Galileo command.
+- M2 has real 0G Storage evidence: Galileo chain ID `16602`, root `0x19f0e4b46fb16401a1fae25378084589fa1a32bf41fa312a4f83f2672a164310`, transaction `0xe2f4801e2dcb6dd45c6cf95ee2f2973aaec926e4e1133600c63ff7b85555e8dd`, sequence `147010`, proof verification enabled/verified, and exact byte equality for the uploaded/downloaded canonical payload.
+- No smart-contract deployment or real 0G Sandbox build exists yet.
 - Repository is public.
 
 ## Highest-risk unknowns
@@ -38,20 +40,21 @@ not merely "hash + blockchain".
 1. Can the hosted/accessible 0G Sandbox path programmatically build an exact public commit and return artifact bytes?
 2. What exact Tapp/TEE evidence is retrievable?
 3. Can artifact/provenance digest data be directly bound into attestation report data through the accessible flow?
-4. Can supported Node.js builds be made deterministic enough for a strong demo?
-5. What canonical manifest encoding should become stable before on-chain commitments?
+4. Can supported Node.js builds be made deterministic enough for a strong demo beyond the controlled fixture?
+5. What exact compact commitment schema should be frozen for the first on-chain registry record?
 
 ## Current objective
 
-Execute M2 without weakening the completed M1 truth path:
+Execute Issue #3 / M3 without weakening M1 or M2:
 
-- select and pin the current official 0G Storage TypeScript SDK;
-- upload canonical M1 provenance bytes to the appropriate 0G test environment;
-- retrieve identical bytes with proof verification where supported;
-- record real root/transaction evidence and structured failures;
-- keep all 0G-specific code in `packages/storage-0g`.
+- implement the smallest credible `ProofRailRegistry.sol` interface required by Wave 3;
+- add local contract tests for valid registration/read, invalid/empty inputs, and duplicate behavior;
+- add a typed `packages/registry-0g` client/adapter;
+- dry-run deploy and register/read on a non-mainnet 0G environment;
+- measure expected mainnet deployment/registration cost;
+- do **not** spend mainnet funds or deploy to mainnet until the pre-mainnet gate in `docs/09-deployment-runbook.md` is satisfied.
 
-M2 requires the relevant 0G endpoint plus a minimally funded test wallet if the live SDK path charges test tokens. No wallet secret may enter source, logs, fixtures, or provenance.
+M2's Storage root is now available as real evidence for the registry design. Secrets remain environment-only and must never enter source, browser code, fixtures, provenance, evidence logs, or chat.
 
 ## Kill / rethink criteria
 

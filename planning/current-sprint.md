@@ -1,10 +1,10 @@
-# Current Sprint — M2 Storage + Infrastructure Feasibility
+# Current Sprint — M3 Registry Contract + Infrastructure Feasibility
 
 ## Primary objective
 
-Preserve the completed local independent-reproduction kernel while proving the first real 0G evidence round trip.
+Preserve the completed M1 independent-reproduction kernel and completed M2 real Storage round trip while proving the minimal on-chain registry path before any mainnet spend.
 
-## M1 tasks
+## M1 complete
 
 - [x] Create `hello-proofrail` deterministic fixture.
 - [x] Produce a known fixture artifact representing the publisher's release.
@@ -19,19 +19,31 @@ Preserve the completed local independent-reproduction kernel while proving the f
 - [x] Stable versioned JSON result shape exists in core and CLI.
 - [x] No 0G, LLM, or third-party runtime dependency entered `packages/core`.
 
-## M2 active tasks
+## M2 complete
 
-- [ ] Reconfirm the current official 0G Storage TypeScript SDK and test environment.
-- [ ] Pin the SDK/package version in `packages/storage-0g` only.
-- [ ] Upload canonical M1 provenance bytes using a minimally funded test wallet.
-- [ ] Record root and upload transaction evidence in `hackathon/evidence.md`.
-- [ ] Retrieve identical bytes with proof verification where the SDK supports it.
-- [ ] Test deterministic failure for missing/incorrect data.
-- [ ] Record durable SDK findings in `research/research-log.md` and `docs/06-integrations.md`.
+- [x] Reconfirm the current official 0G Storage TypeScript SDK and Galileo test environment.
+- [x] Pin `@0gfoundation/0g-storage-ts-sdk@1.2.9` and `ethers@6.13.1` in `packages/storage-0g` only.
+- [x] Implement real SDK upload/download adapter and proof-enabled round-trip command.
+- [x] Add deterministic structured-error, receipt, wrong-network, byte-mismatch, and private-key validation tests.
+- [x] Upload canonical M1 provenance bytes using a minimally funded test wallet.
+- [x] Record root and upload transaction evidence in `hackathon/evidence.md`.
+- [x] Retrieve identical bytes with proof verification enabled.
+- [x] Confirm exact uploaded/downloaded byte equality and matching SHA-256.
+- [x] Record durable SDK/live findings in `research/research-log.md` and `docs/06-integrations.md`.
+
+## M3 active tasks
+
+- [ ] Define the minimal registry commitment fields/events from the existing evidence model.
+- [ ] Implement `contracts/ProofRailRegistry.sol`.
+- [ ] Add local contract tests for valid registration/read behavior.
+- [ ] Test invalid/empty inputs and duplicate semantics.
+- [ ] Add typed `packages/registry-0g` client/adapter.
+- [ ] Dry-run deployment and register/read flow on a non-mainnet 0G environment.
+- [ ] Measure expected mainnet deployment and registration cost.
+- [ ] Recheck `docs/09-deployment-runbook.md` pre-mainnet gate; do not deploy mainnet during M3 unless that gate is explicitly satisfied and approved.
 
 ## Following technical spikes
 
-- [ ] Scaffold/test minimal registry locally and dry-run non-mainnet deployment.
 - [ ] Prove 0G Sandbox programmatic exact-commit build/retrieval path.
 - [ ] Determine exact Tapp/TEE evidence available.
 - [ ] Determine whether artifact/provenance digest can be bound to attestation report data.
