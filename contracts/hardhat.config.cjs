@@ -19,6 +19,10 @@ module.exports = {
       optimizer: { enabled: true, runs: 200 },
     },
   },
+  paths: {
+    sources: "./src",
+    tests: "./test",
+  },
   networks: {
     galileo: {
       url: "https://evmrpc-testnet.0g.ai",

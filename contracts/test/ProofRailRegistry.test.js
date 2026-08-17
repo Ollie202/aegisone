@@ -63,7 +63,7 @@ describe("ProofRailRegistry", function () {
     expect(record.reproducedArtifactDigest).to.equal(value.reproducedArtifactDigest);
     expect(record.provenanceRoot).to.equal(value.provenanceRoot);
     expect(record.submitter).to.equal(submitter.address);
-    expect(record.registeredAt).to.equal(block.timestamp);
+    expect(record.registeredAt).to.equal(BigInt(block.timestamp));
   });
 
   it("allows divergent artifact digests without relabeling them as a pass", async function () {
