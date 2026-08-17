@@ -23,9 +23,12 @@ Preserve completed M1–M4 and connect them into one judgeable ProofRail flow wi
 - [x] Stable CLI inspection and web view derive status from the same integrity-checked core projection.
 - [x] M4 TDX evidence is surfaced as `PROVIDER_EVIDENCE_ONLY`; unsupported TEE-bound output is not implied.
 - [x] Durable M5 live evidence summary and README demo/evidence instructions are in the repository.
-- [ ] Re-run current Aristotle pre-mainnet checks and calculate the exact proposed deploy/register cost.
-- [ ] Obtain explicit user approval for the Aristotle mainnet write.
-- [ ] Submit approved mainnet transaction(s), record contract/transaction evidence, and verify read-back.
+- [x] Re-confirm current Aristotle network details and run the read-only mainnet deploy/register fee gate.
+- [x] Record proposed contract address, record ID, gas limits, current fee envelope, wallet address, nonce, and balance without signing anything.
+- [ ] Fund the selected Aristotle wallet; current mainnet balance is `0.0 0G`.
+- [ ] Re-run the read-only gate after funding and immediately before approval.
+- [ ] Obtain explicit user approval for the refreshed Aristotle mainnet write.
+- [ ] Submit approved deployment + registration, record contract/transaction evidence, and verify read-back.
 - [ ] Final CI green on the completed mainnet-evidence head; merge PR #10 and close Issue #5.
 
 ## Explicitly out of scope now
@@ -39,4 +42,4 @@ Preserve completed M1–M4 and connect them into one judgeable ProofRail flow wi
 - 0G Compute;
 - token/rewards/marketplace;
 - production branding;
-- any Aristotle mainnet write before the separate pre-mainnet gate and explicit approval.
+- any Aristotle mainnet write before wallet funding, refreshed read-only gate, and separate explicit approval.

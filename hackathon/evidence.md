@@ -73,18 +73,31 @@ Record real proof here immediately when created. Do not paste secrets.
 - Storage proof verified: `true`
 - Storage exact-byte equality: `true`
 - Registry commitments prepared from that exact stored verification.
-- Aristotle status: `PREPARED_NOT_SUBMITTED`; contract address `null`; transaction hash `null`.
 - Mainnet signer/submission code in the M5 live runner: `false`.
 - Durable structured summary: `hackathon/m5-live-evidence.json`.
-- Status: GALILEO SLICE COMPLETE; Aristotle mainnet gate PENDING.
+- Status: GALILEO SLICE COMPLETE.
 
-## 0G Chain — Aristotle mainnet
-- Expected network: 0G Aristotle Mainnet
-- Expected chain ID: `16661` — verify again from current official 0G sources immediately before any write.
-- Contract address: PENDING
-- Deployment transaction: PENDING
-- M5 registration transaction: PENDING
-- Mainnet status: NOT DEPLOYED; read-only pre-mainnet gate and explicit approval required.
+## M5 — Aristotle read-only approval gate
+- Official current network config re-confirmed from 0G Builder Hub: chain ID `16661`, RPC `https://evmrpc.0g.ai`, explorer `https://chainscan.0g.ai`.
+- Railway gate deployment: `685275d2-20a4-4995-a290-050fcdade44b`
+- Gate commit: `ef43b16d11301fca85c52a73cafe8b5f9609a15f`
+- Read-only: `true`; mainnet writes: `false`.
+- Latest block at snapshot: `41909961`.
+- Public wallet: `0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb`.
+- Nonce: `0`.
+- Balance: `0.0 0G` — NOT FUNDED.
+- Gas price: `4000000007` wei/gas.
+- Max-fee snapshot: `4000000014` wei/gas.
+- Mainnet deployment estimate: `306924` gas.
+- Proposed deploy gas with 20% safety: `368309`.
+- Proposed register gas with 20% safety: `193348` (from Galileo measured registration gas `161123`).
+- Combined safety gas: `561657`.
+- Current combined fee envelope: `0.002246628007863198 0G`.
+- Predicted registry at nonce 0: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`; no code there at gate time.
+- Prepared record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
+- Registration calldata hash: `0x9312e036d22d405998b17325cba4039c6bbddf0259189fe998e12838927b15be`.
+- Mainnet status: BLOCKED — wallet funding + refreshed fee gate + explicit user approval required.
+- Durable structured gate: `hackathon/m5-aristotle-preflight.json`.
 
 ## Product
 - Judge-facing shared core projection: IMPLEMENTED (`createVerificationView()` used by CLI and web renderer)

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1",
+  "kind": "ProofRailAristotleReadOnlyApprovalGate",
+  "checkedAt": "2026-08-17T19:05:35Z",
+  "railwayDeployment": "685275d2-20a4-4995-a290-050fcdade44b",
+  "implementationCommit": "ef43b16d11301fca85c52a73cafe8b5f9609a15f",
+  "readOnly": true,
+  "mainnetWrites": false,
+  "network": {
+    "name": "0G Mainnet / Aristotle",
+    "chainId": 16661,
+    "rpc": "https://evmrpc.0g.ai",
+    "explorer": "https://chainscan.0g.ai",
+    "latestBlock": 41909961
+  },
+  "wallet": {
+    "address": "0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb",
+    "nonce": 0,
+    "balanceWei": "0",
+    "balance0G": "0.0"
+  },
+  "feeSnapshot": {
+    "gasPriceWei": "4000000007",
+    "maxFeePerGasWei": "4000000014",
+    "maxPriorityFeePerGasWei": "4000000000"
+  },
+  "contract": {
+    "compiler": "0.8.24",
+    "evmVersion": "cancun",
+    "deploymentBytecodeKeccak256": "0x25e077f4adb8082bfb85b28ee7f90d0257b6f96fbfd79a529d65815960cdd0cd",
+    "predictedAddressAtNonce0": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+    "predictedAddressAlreadyHasCode": false,
+    "mainnetDeploymentGasEstimate": "306924",
+    "galileoMeasuredDeploymentGas": "299829",
+    "proposedDeploymentGasLimit120pct": "368309"
+  },
+  "registration": {
+    "galileoMeasuredRegistrationGas": "161123",
+    "proposedRegistrationGasLimit120pct": "193348",
+    "recordId": "0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e",
+    "calldataKeccak256": "0x9312e036d22d405998b17325cba4039c6bbddf0259189fe998e12838927b15be",
+    "calldataBytes": 164,
+    "commitments": {
+      "manifestDigest": "0xb0ac39ac60df76f427311e3d1fce665b820b81a9c4b39481ce16843804419a54",
+      "sourceClaimDigest": "0xfcb0a23bcdf13648437b160e5a6dbc04b24f2399460c030753e194606e4e611a",
+      "publisherArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "reproducedArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "provenanceRoot": "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181"
+    }
+  },
+  "proposedSequence": [
+    {
+      "nonce": 0,
+      "action": "DEPLOY_PROOFRAIL_REGISTRY",
+      "to": null,
+      "valueWei": "0",
+      "gasLimit": "368309"
+    },
+    {
+      "nonce": 1,
+      "action": "REGISTER_M5_EVIDENCE",
+      "to": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+      "valueWei": "0",
+      "gasLimit": "193348"
+    }
+  ],
+  "costGate": {
+    "totalProposedGasLimit": "561657",
+    "feeBasisWei": "4000000014",
+    "estimatedMaxFeeWei": "2246628007863198",
+    "estimatedMaxFee0G": "0.002246628007863198",
+    "walletSufficientAtCurrentFeeBasis": false
+  },
+  "status": "BLOCKED_WALLET_UNFUNDED_AND_USER_APPROVAL_REQUIRED",
+  "note": "No transaction was signed or submitted. Fee data is a point-in-time snapshot and must be re-queried immediately before any approved write."
+}
