@@ -8,8 +8,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "pnpm --filter @proofrail/registry-0g check && pnpm --filter @proofrail/sandbox-0g check && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts check",
-    "test": "pnpm --filter @proofrail/registry-0g test && pnpm --filter @proofrail/sandbox-0g test && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts test",
+    "check": "pnpm --filter @proofrail/registry-0g check && pnpm --filter @proofrail/sandbox-0g check && pnpm --filter @proofrail/web check && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts check",
+    "test": "pnpm --filter @proofrail/registry-0g test && pnpm --filter @proofrail/sandbox-0g test && pnpm --filter @proofrail/web test && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts test",
     "test:contracts": "pnpm --filter @proofrail/contracts test",
     "m2:live": "pnpm --filter @proofrail/storage-0g test:live",
     "m3:live": "pnpm --filter @proofrail/contracts compile && pnpm --filter @proofrail/registry-0g test:live",
