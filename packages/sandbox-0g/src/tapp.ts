@@ -18,6 +18,14 @@ export interface EvidenceSummary {
   runtimeData: Record<string, unknown> | null;
   challengeHex: string;
   challengeMatchesRuntimeData: boolean;
+  quoteEncoding: string | null;
+  quoteBytes: number | null;
+  quoteVersion: number | null;
+  quoteReportDataHex: string | null;
+  expectedRuntimeDataSha512Hex: string | null;
+  quoteMatchesExpectedRuntimeDataSha512: boolean;
+  quoteMatchesLegacySignerPadding: boolean;
+  challengeBindingProven: boolean;
   evidenceJsonKeys: string[];
 }
 
@@ -133,14 +141,15 @@ export async function getEvidence(teeUrl: string, appId: string, nonce: Uint8Arr
   const requestBytes = grpcFrame(encodeGetEvidenceRequest(appId, nonce));
   try {
     return await new Promise<TappEvidenceResponse>((resolve, reject) => {
+      let request: http2.ClientHttp2Stream;
       const timer = setTimeout(() => {
-        request.close(http2.constants.NGHTTP2_CANCEL);
+        request?.close(http2.constants.NGHTTP2_CANCEL);
         reject(new Error(`Tapp GetEvidence timed out after ${timeoutMs}ms`));
       }, timeoutMs);
       const chunks: Buffer[] = [];
       let grpcStatus = "0";
       let grpcMessage = "";
-      const request = client.request({
+      request = client.request({
         ":method": "POST",
         ":path": "/tapp_service.TappService/GetEvidence",
         "content-type": "application/grpc",
@@ -179,7 +188,30 @@ export async function getEvidence(teeUrl: string, appId: string, nonce: Uint8Arr
   }
 }
 
-export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uint8Array): EvidenceSummary {
+function decodeQuote(value: unknown): { bytes: Buffer; encoding: string } | null {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (/^0x[0-9a-fA-F]+$/.test(raw) && raw.length % 2 === 0) return { bytes: Buffer.from(raw.slice(2), "hex"), encoding: "hex-0x" };
+  if (/^[0-9a-fA-F]+$/.test(raw) && raw.length % 2 === 0) return { bytes: Buffer.from(raw, "hex"), encoding: "hex" };
+  if (/^[A-Za-z0-9+/]+={0,2}$/.test(raw) && raw.length % 4 === 0) return { bytes: Buffer.from(raw, "base64"), encoding: "base64" };
+  return null;
+}
+
+export function extractTdxReportData(quote: Uint8Array): { version: number; reportData: Buffer } | null {
+  // Intel TDX quote v4/v5: 48-byte quote header + 584-byte TD10 report body;
+  // REPORTDATA is the final 64 bytes of that report body (quote offsets 568..631).
+  if (quote.length < 632) return null;
+  const bytes = Buffer.from(quote);
+  const version = bytes.readUInt16LE(0);
+  if (version < 4 || version > 5) return null;
+  return { version, reportData: bytes.subarray(568, 632) };
+}
+
+function expectedCurrentRuntimeData(challengeHex: string, signer: string): string {
+  return JSON.stringify({ nonce: challengeHex.toLowerCase(), signer: signer.toLowerCase() });
+}
+
+export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uint8Array, expectedSigner?: string): EvidenceSummary {
   const evidenceBytes = Buffer.from(response.evidence);
   const challengeHex = `0x${Buffer.from(challenge).toString("hex")}`;
   let evidenceObject: Record<string, unknown> | null = null;
@@ -198,9 +230,27 @@ export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uin
       runtimeDataRaw = JSON.stringify(runtime);
     }
   } catch {
-    // Evidence remains useful as raw bytes/hash even if its envelope is not JSON.
+    // Keep raw evidence/hash even if its outer envelope is not JSON.
   }
+
   const nonce = typeof runtimeData?.nonce === "string" ? runtimeData.nonce.toLowerCase() : "";
+  const challengeMatchesRuntimeData = nonce === challengeHex.toLowerCase();
+  const decodedQuote = decodeQuote(evidenceObject?.quote);
+  const extracted = decodedQuote ? extractTdxReportData(decodedQuote.bytes) : null;
+  let expectedRuntimeDataSha512Hex: string | null = null;
+  let quoteMatchesExpectedRuntimeDataSha512 = false;
+  let quoteMatchesLegacySignerPadding = false;
+  if (expectedSigner && /^0x[0-9a-fA-F]{40}$/.test(expectedSigner) && extracted) {
+    const expectedRuntime = expectedCurrentRuntimeData(challengeHex, expectedSigner);
+    const expectedHash = createHash("sha512").update(expectedRuntime).digest();
+    expectedRuntimeDataSha512Hex = `0x${expectedHash.toString("hex")}`;
+    quoteMatchesExpectedRuntimeDataSha512 = extracted.reportData.equals(expectedHash);
+    const legacy = Buffer.alloc(64);
+    Buffer.from(expectedSigner.slice(2), "hex").copy(legacy);
+    quoteMatchesLegacySignerPadding = extracted.reportData.equals(legacy);
+  }
+
+  const challengeBindingProven = challengeMatchesRuntimeData || quoteMatchesExpectedRuntimeDataSha512;
   return {
     teeType: response.teeType,
     timestamp: response.timestamp.toString(),
@@ -209,7 +259,15 @@ export function summarizeEvidence(response: TappEvidenceResponse, challenge: Uin
     runtimeDataRaw,
     runtimeData,
     challengeHex,
-    challengeMatchesRuntimeData: nonce === challengeHex.toLowerCase(),
+    challengeMatchesRuntimeData,
+    quoteEncoding: decodedQuote?.encoding ?? null,
+    quoteBytes: decodedQuote?.bytes.length ?? null,
+    quoteVersion: extracted?.version ?? null,
+    quoteReportDataHex: extracted ? `0x${extracted.reportData.toString("hex")}` : null,
+    expectedRuntimeDataSha512Hex,
+    quoteMatchesExpectedRuntimeDataSha512,
+    quoteMatchesLegacySignerPadding,
+    challengeBindingProven,
     evidenceJsonKeys: evidenceObject ? Object.keys(evidenceObject).sort() : [],
   };
 }
