@@ -18,7 +18,11 @@ The registry deliberately stores no `PASS`, `safe`, `official`, or malware/secur
 
 ## Toolchain
 
-The M3 spike uses Hardhat with Solidity `0.8.24`, optimizer runs `200`, and `evmVersion: "cancun"`. Galileo is configured at chain ID `16602` and `https://evmrpc-testnet.0g.ai`. The compiler choice is intentionally validated by the Galileo dry-run before the Wave 3 interface/toolchain is frozen.
+The validated Wave 3 path uses Hardhat `2.23.0` with Solidity `0.8.24`, optimizer runs `200`, and `evmVersion: "cancun"`. Galileo is chain ID `16602` at `https://evmrpc-testnet.0g.ai`.
+
+The M3 Galileo dry-run compiled, deployed, registered the canonical M2 commitments, and read them back exactly. The testnet registry is `0x227Fcc243f25c395C93Df789EC72Bc75bf096017`; deployment transaction `0xc265ce3bcd03440a6b7f40e7d24bbfc99722635399763e583f84e4ef4f332ae1`; first registration transaction `0xa20ae8bf02502020e4bef3ae22fb6f32b2a71fb4d6034e6cca6c3444f4f794c8`.
+
+Measured gas was `299829` for deployment and `161123` for registration. The dry-run's read-only Aristotle fee snapshot estimated `0.001843808003226664 0G` combined at that moment; this is not a mainnet quote or spend.
 
 Secrets use `ZEROG_REGISTRY_PRIVATE_KEY` only at deployment/runtime. There is no browser signer path and no private key belongs in Git history.
 
@@ -28,6 +32,7 @@ Commands from repository root:
 pnpm install
 pnpm --filter @proofrail/contracts compile
 pnpm --filter @proofrail/contracts test
+pnpm m3:live
 ```
 
-Mainnet deployment is outside the M3 implementation step until every pre-mainnet gate in `docs/09-deployment-runbook.md` has passed.
+Mainnet deployment remains outside M3. Every pre-mainnet gate in `docs/09-deployment-runbook.md` plus explicit approval is required before any Aristotle signing/broadcast path is used.

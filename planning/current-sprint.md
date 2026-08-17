@@ -1,8 +1,8 @@
-# Current Sprint — M3 Registry Contract + Infrastructure Feasibility
+# Current Sprint — M4 Sandbox / Tapp Execution Proof
 
 ## Primary objective
 
-Preserve the completed M1 independent-reproduction kernel and completed M2 real Storage round trip while proving the minimal on-chain registry path before any mainnet spend.
+Preserve the completed M1 independent-reproduction kernel, M2 real Storage round trip, and M3 Galileo registry proof while testing the highest-risk Wave 3 assumption: whether the accessible 0G Sandbox/Tapp path can perform the real build and expose defensible attestation evidence.
 
 ## M1 complete
 
@@ -31,24 +31,29 @@ Preserve the completed M1 independent-reproduction kernel and completed M2 real 
 - [x] Confirm exact uploaded/downloaded byte equality and matching SHA-256.
 - [x] Record durable SDK/live findings in `research/research-log.md` and `docs/06-integrations.md`.
 
-## M3 active tasks
+## M3 complete
 
-- [ ] Define the minimal registry commitment fields/events from the existing evidence model.
-- [ ] Implement `contracts/ProofRailRegistry.sol`.
-- [ ] Add local contract tests for valid registration/read behavior.
-- [ ] Test invalid/empty inputs and duplicate semantics.
-- [ ] Add typed `packages/registry-0g` client/adapter.
-- [ ] Dry-run deployment and register/read flow on a non-mainnet 0G environment.
-- [ ] Measure expected mainnet deployment and registration cost.
-- [ ] Recheck `docs/09-deployment-runbook.md` pre-mainnet gate; do not deploy mainnet during M3 unless that gate is explicitly satisfied and approved.
+- [x] Define the minimal registry commitment fields/events from the existing evidence model.
+- [x] Implement `contracts/src/ProofRailRegistry.sol`.
+- [x] Add local contract tests for valid registration/read behavior.
+- [x] Test invalid/empty inputs and duplicate semantics.
+- [x] Add typed `packages/registry-0g` client/adapter.
+- [x] Dry-run deployment and register/read flow on 0G Galileo Testnet.
+- [x] Measure expected mainnet deployment and registration cost.
+- [x] Keep Aristotle mainnet untouched; no mainnet transaction was sent during M3.
 
-## Following technical spikes
+## M4 active tasks
 
-- [ ] Prove 0G Sandbox programmatic exact-commit build/retrieval path.
-- [ ] Determine exact Tapp/TEE evidence available.
-- [ ] Determine whether artifact/provenance digest can be bound to attestation report data.
-- [ ] Measure resource/cost characteristics for the supported demo build.
-- [ ] Update architecture/threat model based on real findings.
+- [ ] Reconfirm the current official 0G Sandbox/Tapp usage and SDK/API path.
+- [ ] Create/access a sandbox programmatically.
+- [ ] Clone an exact public repository commit.
+- [ ] Run a constrained Node.js build.
+- [ ] Retrieve the built artifact bytes.
+- [ ] Capture every available sandbox/TEE attestation evidence field.
+- [ ] Test direct artifact/provenance-digest binding into attestation report data.
+- [ ] Classify output binding as PROVEN, NOT AVAILABLE, or BLOCKED with evidence.
+- [ ] Measure and record Sandbox resource/cost characteristics.
+- [ ] Update architecture/trust/threat-model language to match only what M4 proves.
 
 ## Explicitly out of scope now
 
@@ -62,4 +67,5 @@ Preserve the completed M1 independent-reproduction kernel and completed M2 real 
 - MCP server;
 - 0G Compute;
 - token/rewards/marketplace;
-- production branding.
+- production branding;
+- Aristotle mainnet deployment unless the separate pre-mainnet gate is later satisfied and explicitly approved.
