@@ -15,6 +15,7 @@
     "m3:live": "pnpm --filter @proofrail/contracts compile && pnpm --filter @proofrail/registry-0g test:live",
     "m4:discover": "pnpm --filter @proofrail/sandbox-0g discover:live",
     "m4:inspect": "pnpm --filter @proofrail/sandbox-0g inspect:live",
-    "m4:live": "pnpm --filter @proofrail/sandbox-0g test:live"
+    "m4:live": "pnpm --filter @proofrail/sandbox-0g test:live",
+    "m5:live": "pnpm --filter @proofrail/m5-flow test:live"
   }
 }
