@@ -6,22 +6,21 @@ import { getEvidence, summarizeEvidence } from "../src/tapp.ts";
 
 const SOURCE_REPO = "https://github.com/Ollie202/proofrail-0g.git";
 const SOURCE_COMMIT = "e9c82277cef2f7630977e2473664e14eed2f860d";
+const SOURCE_PATH = "/tmp/proofrail-m4";
 const EXPECTED_ARTIFACT_SHA256 = "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154";
 const EXPECTED_ARTIFACT_BYTES = 53;
-const ARTIFACT_PATH = "/tmp/proofrail-m4/examples/hello-proofrail/dist/artifact.json";
-const DEPOSIT_TARGET = parseEther("0.08");
+const ARTIFACT_PATH = `${SOURCE_PATH}/examples/hello-proofrail/dist/hello-proofrail.json`;
+const DEPOSIT_TARGET = parseEther("0.07");
 const HARD_DEPOSIT_CAP = parseEther("0.08");
 const GAS_RESERVE = parseEther("0.02");
 const BUDGETED_MINUTES = 5n;
 
 const commands = [
-  "git --version && node --version",
-  `rm -rf /tmp/proofrail-m4 && git clone --no-checkout ${SOURCE_REPO} /tmp/proofrail-m4`,
-  `git -C /tmp/proofrail-m4 checkout --detach ${SOURCE_COMMIT}`,
-  `test \"$(git -C /tmp/proofrail-m4 rev-parse HEAD)\" = \"${SOURCE_COMMIT}\"`,
-  "node /tmp/proofrail-m4/examples/hello-proofrail/build.mjs",
+  "node --version",
+  `node ${SOURCE_PATH}/examples/hello-proofrail/build.mjs`,
   `sha256sum ${ARTIFACT_PATH}`,
 ];
+const cloneRequest = { url: SOURCE_REPO, path: SOURCE_PATH, commit_id: SOURCE_COMMIT };
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -82,7 +81,7 @@ const output: Record<string, unknown> = {
     budgetedProviderCostWei: budgetedProviderCost.toString(),
   },
   safety: { depositTargetWei: DEPOSIT_TARGET.toString(), hardDepositCapWei: HARD_DEPOSIT_CAP.toString(), gasReserveWei: GAS_RESERVE.toString(), mainnetWrites: false },
-  source: { repository: SOURCE_REPO, commit: SOURCE_COMMIT, commands },
+  source: { repository: SOURCE_REPO, commit: SOURCE_COMMIT, cloneTransport: "Daytona toolbox git/clone", cloneRequest, commands },
 };
 
 let id: string | null = null;
@@ -98,9 +97,15 @@ try {
   id = sandboxId(created);
   output.sandbox = { id, createResponse: created };
 
+  const cloneResponse = await client.gitClone(id, SOURCE_REPO, SOURCE_PATH, SOURCE_COMMIT);
+  const headBytes = await client.downloadFile(id, `${SOURCE_PATH}/.git/HEAD`);
+  const resolvedHead = Buffer.from(headBytes).toString("utf8").trim();
+  if (resolvedHead !== SOURCE_COMMIT) throw new Error(`Toolbox clone did not leave detached HEAD at requested commit: ${resolvedHead}`);
+  output.clone = { request: cloneRequest, response: cloneResponse, gitHead: resolvedHead, exactCommitVerified: true };
+
   const execResults: Array<{ command: string; response: unknown }> = [];
   for (const command of commands) {
-    const response = await client.exec(id, command, command.includes("git clone") ? 120 : 60);
+    const response = await client.exec(id, command, 60);
     assertExecSucceeded(response, command);
     execResults.push({ command, response });
   }
@@ -127,9 +132,10 @@ try {
     providerNodeComposeHash: pre.nodeComposeHash,
     providerNodeVolumesHash: pre.nodeVolumesHash,
     evidence,
-    artifactDigestChallengeBinding: evidence.challengeBindingProven ? "PROVEN" : "BLOCKED",
+    providerTdxEvidence: "PROVEN",
+    artifactDigestChallengeBinding: evidence.challengeBindingProven ? "PROVEN" : "NOT_AVAILABLE_ON_LIVE_LEGACY_TAPP",
     artifactComputedInTee: "NOT_AVAILABLE",
-    rationale: "The public toolbox build runs in a non-sealed sandbox. GetEvidence attests the provider Tapp and can bind a caller challenge, but does not prove that the sandbox computed the artifact digest.",
+    rationale: "The public toolbox build runs in a non-sealed sandbox. The live Galileo Tapp returns real TDX evidence, but its quote v5 report_data is the legacy provider-signer padding and does not bind the caller artifact digest.",
   };
   output.ok = true;
 } catch (error) {

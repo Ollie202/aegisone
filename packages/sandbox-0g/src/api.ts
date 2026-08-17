@@ -56,9 +56,7 @@ export interface SignedHeaders {
 }
 
 function asRecord(value: unknown, name: string): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new TypeError(`${name} must be a JSON object`);
-  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`${name} must be a JSON object`);
   return value as Record<string, unknown>;
 }
 
@@ -253,6 +251,11 @@ export class SandboxApiClient {
   async exec(id: string, command: string, timeout = 60): Promise<unknown> {
     const body = { command, timeout };
     return jsonResponse(await this.request("toolbox", id, `/api/toolbox/${encodeURIComponent(id)}/toolbox/process/execute`, { method: "POST", body: JSON.stringify(body) }), "POST toolbox process/execute");
+  }
+
+  async gitClone(id: string, url: string, path: string, commitId: string): Promise<unknown> {
+    const body = { url, path, commit_id: commitId };
+    return jsonResponse(await this.request("toolbox", id, `/api/toolbox/${encodeURIComponent(id)}/toolbox/git/clone`, { method: "POST", body: JSON.stringify(body) }), "POST toolbox git/clone");
   }
 
   async downloadFile(id: string, path: string): Promise<Uint8Array> {
