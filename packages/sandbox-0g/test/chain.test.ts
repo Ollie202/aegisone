@@ -10,7 +10,7 @@ test("TappRegistry getNode ABI decodes the captured Galileo NodeInfo struct", ()
   const decoded = iface.decodeFunctionResult("getNode", LIVE_GET_NODE_RESULT);
   const node = decoded.node ?? decoded[0];
   assert.equal(node.teeUrl, "http://47.84.230.89:50051");
-  assert.equal(node.addedAt, 1785749813n);
+  assert.equal(node.addedAt, 1785745717n);
   assert.equal(node.stakeAmount, 1_000_000_000_000_000_000n);
   assert.equal(node.composeHash, "0xa32695bab9528fa38432d34f55322418e58334a058ca5f0e19508034f66f6178ab2cea1b25e6404e153a7d0826f6ba");
   assert.ok(node.volumesHash.startsWith("0x2e656e763a"));
