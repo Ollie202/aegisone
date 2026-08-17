@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1",
   "kind": "ProofRailAristotleReadOnlyApprovalGate",
-  "checkedAt": "2026-08-17T19:05:35Z",
-  "railwayDeployment": "685275d2-20a4-4995-a290-050fcdade44b",
-  "implementationCommit": "ef43b16d11301fca85c52a73cafe8b5f9609a15f",
+  "checkedAt": "2026-08-17T20:07:25Z",
+  "githubActionsRun": 32064064354,
+  "implementationCommit": "4de902498389842c4f69f470a4c798c0302f54a3",
   "readOnly": true,
   "mainnetWrites": false,
   "network": {
@@ -11,13 +11,13 @@
     "chainId": 16661,
     "rpc": "https://evmrpc.0g.ai",
     "explorer": "https://chainscan.0g.ai",
-    "latestBlock": 41909961
+    "latestBlock": 41913821
   },
   "wallet": {
     "address": "0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb",
     "nonce": 0,
-    "balanceWei": "0",
-    "balance0G": "0.0"
+    "balanceWei": "619887293736092003",
+    "balance0G": "0.619887293736092003"
   },
   "feeSnapshot": {
     "gasPriceWei": "4000000007",
@@ -28,7 +28,7 @@
     "compiler": "0.8.24",
     "evmVersion": "cancun",
     "deploymentBytecodeKeccak256": "0x25e077f4adb8082bfb85b28ee7f90d0257b6f96fbfd79a529d65815960cdd0cd",
-    "predictedAddressAtNonce0": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+    "currentNoncePredictedAddress": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
     "predictedAddressAlreadyHasCode": false,
     "mainnetDeploymentGasEstimate": "306924",
     "galileoMeasuredDeploymentGas": "299829",
@@ -69,8 +69,8 @@
     "feeBasisWei": "4000000014",
     "estimatedMaxFeeWei": "2246628007863198",
     "estimatedMaxFee0G": "0.002246628007863198",
-    "walletSufficientAtCurrentFeeBasis": false
+    "walletSufficientAtCurrentFeeBasis": true
   },
-  "status": "BLOCKED_WALLET_UNFUNDED_AND_USER_APPROVAL_REQUIRED",
-  "note": "No transaction was signed or submitted. Fee data is a point-in-time snapshot and must be re-queried immediately before any approved write."
+  "status": "FUNDED_AWAITING_EXPLICIT_USER_APPROVAL",
+  "note": "No transaction was signed or submitted. The user's funding transfer is not deployment approval. Fee data is a point-in-time snapshot and must be re-queried immediately before any approved write."
 }
