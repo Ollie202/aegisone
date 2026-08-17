@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "description": "Working repository for an independent software build verification network.",
+  "packageManager": "pnpm@10.15.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "check": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts",
-    "test": "node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts",
-    "m2:live": "pnpm --filter @proofrail/storage-0g test:live"
+    "check": "pnpm --filter @proofrail/registry-0g check && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts check",
+    "test": "pnpm --filter @proofrail/registry-0g test && node --experimental-strip-types --test packages/core/test/*.test.ts packages/runner-local/test/*.test.ts packages/cli/test/*.test.ts packages/storage-0g/test/*.test.ts && pnpm --filter @proofrail/contracts test",
+    "test:contracts": "pnpm --filter @proofrail/contracts test",
+    "m2:live": "pnpm --filter @proofrail/storage-0g test:live",
+    "m3:live": "pnpm --filter @proofrail/contracts compile && pnpm --filter @proofrail/registry-0g test:live"
   }
 }

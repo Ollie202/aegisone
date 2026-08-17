@@ -1,0 +1,14 @@
+{
+  "name": "@proofrail/registry-0g",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "ethers": "6.13.1"
+  },
+  "scripts": {
+    "check": "node --experimental-strip-types --check scripts/galileo-dry-run.ts && node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --check scripts/galileo-dry-run.ts && node --experimental-strip-types --test test/*.test.ts",
+    "test:live": "node --experimental-strip-types scripts/galileo-dry-run.ts"
+  }
+}

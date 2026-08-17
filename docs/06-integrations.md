@@ -8,10 +8,15 @@ External APIs evolve. Verify current official docs before implementation.
 
 **Purpose:** public, tamper-evident registry of compact release/reproduction commitments.
 
-Wave 3 policy: prove locally/testnet first, then publish real mainnet evidence required by the Buildathon. Do not store large logs onchain.
+Wave 3 policy: prove locally/testnet first, then publish real mainnet evidence required by the Buildathon only after the pre-mainnet gate and explicit approval. Do not store large logs onchain.
+
+M3 now proves the testnet path. `ProofRailRegistry` compiled with Solidity `0.8.24` / Cancun, deployed on Galileo chain ID `16602`, registered the real M2 commitment set, and returned exact read-back equality. The testnet contract is `0x227Fcc243f25c395C93Df789EC72Bc75bf096017`; deployment transaction `0xc265ce3bcd03440a6b7f40e7d24bbfc99722635399763e583f84e4ef4f332ae1`; registration transaction `0xa20ae8bf02502020e4bef3ae22fb6f32b2a71fb4d6034e6cca6c3444f4f794c8`. Full evidence and measured gas are in `hackathon/evidence.md`.
+
+No Aristotle mainnet transaction was sent. The M3 runner queried mainnet fee data read-only solely to estimate deployment/registration cost.
 
 References:
 - https://docs.0g.ai/developer-hub/building-on-0g/contracts-on-0g/deploy-contracts
+- https://build.0g.ai/chain
 - https://github.com/0gfoundation/awesome-0g
 
 ## 0G Storage
@@ -38,16 +43,16 @@ References:
 
 **Purpose:** run the independent reproduction in confidential/attestable execution and reduce trust in a normal ProofRail-controlled build server.
 
-The current official 0G Sandbox project combines 0G Tapp TEE execution with Daytona workspaces and exposes user/CLI flows suitable for scripted operation. We still must prove the exact consumer path required by ProofRail.
+The current official 0G Sandbox project combines 0G Tapp TEE execution with Daytona workspaces and exposes user/CLI flows suitable for scripted operation. M4 must prove the exact consumer path required by ProofRail before this integration gets stronger security language.
 
-Wave 3 questions:
+M4 questions:
 - Can the sandbox be created/accessed programmatically?
 - Can it clone an exact public commit and run a constrained Node build?
 - Can built artifact bytes be retrieved?
 - What exact Tapp/TDX evidence can we retrieve?
 - Can the artifact/provenance digest be bound directly into report data through the accessible path?
 
-If output binding is unavailable, the product must state the weaker guarantee accurately.
+If output binding is unavailable, the product must state the weaker guarantee accurately and classify the capability with evidence rather than inference.
 
 References:
 - https://github.com/0gfoundation/0g-sandbox

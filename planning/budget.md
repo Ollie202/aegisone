@@ -20,6 +20,19 @@ Free/test resources should be used for development where possible. Mainnet trans
 | 0G Sandbox | Short technical spikes only | Stop immediately after test; record cost |
 | AI APIs | None required for core | Do not add in Wave 3 unless justified |
 
+## Measured 0G Chain envelope — M3
+
+The successful Galileo registry dry-run measured:
+
+- deployment gas: `299829`;
+- first registration gas: `161123`;
+- read-only Aristotle gas-price snapshot: `4000000007` wei;
+- estimated deployment cost at that snapshot: `1199316002098803` wei;
+- estimated registration cost at that snapshot: `644492001127861` wei;
+- estimated combined cost at that snapshot: `1843808003226664` wei / `0.001843808003226664 0G`.
+
+This is a point-in-time estimate, **not** an approved budget and not a mainnet spend. No Aristotle mainnet transaction was sent during M3. Re-query fee data immediately before any future mainnet gate and obtain explicit approval before spending.
+
 ## Cost discipline
 
 - No Kubernetes.

@@ -1,0 +1,14 @@
+{
+  "name": "@proofrail/contracts",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "check": "hardhat compile && hardhat test",
+    "compile": "hardhat compile",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "hardhat": "2.23.0"
+  }
+}
