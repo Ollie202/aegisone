@@ -7,8 +7,9 @@
     "ethers": "6.13.1"
   },
   "scripts": {
-    "check": "node --experimental-strip-types --check scripts/discover-live.ts && node --experimental-strip-types --test test/*.test.ts",
-    "test": "node --experimental-strip-types --check scripts/discover-live.ts && node --experimental-strip-types --test test/*.test.ts",
-    "discover:live": "node --experimental-strip-types scripts/discover-live.ts"
+    "check": "node --experimental-strip-types --check scripts/discover-live.ts && node --experimental-strip-types --check scripts/inspect-live.ts && node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --check scripts/discover-live.ts && node --experimental-strip-types --check scripts/inspect-live.ts && node --experimental-strip-types --test test/*.test.ts",
+    "discover:live": "node --experimental-strip-types scripts/discover-live.ts",
+    "inspect:live": "node --experimental-strip-types scripts/inspect-live.ts"
   }
 }

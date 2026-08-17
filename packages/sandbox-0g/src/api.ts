@@ -3,6 +3,25 @@ import { Wallet } from "ethers";
 
 export const DEFAULT_SANDBOX_API = "https://private-sandbox-testnet.0g.ai";
 
+export interface BrokerInfo {
+  contractAddress: string;
+  appId: string;
+  chainId: number;
+  rpcUrl: string;
+  tappRegistry: string;
+  raw: Record<string, unknown>;
+}
+
+export interface ProviderListing {
+  address: string;
+  url: string;
+  appId: string;
+  createFee: string;
+  pricePerCpuPerMin?: string;
+  pricePerMemGbPerMin?: string;
+  raw: Record<string, unknown>;
+}
+
 export interface SandboxInfo {
   contractAddress: string;
   providerAddress: string;
@@ -15,7 +34,18 @@ export interface SandboxInfo {
   computePricePerSec?: string;
   voucherIntervalSec?: number;
   minBalance?: string;
-  sealedOnly?: boolean;
+  sealedOnly: boolean;
+  raw: Record<string, unknown>;
+}
+
+export interface SandboxSnapshot {
+  id: string;
+  name: string;
+  imageName?: string;
+  state?: string;
+  cpu?: number;
+  mem?: number;
+  disk?: number;
   raw: Record<string, unknown>;
 }
 
@@ -39,9 +69,7 @@ function pick(record: Record<string, unknown>, ...names: string[]): unknown {
 
 function requiredString(record: Record<string, unknown>, ...names: string[]): string {
   const value = pick(record, ...names);
-  if (typeof value !== "string" || value.length === 0) {
-    throw new TypeError(`Missing string field ${names.join("/")}`);
-  }
+  if (typeof value !== "string" || value.length === 0) throw new TypeError(`Missing string field ${names.join("/")}`);
   return value;
 }
 
@@ -55,6 +83,33 @@ function optionalNumber(record: Record<string, unknown>, ...names: string[]): nu
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
   return undefined;
+}
+
+export function parseBrokerInfo(value: unknown): BrokerInfo {
+  const raw = asRecord(value, "broker info");
+  const chainId = optionalNumber(raw, "chain_id", "chainId");
+  if (!chainId) throw new TypeError("Missing chain_id");
+  return {
+    contractAddress: requiredString(raw, "contract_address", "contractAddress"),
+    appId: requiredString(raw, "app_id", "appId"),
+    chainId,
+    rpcUrl: requiredString(raw, "rpc_url", "rpcUrl"),
+    tappRegistry: requiredString(raw, "tapp_registry", "tappRegistry", "tapp_registry_address"),
+    raw,
+  };
+}
+
+export function parseProviderListing(value: unknown): ProviderListing {
+  const raw = asRecord(value, "provider listing");
+  return {
+    address: requiredString(raw, "address"),
+    url: requiredString(raw, "url"),
+    appId: requiredString(raw, "app_id", "appId"),
+    createFee: requiredString(raw, "create_fee", "createFee"),
+    pricePerCpuPerMin: optionalString(raw, "price_per_cpu_per_min", "pricePerCpuPerMin"),
+    pricePerMemGbPerMin: optionalString(raw, "price_per_mem_gb_per_min", "pricePerMemGbPerMin"),
+    raw,
+  };
 }
 
 export function parseSandboxInfo(value: unknown): SandboxInfo {
@@ -76,6 +131,23 @@ export function parseSandboxInfo(value: unknown): SandboxInfo {
     sealedOnly: pick(raw, "sealed_only", "sealedOnly") === true,
     raw,
   };
+}
+
+export function parseSnapshots(value: unknown): SandboxSnapshot[] {
+  if (!Array.isArray(value)) throw new TypeError("snapshots must be an array");
+  return value.map((entry) => {
+    const raw = asRecord(entry, "snapshot");
+    return {
+      id: requiredString(raw, "id"),
+      name: requiredString(raw, "name"),
+      imageName: optionalString(raw, "imageName", "image_name"),
+      state: optionalString(raw, "state"),
+      cpu: optionalNumber(raw, "cpu"),
+      mem: optionalNumber(raw, "mem"),
+      disk: optionalNumber(raw, "disk"),
+      raw,
+    };
+  });
 }
 
 export function canonicalPayload<T>(value: T): T {
@@ -112,28 +184,44 @@ export async function buildSignedHeaders(
   };
 }
 
-async function jsonResponse(response: Response, context: string): Promise<unknown> {
+async function responseText(response: Response, context: string): Promise<string> {
   const text = await response.text();
   if (!response.ok) throw new Error(`${context}: HTTP ${response.status}: ${text.slice(0, 1000)}`);
+  return text;
+}
+
+async function jsonResponse(response: Response, context: string): Promise<unknown> {
+  const text = await responseText(response, context);
   if (!text) return null;
   try { return JSON.parse(text); } catch { throw new Error(`${context}: invalid JSON response`); }
 }
 
-export async function discoverSandbox(apiUrl = DEFAULT_SANDBOX_API): Promise<{
-  info: SandboxInfo;
-  providers: unknown;
-  snapshots: unknown;
-}> {
+export async function discoverBroker(apiUrl = DEFAULT_SANDBOX_API): Promise<{ info: BrokerInfo; providers: ProviderListing[] }> {
   const base = apiUrl.replace(/\/$/, "");
-  const [infoResponse, providersResponse, snapshotsResponse] = await Promise.all([
-    fetch(`${base}/api/info`),
-    fetch(`${base}/api/providers`),
-    fetch(`${base}/api/snapshots`),
-  ]);
-  const info = parseSandboxInfo(await jsonResponse(infoResponse, "GET /api/info"));
-  const providers = await jsonResponse(providersResponse, "GET /api/providers");
-  const snapshots = await jsonResponse(snapshotsResponse, "GET /api/snapshots");
-  return { info, providers, snapshots };
+  const [infoResponse, providersResponse] = await Promise.all([fetch(`${base}/api/info`), fetch(`${base}/api/providers`)]);
+  const info = parseBrokerInfo(await jsonResponse(infoResponse, "GET broker /api/info"));
+  const providersRaw = await jsonResponse(providersResponse, "GET broker /api/providers");
+  if (!Array.isArray(providersRaw)) throw new TypeError("broker providers must be an array");
+  return { info, providers: providersRaw.map(parseProviderListing) };
+}
+
+export async function discoverProvider(provider: ProviderListing): Promise<{ info: SandboxInfo; snapshots: SandboxSnapshot[] }> {
+  const base = provider.url.replace(/\/$/, "");
+  const [infoResponse, snapshotsResponse] = await Promise.all([fetch(`${base}/api/info`), fetch(`${base}/api/snapshots`)]);
+  const info = parseSandboxInfo(await jsonResponse(infoResponse, `GET ${provider.url} /api/info`));
+  const snapshots = parseSnapshots(await jsonResponse(snapshotsResponse, `GET ${provider.url} /api/snapshots`));
+  if (info.providerAddress.toLowerCase() !== provider.address.toLowerCase()) throw new Error("provider registry address does not match provider /api/info");
+  return { info, snapshots };
+}
+
+export function selectExecutionProvider(surfaces: Array<{ listing: ProviderListing; info: SandboxInfo; snapshots: SandboxSnapshot[] }>): { listing: ProviderListing; info: SandboxInfo; snapshot: SandboxSnapshot } {
+  for (const surface of surfaces) {
+    if (surface.info.sealedOnly) continue;
+    const snapshot = surface.snapshots.find((item) => item.state === "active" && item.name === "daytonaio/sandbox:0.5.0-slim")
+      ?? surface.snapshots.find((item) => item.state === "active");
+    if (snapshot) return { listing: surface.listing, info: surface.info, snapshot };
+  }
+  throw new Error("No non-sealed provider with an active snapshot is available for toolbox execution");
 }
 
 export class SandboxApiClient {
@@ -141,34 +229,42 @@ export class SandboxApiClient {
   readonly wallet: Wallet;
 
   constructor(apiUrl: string, wallet: Wallet) {
-    this.apiUrl = apiUrl;
+    this.apiUrl = apiUrl.replace(/\/$/, "");
     this.wallet = wallet;
   }
 
-  private async request(action: string, resourceId: string, path: string, init: RequestInit, payload: Record<string, unknown> = {}): Promise<unknown> {
+  private async request(action: string, resourceId: string, path: string, init: RequestInit, payload: Record<string, unknown> = {}): Promise<Response> {
     const headers = await buildSignedHeaders(this.wallet, action, resourceId, payload);
-    const response = await fetch(`${this.apiUrl.replace(/\/$/, "")}${path}`, {
+    return fetch(`${this.apiUrl}${path}`, {
       ...init,
       headers: { ...headers, ...(init.body ? { "Content-Type": "application/json" } : {}), ...(init.headers ?? {}) },
     });
-    return jsonResponse(response, `${init.method ?? "GET"} ${path}`);
   }
 
-  create(payload: Record<string, unknown>): Promise<unknown> {
+  async create(payload: Record<string, unknown>): Promise<unknown> {
     const normalized = canonicalPayload(payload);
-    return this.request("create", "", "/api/sandbox", { method: "POST", body: JSON.stringify(normalized) }, normalized);
+    return jsonResponse(await this.request("create", "", "/api/sandbox", { method: "POST", body: JSON.stringify(normalized) }, normalized), "POST /api/sandbox");
   }
 
-  list(): Promise<unknown> {
-    return this.request("list", "", "/api/sandbox", { method: "GET" });
+  async list(): Promise<unknown> {
+    return jsonResponse(await this.request("list", "", "/api/sandbox", { method: "GET" }), "GET /api/sandbox");
   }
 
-  exec(id: string, command: string, timeout = 60): Promise<unknown> {
+  async exec(id: string, command: string, timeout = 60): Promise<unknown> {
     const body = { command, timeout };
-    return this.request("toolbox", id, `/api/toolbox/${encodeURIComponent(id)}/toolbox/process/execute`, { method: "POST", body: JSON.stringify(body) });
+    return jsonResponse(await this.request("toolbox", id, `/api/toolbox/${encodeURIComponent(id)}/toolbox/process/execute`, { method: "POST", body: JSON.stringify(body) }), "POST toolbox process/execute");
   }
 
-  delete(id: string): Promise<unknown> {
-    return this.request("delete", id, `/api/sandbox/${encodeURIComponent(id)}`, { method: "DELETE" });
+  async downloadFile(id: string, path: string): Promise<Uint8Array> {
+    const response = await this.request("toolbox", id, `/api/toolbox/${encodeURIComponent(id)}/toolbox/files/download?path=${encodeURIComponent(path)}`, { method: "GET" });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`GET toolbox files/download: HTTP ${response.status}: ${text.slice(0, 1000)}`);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  async delete(id: string): Promise<unknown> {
+    return jsonResponse(await this.request("delete", id, `/api/sandbox/${encodeURIComponent(id)}`, { method: "DELETE" }), "DELETE /api/sandbox/:id");
   }
 }
