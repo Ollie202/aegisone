@@ -3,8 +3,8 @@ import {
   AbiCoder,
   Interface,
   JsonRpcProvider,
-  computeAddress,
   formatEther,
+  getAddress,
   getCreateAddress,
   keccak256,
 } from "ethers";
@@ -24,24 +24,17 @@ const commitments = {
   provenanceRoot: "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181",
 } as const;
 
-function normalizePrivateKey(value: string): string {
-  const trimmed = value.trim();
-  const normalized = trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`;
-  if (!/^0x[0-9a-fA-F]{64}$/.test(normalized)) {
-    throw new TypeError("Pre-mainnet private key must be a 32-byte hexadecimal value");
-  }
-  return normalized;
-}
-
 function safetyGas(value: bigint): bigint {
   return (value * SAFETY_NUMERATOR + SAFETY_DENOMINATOR - 1n) / SAFETY_DENOMINATOR;
 }
 
-const privateKeyRaw = process.env.ZEROG_SANDBOX_PRIVATE_KEY?.trim();
-if (!privateKeyRaw) throw new Error("ZEROG_SANDBOX_PRIVATE_KEY is required for public-address derivation only");
+const publicAddressRaw = process.env.PROOFRAIL_ARISTOTLE_WALLET_ADDRESS?.trim();
+if (!publicAddressRaw) {
+  throw new Error("PROOFRAIL_ARISTOTLE_WALLET_ADDRESS is required for the read-only gate");
+}
 
-// Deliberately derive only the public address. This script creates no signer and has no send/sign path.
-const address = computeAddress(normalizePrivateKey(privateKeyRaw));
+// This script intentionally accepts only a public address. It creates no signer and has no send/sign path.
+const address = getAddress(publicAddressRaw);
 const provider = new JsonRpcProvider(ARISTOTLE_RPC);
 const network = await provider.getNetwork();
 if (network.chainId !== ARISTOTLE_CHAIN_ID) {
