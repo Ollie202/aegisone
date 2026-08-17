@@ -3,21 +3,17 @@ import test from "node:test";
 import { Interface } from "ethers";
 import { TAPP_ABI } from "../src/chain.ts";
 
-test("TappRegistry getNode ABI decodes current five-field NodeInfo", () => {
+const LIVE_GET_NODE_RESULT = "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000006a7051350000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001400000000000000000000000000000000000000000000000000000000000000019687474703a2f2f34372e38342e3233302e38393a3530303531000000000000000000000000000000000000000000000000000000000000000000000000000030a32695bab9528fa38432d34f55322418e58334a058ca5f0e19508034f66f6178ab2cea1b25e6404e153a7d0826f6ba000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000732e656e763a58967dec0146cb9acc9f46a3842a69d60ed391290ebf72c0d2f824510f255fb2b799373087b24c509f31ae4c67fdbe260a636f6e6669672e79616d6c3aa1b9e2ab5ab35dee2c3339e57f346ff58876383f9bdd505df19b1e646a06f5cc22c919b0fd61aabb97d24baeacc4cd5b0a00000000000000000000000000";
+
+test("TappRegistry getNode ABI decodes the captured Galileo NodeInfo struct", () => {
   const iface = new Interface(TAPP_ABI);
-  const encoded = iface.encodeFunctionResult("getNode", [
-    "https://tee.example",
-    123n,
-    456n,
-    "0x1234",
-    "0xabcd",
-  ]);
-  const decoded = iface.decodeFunctionResult("getNode", encoded);
-  assert.equal(decoded.teeUrl, "https://tee.example");
-  assert.equal(decoded.addedAt, 123n);
-  assert.equal(decoded.stakeAmount, 456n);
-  assert.equal(decoded.composeHash, "0x1234");
-  assert.equal(decoded.volumesHash, "0xabcd");
+  const decoded = iface.decodeFunctionResult("getNode", LIVE_GET_NODE_RESULT);
+  const node = decoded.node ?? decoded[0];
+  assert.equal(node.teeUrl, "http://47.84.230.89:50051");
+  assert.equal(node.addedAt, 1785749813n);
+  assert.equal(node.stakeAmount, 1_000_000_000_000_000_000n);
+  assert.equal(node.composeHash, "0xa32695bab9528fa38432d34f55322418e58334a058ca5f0e19508034f66f6178ab2cea1b25e6404e153a7d0826f6ba");
+  assert.ok(node.volumesHash.startsWith("0x2e656e763a"));
 });
 
 test("TappRegistry ABI includes live version probe", () => {

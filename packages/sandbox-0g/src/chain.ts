@@ -16,7 +16,7 @@ export const TAPP_ABI = [
   "function isAcknowledged(address user,string appId) view returns (bool)",
   "function acknowledgeApp(string appId)",
   "function getAppInfo(string appId) view returns (bytes composeHash,bytes volumesHash,bytes[] imageHashes,address owner,uint256 registeredAt)",
-  "function getNode(string appId,address signer) view returns (string teeUrl,uint256 addedAt,uint256 stakeAmount,bytes composeHash,bytes volumesHash)",
+  "function getNode(string appId,address signer) view returns (tuple(string teeUrl,uint256 addedAt,uint256 stakeAmount,bytes composeHash,bytes volumesHash) node)",
 ];
 
 export async function requireGalileo(provider: JsonRpcProvider): Promise<void> {
@@ -61,12 +61,13 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
   ]);
   const tapp = new Contract(registryAddress, TAPP_ABI, provider);
   const appId = service.appId || info.appId;
-  const [acknowledged, node, tappVersion] = await Promise.all([
+  const [acknowledged, nodeResult, tappVersion] = await Promise.all([
     tapp.isAcknowledged(user, appId),
     tapp.getNode(appId, providerAddress),
     tapp.version(),
   ]);
-  if (BigInt(node.addedAt) === 0n) throw new Error("Broker provider is not an active TappRegistry node for its appId");
+  const node = nodeResult.node ?? nodeResult[0];
+  if (!node || BigInt(node.addedAt) === 0n) throw new Error("Broker provider is not an active TappRegistry node for its appId");
   return {
     nativeBalance,
     contractBalance: BigInt(balanceResult.balance),
