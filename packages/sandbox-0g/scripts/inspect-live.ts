@@ -36,7 +36,14 @@ console.log(JSON.stringify({
     pendingRefundWei: chain.pendingRefund.toString(),
     refundUnlockAt: chain.refundUnlockAt.toString(),
   },
-  tapp: { registry: chain.tappRegistry, acknowledged: chain.acknowledged, teeUrl: chain.teeUrl },
+  tapp: {
+    registry: chain.tappRegistry,
+    version: chain.tappVersion,
+    acknowledged: chain.acknowledged,
+    teeUrl: chain.teeUrl,
+    nodeComposeHash: chain.nodeComposeHash,
+    nodeVolumesHash: chain.nodeVolumesHash,
+  },
   preflight: { requiredMinimumWei: requiredMinimum.toString(), enoughNativeForMinimum },
 }, null, 2));
 

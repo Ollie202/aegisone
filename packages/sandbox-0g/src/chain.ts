@@ -11,11 +11,12 @@ const SANDBOX_ABI = [
   "function deposit(address recipient,address provider) payable",
 ];
 
-const TAPP_ABI = [
+export const TAPP_ABI = [
+  "function version() view returns (string)",
   "function isAcknowledged(address user,string appId) view returns (bool)",
   "function acknowledgeApp(string appId)",
   "function getAppInfo(string appId) view returns (bytes composeHash,bytes volumesHash,bytes[] imageHashes,address owner,uint256 registeredAt)",
-  "function getNode(string appId,address signer) view returns (string teeUrl,uint256 addedAt,uint256 stakeAmount)",
+  "function getNode(string appId,address signer) view returns (string teeUrl,uint256 addedAt,uint256 stakeAmount,bytes composeHash,bytes volumesHash)",
 ];
 
 export async function requireGalileo(provider: JsonRpcProvider): Promise<void> {
@@ -38,8 +39,11 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
   pendingRefund: bigint;
   refundUnlockAt: bigint;
   tappRegistry: string;
+  tappVersion: string;
   acknowledged: boolean;
   teeUrl: string;
+  nodeComposeHash: string;
+  nodeVolumesHash: string;
   serviceCreateFee: bigint;
   appId: string;
 }> {
@@ -57,9 +61,10 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
   ]);
   const tapp = new Contract(registryAddress, TAPP_ABI, provider);
   const appId = service.appId || info.appId;
-  const [acknowledged, node] = await Promise.all([
+  const [acknowledged, node, tappVersion] = await Promise.all([
     tapp.isAcknowledged(user, appId),
     tapp.getNode(appId, providerAddress),
+    tapp.version(),
   ]);
   if (BigInt(node.addedAt) === 0n) throw new Error("Broker provider is not an active TappRegistry node for its appId");
   return {
@@ -68,8 +73,11 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
     pendingRefund: BigInt(balanceResult.pendingRefund),
     refundUnlockAt: BigInt(balanceResult.refundUnlockAt),
     tappRegistry: getAddress(registryAddress),
+    tappVersion: String(tappVersion),
     acknowledged,
     teeUrl: String(node.teeUrl),
+    nodeComposeHash: String(node.composeHash),
+    nodeVolumesHash: String(node.volumesHash),
     serviceCreateFee: BigInt(service.createFee),
     appId,
   };
