@@ -24,29 +24,33 @@ Free/test resources should be used for development where possible. Mainnet trans
 
 The successful Galileo registry dry-run measured deployment gas `299829` and first-registration gas `161123`. At the M3 read-only Aristotle fee snapshot (`4000000007` wei gas price), the estimated combined cost was `0.001843808003226664 0G`.
 
-This was a point-in-time estimate, **not** an approved budget and not a mainnet spend.
+This was a point-in-time estimate, not the later mainnet spend.
 
-## Current Aristotle approval envelope — M5
+## Aristotle mainnet spend — M5
 
-The read-only M5 gate on 2026-08-17 re-confirmed current mainnet chain ID `16661`, RPC `https://evmrpc.0g.ai`, and queried the network without signing or sending a transaction.
+The final M5 write was separately gated and explicitly approved for exactly two Aristotle transactions with a maximum combined fee of `0.002246628007863198 0G`.
 
-Observed gate:
+Approved sequence:
 
 - wallet: `0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb`;
-- nonce: `0`;
-- balance: `0.0 0G`;
-- gas price: `4000000007` wei/gas;
-- max-fee snapshot: `4000000014` wei/gas;
-- mainnet contract-deployment estimate: `306924` gas;
-- proposed deployment limit with 20% safety: `368309` gas;
-- Galileo-measured registration gas: `161123`;
-- proposed registration limit with 20% safety: `193348` gas;
-- combined safety gas: `561657`;
-- point-in-time combined fee envelope: `0.002246628007863198 0G`.
+- nonce `0`: deploy `ProofRailRegistry` with gas limit `368309`;
+- nonce `1`: register the M5 record with gas limit `193348`;
+- combined safety gas limit: `561657`;
+- maximum approved combined fee: `0.002246628007863198 0G`.
 
-The wallet is therefore **not funded** for the proposed mainnet sequence. No mainnet spend is approved or possible from this wallet yet.
+Observed mainnet receipts:
 
-A funding amount around `0.003 0G` would exceed this particular snapshot with a modest buffer, but fees/nonce must be refreshed immediately before any approved write. Funding the wallet is not itself authorization for ProofRail to submit the mainnet transactions.
+- deployment gas used: `299829`;
+- deployment fee: `0.001199316002098803 0G`;
+- registration gas used: `161135`;
+- registration fee: `0.000644540001127945 0G`;
+- actual combined fee: **`0.001843856003226748 0G`**;
+- within approved cap: `true`;
+- ending observed wallet balance: `0.618043437732865255 0G`.
+
+The final receipts and exact read-back were independently verified without access to the signer secret. See `hackathon/m5-aristotle-mainnet.json`.
+
+No further mainnet spend is authorized by this completed M5 approval. Any future mainnet transaction requires a new applicable gate/approval.
 
 ## Measured 0G Sandbox envelope — M4/M5
 
@@ -70,4 +74,4 @@ These are testnet-token observations, not fiat costs or production-price guarant
 - No paid monitoring suite.
 - No paid AI API solely for demo optics.
 - Sandbox execution services default back to read-only after a live spike.
-- No Aristotle mainnet transaction until the wallet is funded, the fee gate is refreshed, the exact proposed sequence is presented, and the user explicitly approves it.
+- Every future mainnet transaction needs its own applicable budget/approval gate.
