@@ -33,6 +33,23 @@ export function normalizePrivateKey(value: string): string {
   return key;
 }
 
+function isNodeLike(value: any): boolean {
+  return Boolean(value)
+    && typeof value === "object"
+    && value.teeUrl !== undefined
+    && value.addedAt !== undefined
+    && value.stakeAmount !== undefined
+    && value.composeHash !== undefined
+    && value.volumesHash !== undefined;
+}
+
+export function unwrapNodeResult(value: any): any {
+  if (isNodeLike(value)) return value;
+  const nested = value?.node ?? value?.[0];
+  if (isNodeLike(nested)) return nested;
+  throw new TypeError("TappRegistry getNode returned an unexpected NodeInfo shape");
+}
+
 export async function inspectSandboxChain(info: SandboxInfo, walletAddress: string): Promise<{
   nativeBalance: bigint;
   contractBalance: bigint;
@@ -66,8 +83,8 @@ export async function inspectSandboxChain(info: SandboxInfo, walletAddress: stri
     tapp.getNode(appId, providerAddress),
     tapp.version(),
   ]);
-  const node = nodeResult.node ?? nodeResult[0];
-  if (!node || BigInt(node.addedAt) === 0n) throw new Error("Broker provider is not an active TappRegistry node for its appId");
+  const node = unwrapNodeResult(nodeResult);
+  if (BigInt(node.addedAt) === 0n) throw new Error("Broker provider is not an active TappRegistry node for its appId");
   return {
     nativeBalance,
     contractBalance: BigInt(balanceResult.balance),
