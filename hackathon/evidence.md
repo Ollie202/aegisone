@@ -29,7 +29,7 @@ Record real proof here immediately when created. Do not paste secrets.
 - Exact contract read-back: `true`
 - Gas: deploy `299829`, register `161123`
 - Railway deployment: `46fc7126-8d7b-4565-8f89-a284e8b3d898`
-- Status: COMPLETE; no mainnet transaction.
+- Status: COMPLETE.
 
 ## M4 — real 0G Sandbox / Tapp
 - Network / chain ID: Galileo / `16602`
@@ -72,32 +72,46 @@ Record real proof here immediately when created. Do not paste secrets.
 - Uploaded/downloaded SHA: `4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec`
 - Storage proof verified: `true`
 - Storage exact-byte equality: `true`
-- Registry commitments prepared from that exact stored verification.
-- Mainnet signer/submission code in the M5 live runner: `false`.
+- Registry commitments derive from those exact stored verification bytes.
+- Mainnet signer/submission code in the M5 Galileo live runner: `false`.
 - Durable structured summary: `hackathon/m5-live-evidence.json`.
 - Status: GALILEO SLICE COMPLETE.
 
-## M5 — Aristotle read-only approval gate
-- Official current network config re-confirmed from 0G Builder Hub: chain ID `16661`, RPC `https://evmrpc.0g.ai`, explorer `https://chainscan.0g.ai`.
-- Railway gate deployment: `685275d2-20a4-4995-a290-050fcdade44b`
-- Gate commit: `ef43b16d11301fca85c52a73cafe8b5f9609a15f`
-- Read-only: `true`; mainnet writes: `false`.
-- Latest block at snapshot: `41909961`.
+## M5 — Aristotle approval gate (historical preflight)
+- Network / chain ID: 0G Mainnet / Aristotle / `16661`.
 - Public wallet: `0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb`.
-- Nonce: `0`.
-- Balance: `0.0 0G` — NOT FUNDED.
-- Gas price: `4000000007` wei/gas.
-- Max-fee snapshot: `4000000014` wei/gas.
-- Mainnet deployment estimate: `306924` gas.
-- Proposed deploy gas with 20% safety: `368309`.
-- Proposed register gas with 20% safety: `193348` (from Galileo measured registration gas `161123`).
-- Combined safety gas: `561657`.
-- Current combined fee envelope: `0.002246628007863198 0G`.
-- Predicted registry at nonce 0: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`; no code there at gate time.
-- Prepared record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
+- Final approved sequence: nonce `0` registry deployment + nonce `1` M5 registration.
+- Approved 20% safety limits: deploy `368309`, register `193348`; total `561657` gas.
+- Approved maximum combined fee: `0.002246628007863198 0G`.
+- Predicted registry address at nonce `0`: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
+- Prepared M5 record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
 - Registration calldata hash: `0x9312e036d22d405998b17325cba4039c6bbddf0259189fe998e12838927b15be`.
-- Mainnet status: BLOCKED — wallet funding + refreshed fee gate + explicit user approval required.
-- Durable structured gate: `hackathon/m5-aristotle-preflight.json`.
+- Durable structured preflight: `hackathon/m5-aristotle-preflight.json`.
+
+## M5 — Aristotle mainnet anchor
+- Network / chain ID: 0G Mainnet / Aristotle / `16661`.
+- Registry: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
+- Contract code present: `true`.
+- Deployment transaction: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`.
+- Deployment block: `41916904`.
+- Deployment gas used: `299829`.
+- Deployment fee: `0.001199316002098803 0G`.
+- M5 record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
+- Registration transaction: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`.
+- Registration block: `41916913`.
+- Registration gas used: `161135`.
+- Registration fee: `0.000644540001127945 0G`.
+- Submitter: `0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb`.
+- Exact contract read-back: `true`.
+- Publisher/reproduced artifact commitments remain identical at `0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`.
+- Provenance root: `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`.
+- Actual combined fee: `0.001843856003226748 0G`.
+- Approved maximum combined fee: `0.002246628007863198 0G`.
+- Within approved cap: `true`.
+- Ending wallet nonce: `2`.
+- Independent secret-free GitHub Actions verification: run `32068243865`, job `95506685727`, verified at block `41917073`.
+- Durable structured final evidence: `hackathon/m5-aristotle-mainnet.json`.
+- Status: VERIFIED / COMPLETE.
 
 ## Product
 - Judge-facing shared core projection: IMPLEMENTED (`createVerificationView()` used by CLI and web renderer)
