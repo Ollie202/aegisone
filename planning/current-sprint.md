@@ -1,63 +1,56 @@
-# Current Sprint — M5 Judgeable Wave 3 Slice
+# Current Sprint — M6 Product Runtime
 
 ## Primary objective
 
-Preserve completed M1–M4 and connect them into one judgeable ProofRail flow without weakening the trust model or replacing independent reproduction with publisher-provided hash anchoring.
+Turn the proven M1–M5 verification engine into one understandable product runtime without moving ProofRail's trust into a mutable database.
 
-## M1–M4
+## Proven foundation — M1–M5
 
-- [x] M1 deterministic provider-independent verification kernel, local rebuild, canonical evidence, MATCH/MISMATCH, CLI JSON.
-- [x] M2 real Galileo 0G Storage upload/retrieval with proof verification and exact-byte equality.
-- [x] M3 minimal registry contract/client, Galileo deploy/register/read-back, gas measurement.
-- [x] M4 real hosted 0G Sandbox exact-commit build, artifact retrieval, provider TDX evidence, precise unsupported output-binding classification, cleanup.
+- [x] M1 provider-independent deterministic verification core and MATCH/MISMATCH.
+- [x] M2 real proof-verified 0G Storage round trip.
+- [x] M3 minimal registry contract/client and Galileo deployment/readback.
+- [x] M4 real hosted 0G Sandbox execution plus precise `PROVIDER_EVIDENCE_ONLY` TDX boundary.
+- [x] M5 real end-to-end Galileo reproduction + Storage + independently verified Aristotle mainnet anchor.
 
-## M5 — Issue #5 — COMPLETE
+## M6 — Issue #11
 
-- [x] Source claim and assurance level are inspectable in the end-to-end flow.
-- [x] Publisher artifact bytes and exact immutable commit/build recipe flow through the same core model.
-- [x] Independent build routes through the proven real 0G Sandbox path.
-- [x] Genuine artifact returns `MATCH` through the shared digest-comparison core.
-- [x] Deterministic one-byte publisher substitution returns `MISMATCH` with unchanged reproduced bytes.
-- [x] Canonical genuine evidence completes a real proof-verified exact-byte 0G Storage round trip.
-- [x] Registry commitments are derived from the exact stored evidence without changing M3 semantics.
-- [x] Stable CLI inspection and web view derive status from the same integrity-checked core projection.
-- [x] M4 TDX evidence is surfaced as `PROVIDER_EVIDENCE_ONLY`; unsupported TEE-bound output is not implied.
-- [x] Durable M5 live evidence summary and README demo/evidence instructions are in the repository.
-- [x] Re-confirm Aristotle network details and run read-only mainnet deploy/register fee gates.
-- [x] Fund the selected Aristotle wallet and refresh balance/nonce/fee state.
-- [x] Obtain explicit user approval for exactly two Aristotle transactions under a `0.002246628007863198 0G` combined fee cap.
-- [x] Deploy `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
-- [x] Register M5 evidence record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
-- [x] Independently verify deployment receipt, registration event, exact contract read-back, submitter, and actual fees without access to the signer secret.
-- [x] Record durable final Aristotle evidence in `hackathon/m5-aristotle-mainnet.json`.
-- [x] Final CI green on the completed mainnet-evidence head.
-- [x] Mark PR #10 ready, squash-merge it, and confirm Issue #5 closes.
+- [x] Define database-independent verification-job lifecycle (`queued`, `running`, `verified`, `failed`).
+- [x] Keep pipeline status separate from cryptographic correspondence; no mutable database `verdict` field.
+- [x] Add server-only Supabase PostgREST adapter.
+- [x] Add RLS-enabled `verification_jobs` migration with ownership fields and 0G evidence pointers.
+- [x] Add in-memory store for local/CI smoke tests only.
+- [x] Turn `apps/web` into a product runtime with `/health`, job create/read API, and job pages.
+- [x] Require cached verification JSON to pass the existing integrity-checked core renderer before MATCH/MISMATCH is displayed.
+- [x] Add tests proving database pipeline status cannot override a core MISMATCH.
+- [x] Change M4 inspection so an expected missing output/TEE binding is a capability limitation, not an operational Railway crash.
+- [x] Create/stage the primary Railway `proofrail-app` service in explicit memory smoke-test mode.
+- [ ] Prove a corrected `proofrail-app` Railway deployment passes `/health`.
+- [ ] Create a dedicated ProofRail Supabase project in the user-selected Supabase organization after cost confirmation.
+- [ ] Apply migration; run Supabase security and performance advisors.
+- [ ] Switch `proofrail-app` from memory mode to real Supabase and prove create/read job persistence.
+- [ ] Consolidate/remove milestone-only Railway services after the product runtime is proven; preserve GitHub/0G evidence.
+- [ ] Final docs/CI, mark PR #13 ready, merge, and close Issue #11.
 
-## Final Aristotle evidence
+## M7 — Issue #12 queued next
 
-- contract: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`;
-- deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
-- registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
-- record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`;
-- actual combined fee: `0.001843856003226748 0G`;
-- independent verification: GitHub Actions run `32068243865`, job `95506685727`, status `VERIFIED`;
-- PR #10 squash merge: `38c427c3beadca008430ce86fde4238afcdd8db9`;
-- Issue #5: closed/completed.
+Agent Skills become a first-class artifact family with two independent outputs:
 
-## Infrastructure cleanup
+1. **Provenance/correspondence:** do the distributed skill bytes match the exact publisher-declared source commit? This remains normal ProofRail `MATCH` / `MISMATCH`.
+2. **Skill security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, or hidden payloads exist? This is a separate report and never rewrites the correspondence result.
 
-- [x] Aristotle execution tokens cleared.
-- [x] M3 and M4 branch/config handoffs restored.
-- [ ] Permanently delete temporary Railway service `m5-aristotle-anchor-temp`; deletion is staged, but Railway requires dashboard two-factor verification to apply it.
+The UI must be able to show combinations such as `MATCH + HIGH-RISK FINDINGS` and `MISMATCH + NO FINDINGS`.
 
-## Explicitly out of scope now
+## Infrastructure hygiene
 
-- automatic source discovery;
-- private repositories;
-- arbitrary huge repositories;
-- multi-builder consensus network;
-- Agentic ID/ERC-8004 integration;
-- MCP server;
-- 0G Compute;
-- token/rewards/marketplace;
-- production branding.
+- [x] Aristotle execution tokens cleared after M5.
+- [x] M3/M4 temporary branch/config handoffs restored after M5.
+- [ ] Delete the previously staged disposable `m5-aristotle-anchor-temp` service; Railway requires dashboard 2FA to finalize destructive deletion.
+- [ ] Retire M2/M3/M4/M5 milestone Railway boxes only after `proofrail-app` is the proven replacement topology.
+
+## Explicitly out of scope for M6
+
+- payments/billing;
+- arbitrary enterprise RBAC;
+- private repository support;
+- changing the M1–M5 trust model;
+- implementing M7 security rules before the M6 product runtime is stable.
