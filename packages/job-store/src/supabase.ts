@@ -34,6 +34,12 @@ interface SupabaseJobRow {
   failure_message: string | null;
 }
 
+interface EdgeResponse {
+  rows?: SupabaseJobRow[];
+  error?: string;
+  message?: string;
+}
+
 export interface SupabaseJobStoreConfig {
   url: string;
   publishableKey: string;
@@ -105,58 +111,46 @@ export class SupabaseJobStore implements JobStore {
     this.#fetcher = config.fetcher ?? fetch;
   }
 
-  #headers(): Record<string, string> {
-    return {
-      apikey: this.#publishableKey,
-      authorization: `Bearer ${this.#publishableKey}`,
-      "content-type": "application/json",
-      "cache-control": "no-store",
-    };
-  }
-
-  async #rpc(name: string, body: Record<string, unknown>): Promise<SupabaseJobRow[]> {
-    const response = await this.#fetcher(`${this.#baseUrl}/rest/v1/rpc/${name}`, {
+  async #invoke(action: string, body: Record<string, unknown>): Promise<SupabaseJobRow[]> {
+    const response = await this.#fetcher(`${this.#baseUrl}/functions/v1/proofrail-jobs`, {
       method: "POST",
-      headers: this.#headers(),
-      body: JSON.stringify({ p_token: this.#appToken, ...body }),
+      headers: {
+        apikey: this.#publishableKey,
+        authorization: `Bearer ${this.#publishableKey}`,
+        "x-proofrail-app-token": this.#appToken,
+        "content-type": "application/json",
+        "cache-control": "no-store",
+      },
+      body: JSON.stringify({ action, ...body }),
     });
+    const result = await response.json() as EdgeResponse;
     if (!response.ok) {
-      const detail = (await response.text()).slice(0, 1_000);
-      throw new Error(`Supabase job store RPC failed (${response.status}): ${detail}`);
+      throw new Error(`Supabase job store request failed (${response.status}): ${result.message ?? result.error ?? "unknown error"}`);
     }
-    return await response.json() as SupabaseJobRow[];
+    return result.rows ?? [];
   }
 
   async create(input: NewVerificationJob): Promise<VerificationJob> {
-    const rows = await this.#rpc("proofrail_job_create", {
-      p_owner_id: input.ownerId ?? null,
-      p_artifact_kind: input.artifactKind ?? "software",
-      p_project_id: input.projectId,
-      p_source_repository: input.sourceRepository,
-      p_source_commit_sha: input.sourceCommitSha,
-      p_source_subdirectory: input.sourceSubdirectory ?? null,
-      p_publisher_artifact_name: input.publisherArtifactName,
-      p_publisher_artifact_sha256: input.publisherArtifactSha256 ?? null,
-    });
+    const rows = await this.#invoke("create", { input });
     if (rows.length !== 1) throw new Error(`Expected one created verification job, received ${rows.length}`);
     return rowToJob(rows[0]!);
   }
 
   async get(id: string): Promise<VerificationJob | null> {
-    const rows = await this.#rpc("proofrail_job_get", { p_id: id });
+    const rows = await this.#invoke("get", { id });
     return rows[0] ? rowToJob(rows[0]) : null;
   }
 
   async list(ownerId?: string | null): Promise<VerificationJob[]> {
-    const rows = await this.#rpc("proofrail_job_list", {
-      p_filter_owner: ownerId !== undefined,
-      p_owner_id: ownerId ?? null,
+    const rows = await this.#invoke("list", {
+      filterOwner: ownerId !== undefined,
+      ownerId: ownerId ?? null,
     });
     return rows.map(rowToJob);
   }
 
   async update(id: string, patch: VerificationJobPatch): Promise<VerificationJob> {
-    const rows = await this.#rpc("proofrail_job_update", { p_id: id, p_patch: patchToRow(patch) });
+    const rows = await this.#invoke("update", { id, patch: patchToRow(patch) });
     if (rows.length !== 1) throw new Error(`Unknown verification job: ${id}`);
     return rowToJob(rows[0]!);
   }
