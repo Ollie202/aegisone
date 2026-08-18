@@ -85,6 +85,8 @@ export interface SkillVerificationResult {
   correspondence: ComparisonResult;
   publisherPackage: SkillPackageSummary;
   reproducedPackage: SkillPackageSummary;
-  format: SkillFormatValidation;
+  publisherFormat: SkillFormatValidation;
+  reproducedFormat: SkillFormatValidation;
+  auditTarget: "publisher";
   audit: SkillAuditReport;
 }
