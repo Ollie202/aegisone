@@ -151,7 +151,10 @@ try {
 
   const toolboxReadyAttempt = await waitForToolboxReady(sandboxClient, createdSandboxId);
   output.toolboxReadiness = { ready: true, attempt: toolboxReadyAttempt };
-  await sandboxClient.gitClone(createdSandboxId, SOURCE_REPO, SOURCE_PATH, SOURCE_COMMIT);
+  const cloneCommand = `git clone --no-checkout ${SOURCE_REPO} ${SOURCE_PATH} && cd ${SOURCE_PATH} && git checkout --detach ${SOURCE_COMMIT}`;
+  const cloneResponse = await sandboxClient.exec(createdSandboxId, cloneCommand, 60);
+  assertExecSucceeded(cloneResponse, cloneCommand);
+  output.sourceCheckout = { method: "PROCESS_EXEC_GIT", response: cloneResponse };
   const headBytes = await sandboxClient.downloadFile(createdSandboxId, `${SOURCE_PATH}/.git/HEAD`);
   const resolvedHead = Buffer.from(headBytes).toString("utf8").trim();
   if (resolvedHead !== SOURCE_COMMIT) throw new Error(`0G Sandbox checkout resolved ${resolvedHead}, expected ${SOURCE_COMMIT}`);
