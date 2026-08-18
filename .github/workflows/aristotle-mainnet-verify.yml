@@ -2,12 +2,6 @@ name: Aristotle Mainnet Verify
 
 on:
   workflow_dispatch:
-  push:
-    branches: [agent/m5-judgeable-slice]
-    paths:
-      - .github/workflows/aristotle-mainnet-verify.yml
-      - packages/m5-flow/scripts/verify-aristotle.ts
-      - contracts/src/ProofRailRegistry.sol
 
 concurrency:
   group: aristotle-mainnet-verify-${{ github.ref }}
