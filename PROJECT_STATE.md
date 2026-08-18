@@ -1,84 +1,72 @@
 # Project State
 
 **Last updated:** 2026-08-18  
-**Phase:** M6 in progress — product runtime + Supabase app index
+**Phase:** M6 complete — product runtime + persistent Supabase job index proven
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
 
-ProofRail does **not** determine whether code is good or bad and does **not** magically identify an official source repository.
+ProofRail independently rebuilds software from an explicit publisher source claim and compares the reproduced artifact bytes with the publisher artifact. Application state is never allowed to invent or override a cryptographic `MATCH` / `MISMATCH` result.
 
-The publisher supplies a source/release claim. ProofRail independently rebuilds the exact immutable commit under an explicit recipe, compares the reproduced artifact with the published artifact, and packages the resulting evidence for humans or AI agents.
-
-The core trust boundary remains:
+The product trust boundary is:
 
 > **publisher artifact vs independent rebuild — verified from canonical evidence, not from mutable application state**
 
 ## Proven foundation
 
 - M1–M5 are complete and merged.
-- Real 0G Sandbox reproduction, proof-verified Storage, and Aristotle mainnet anchoring are proven.
-- The M5 Aristotle registry remains deployed at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
-- M5 record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e` has exact verified readback.
-- Durable final M5 mainnet evidence is `hackathon/m5-aristotle-mainnet.json`.
-- M4's current TDX surface remains honestly classified as `PROVIDER_EVIDENCE_ONLY`; lack of artifact-digest binding is a capability boundary, not evidence of an operational failure.
+- Real 0G Sandbox reproduction, proof-verified 0G Storage, and Aristotle mainnet anchoring are proven.
+- The M5 Aristotle registry remains deployed at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4` with record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
+- M4's current TDX surface remains honestly classified as `PROVIDER_EVIDENCE_ONLY`; missing artifact-digest binding is a capability boundary, not an operational failure.
 
-## M6 product topology
-
-M6 turns the milestone-oriented engineering topology into one understandable product runtime:
+## M6 product topology — proven
 
 ```text
 Supabase     = mutable app/job memory
-Railway      = ProofRail app/API + controlled workers
+Railway app  = product API/UI
+Railway worker = controlled secret-bearing worker, standby by default
 0G Sandbox   = independent build/execution
 0G Storage   = durable canonical evidence
 0G Aristotle = immutable compact commitment anchor
 ```
 
-Supabase is explicitly **not** a proof authority. The M6 schema has no mutable verdict column. A stored/cached verification can display MATCH/MISMATCH only after the existing ProofRail core integrity checks accept it.
+Supabase is **not** a proof authority. The schema deliberately has no mutable verdict column. Cached verification JSON can display MATCH/MISMATCH only after the existing ProofRail core integrity checks accept it.
 
-## What is implemented on `agent/m6-product-runtime`
+## What M6 proved
 
-- `packages/job-store` defines a database-independent verification job model and interface.
-- Job pipeline states are `queued`, `running`, `verified`, and `failed`.
-- Artifact kinds already reserve `software` and `agent-skill` without changing core correspondence semantics.
-- A local in-memory store exists only for tests/smoke runs.
-- A server-only Supabase PostgREST adapter uses `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; no service-role secret belongs in browser code or database rows.
-- `supabase/migrations/202608180001_m6_verification_jobs.sql` defines the RLS-enabled mutable job index and 0G evidence pointers.
-- `apps/web` now supports product mode with `/health`, job create/read APIs, and job pages while preserving legacy evidence-viewer mode.
-- If a job has cached `VerificationJson`, the page passes it through the same integrity-checked core renderer used by the prior viewer; database status cannot override the resulting verdict.
-- Tests explicitly cover the rule that a database status of `verified` cannot turn a core `MISMATCH` into `MATCH`.
-- M4 live inspection no longer exits non-zero merely because output/TEE binding is unavailable; it reports the weaker capability state in structured output.
-- Draft PR #13 tracks M6.
-- GitHub CI has passed the first full M6 test run.
+- `packages/job-store` provides a database-independent job model with `queued`, `running`, `verified`, and `failed` pipeline states.
+- Artifact families already distinguish `software` and `agent-skill` without changing core correspondence semantics.
+- A dedicated Supabase project named `ProofRail` exists in `eu-west-1`; provider-reported project cost is `$0/month` for the current organization.
+- `verification_jobs` is RLS-enabled and stores application metadata plus 0G evidence pointers, not a mutable verdict.
+- Railway talks to Supabase through an authenticated `proofrail-jobs` Edge Function. Supabase keeps its service-role credential inside the Edge Function; Railway holds only a separate ProofRail app token plus a publishable key.
+- Supabase security advisor is clean after the final schema. Performance advisor only reports unused-index informational notices expected for a new table.
+- `proofrail-app` is live on Railway and backed by Supabase rather than the temporary memory store.
+- A live external API smoke test returned `/health` 200, created job `085e2667-c2ca-4d98-919b-106eb2ff4334`, read it back through the app, and independent SQL confirmed the exact same persisted row.
+- `packages/sandbox-0g/scripts/inspect-live.ts` now reports expected TEE capability limitations without exiting as a Railway crash.
+- A permanent `proofrail-worker` Railway service is proven healthy on commit `4fa559c839bf15f2a592cebbf96d168acdda3a03`.
+- Worker startup confirms the shared signer secret is configured while public signing remains disabled. The signer is stored as the project-level shared `ZEROG_STORAGE_PRIVATE_KEY`; it was not copied into GitHub or exposed.
+- The repository root Railway config is now service-neutral so new services cannot accidentally inherit the historical M2 Storage round-trip command.
+- The five milestone-only Railway services are staged for deletion. Railway requires dashboard 2FA to finalize those destructive removals; `proofrail-app`, `proofrail-worker`, and the shared signer secret are explicitly excluded from deletion.
+- GitHub CI passed on the final neutral-root worker commit before final documentation updates.
 
-## Railway transition
+## Final Railway target
 
-A new primary service, `proofrail-app`, has been created from `agent/m6-product-runtime` in explicit `PROOFRAIL_JOB_STORE=memory` smoke-test mode. Its intended runtime is `pnpm --filter @proofrail/web start`, with `/health` and `railway.product.json` pinned.
+After the staged deletions are confirmed in the Railway dashboard, the visible product topology is intentionally just:
 
-The first two deployments started before those explicit service settings had fully persisted and are being allowed to age out. A corrected fresh deployment is being validated. Do not retire historical milestone services until the corrected product runtime is actually healthy.
+1. `proofrail-app` — API/UI + Supabase-backed job index.
+2. `proofrail-worker` — controlled worker/secret boundary; standby and non-public by default.
 
-## Supabase gate
+Historical M1–M5 evidence remains in GitHub, 0G Storage, and Aristotle regardless of Railway service cleanup.
 
-The connected Supabase account currently contains only the existing `goatmints_bot` project. ProofRail must get its **own** Supabase project rather than sharing Goatmints' database.
+## M7 — Agent Skills next
 
-Creating a new Supabase project is gated on selecting the Supabase organization and confirming the provider-reported project cost. After that, M6 will apply the migration, run security/performance advisors, switch Railway from memory mode to Supabase, and prove persistent job create/read behavior.
+Issue #12 makes Agent Skills the first new auditable artifact family. ProofRail will keep two independent answers:
 
-## Agent Skills direction — M7
+1. **Correspondence:** do distributed skill-package bytes match the deterministic package independently produced from the exact publisher-declared source commit? → `MATCH` / `MISMATCH`.
+2. **Security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, hidden payloads, or persistence behaviors exist? → separate findings and severity.
 
-Issue #12 defines Agent Skills as the first new auditable artifact family.
+A `MATCH` never means “safe,” and a security finding never rewrites the cryptographic correspondence result.
 
-ProofRail will keep two independent answers:
+## Remaining manual infrastructure hygiene
 
-1. **Correspondence:** do the distributed skill package bytes match the package independently produced from the exact publisher-declared source commit? → `MATCH` / `MISMATCH`.
-2. **Security audit:** what risky instructions/scripts/capabilities are present? → separate findings/severity report.
-
-A `MATCH` must never mean “safe,” and a security finding must never rewrite the cryptographic correspondence result.
-
-## Current blockers / gates
-
-1. Prove the corrected `proofrail-app` Railway deployment passes `/health`.
-2. User selects the Supabase organization for a dedicated ProofRail project; then confirm current Supabase project cost before creation.
-3. Apply/validate Supabase schema and switch the product service to persistent storage.
-4. Retire milestone-only Railway services after the product service is proven. Destructive deletion may require Railway dashboard 2FA.
-5. Final M6 CI/merge, then begin M7 implementation.
+Open the Railway project and apply the already-staged deletions of the five legacy M2/M3/M4/M5 services. Railway requires interactive two-factor verification for that destructive action and does not permit the connector to complete it.
