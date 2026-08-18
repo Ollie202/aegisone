@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   auditSkillPackage,
   canonicalSkillPackageBytes,
+  decodeCanonicalSkillPackage,
   readSkillDirectory,
   summarizeSkillPackage,
   validateSkillPackage,
@@ -32,12 +33,28 @@ test("canonical skill package is byte-stable regardless of input entry order", (
   assert.equal(summarizeSkillPackage(a).sha256, summarizeSkillPackage(b).sha256);
 });
 
-test("canonical package rejects traversal and duplicate paths", () => {
+test("canonical skill package decodes to the exact paths and bytes", () => {
+  const entries = [
+    { path: "SKILL.md", bytes: bytes("skill\n") },
+    { path: "assets/data.bin", bytes: new Uint8Array([0, 1, 2, 255]) },
+  ];
+  const encoded = canonicalSkillPackageBytes(entries);
+  const decoded = decodeCanonicalSkillPackage(encoded);
+  assert.deepEqual(decoded.map((entry) => entry.path), ["SKILL.md", "assets/data.bin"]);
+  assert.deepEqual(decoded[0]!.bytes, entries[0]!.bytes);
+  assert.deepEqual(decoded[1]!.bytes, entries[1]!.bytes);
+  assert.deepEqual(canonicalSkillPackageBytes(decoded), encoded);
+});
+
+test("canonical package rejects traversal, duplicate paths, truncation, and trailing bytes", () => {
   assert.throws(() => canonicalSkillPackageBytes([{ path: "../SKILL.md", bytes: bytes("x") }]), /Unsafe/);
   assert.throws(
     () => canonicalSkillPackageBytes([{ path: "SKILL.md", bytes: bytes("a") }, { path: "SKILL.md", bytes: bytes("b") }]),
     /Duplicate/,
   );
+  const valid = canonicalSkillPackageBytes([{ path: "SKILL.md", bytes: bytes("x") }]);
+  assert.throws(() => decodeCanonicalSkillPackage(valid.slice(0, valid.byteLength - 1)), /Truncated|malformed/);
+  assert.throws(() => decodeCanonicalSkillPackage(new Uint8Array([...valid, 0])), /trailing bytes/);
 });
 
 test("clean fixture follows Agent Skills frontmatter constraints and has no static findings", async () => {
