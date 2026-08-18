@@ -30,7 +30,7 @@ const rules: LineRule[] = [
     ruleId: "PR-SKILL-003",
     title: "Destructive filesystem or device command",
     severity: "CRITICAL",
-    matches: (line) => /\brm\s+(?:-[A-Za-z]*r[A-Za-z]*f[A-Za-z]*|-[A-Za-z]*f[A-Za-z]*r[A-Za-z]*)\s+(?:\/|~|\$HOME)(?:\s|$)|\bmkfs(?:\.|\s)|\bdd\s+[^\n]*\bof=\/dev\/|\bformat\s+[a-z]:\s*(?:\/|$)|Remove-Item\b[^\n]*(?:-Recurse[^\n]*[A-Z]:\\|[A-Z]:\\[^\n]*-Recurse)/i.test(line),
+    matches: (line) => /\brm\s+(?:-[A-Za-z]*r[A-Za-z]*f[A-Za-z]*|-[A-Za-z]*f[A-Za-z]*r[A-Za-z]*)\s+(?:\/|~|\$HOME)(?:\s|[`'";]|$)|\bmkfs(?:\.|\s)|\bdd\s+[^\n]*\bof=\/dev\/|\bformat\s+[a-z]:\s*(?:\/|$)|Remove-Item\b[^\n]*(?:-Recurse[^\n]*[A-Z]:\\|[A-Z]:\\[^\n]*-Recurse)/i.test(line),
   },
   {
     ruleId: "PR-SKILL-004",
