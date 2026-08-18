@@ -9,7 +9,6 @@ import type {
   VerificationJobStatus,
   ArtifactKind,
 } from "./model.ts";
-import { EMPTY_EVIDENCE_POINTERS } from "./model.ts";
 
 interface SupabaseJobRow {
   id: string;
@@ -37,7 +36,8 @@ interface SupabaseJobRow {
 
 export interface SupabaseJobStoreConfig {
   url: string;
-  serviceRoleKey: string;
+  publishableKey: string;
+  appToken: string;
   fetcher?: typeof fetch;
 }
 
@@ -94,87 +94,69 @@ function patchToRow(patch: VerificationJobPatch): Record<string, unknown> {
 
 export class SupabaseJobStore implements JobStore {
   readonly #baseUrl: string;
-  readonly #key: string;
+  readonly #publishableKey: string;
+  readonly #appToken: string;
   readonly #fetcher: typeof fetch;
 
   constructor(config: SupabaseJobStoreConfig) {
     this.#baseUrl = config.url.replace(/\/$/, "");
-    this.#key = config.serviceRoleKey;
+    this.#publishableKey = config.publishableKey;
+    this.#appToken = config.appToken;
     this.#fetcher = config.fetcher ?? fetch;
   }
 
-  #headers(preferRepresentation = false): Record<string, string> {
+  #headers(): Record<string, string> {
     return {
-      apikey: this.#key,
-      authorization: `Bearer ${this.#key}`,
+      apikey: this.#publishableKey,
+      authorization: `Bearer ${this.#publishableKey}`,
       "content-type": "application/json",
-      ...(preferRepresentation ? { prefer: "return=representation" } : {}),
+      "cache-control": "no-store",
     };
   }
 
-  #url(search?: URLSearchParams): string {
-    const suffix = search && [...search].length > 0 ? `?${search.toString()}` : "";
-    return `${this.#baseUrl}/rest/v1/verification_jobs${suffix}`;
-  }
-
-  async #rows(response: Response): Promise<SupabaseJobRow[]> {
+  async #rpc(name: string, body: Record<string, unknown>): Promise<SupabaseJobRow[]> {
+    const response = await this.#fetcher(`${this.#baseUrl}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify({ p_token: this.#appToken, ...body }),
+    });
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 1_000);
-      throw new Error(`Supabase job store request failed (${response.status}): ${detail}`);
+      throw new Error(`Supabase job store RPC failed (${response.status}): ${detail}`);
     }
     return await response.json() as SupabaseJobRow[];
   }
 
   async create(input: NewVerificationJob): Promise<VerificationJob> {
-    const body = {
-      owner_id: input.ownerId ?? null,
-      status: "queued",
-      artifact_kind: input.artifactKind ?? "software",
-      project_id: input.projectId,
-      source_repository: input.sourceRepository,
-      source_commit_sha: input.sourceCommitSha,
-      source_subdirectory: input.sourceSubdirectory ?? null,
-      publisher_artifact_name: input.publisherArtifactName,
-      publisher_artifact_sha256: input.publisherArtifactSha256 ?? null,
-      ...{
-        manifest_sha256: EMPTY_EVIDENCE_POINTERS.manifestSha256,
-        storage_root: EMPTY_EVIDENCE_POINTERS.storageRoot,
-        storage_transaction: EMPTY_EVIDENCE_POINTERS.storageTransaction,
-        registry_contract: EMPTY_EVIDENCE_POINTERS.registryContract,
-        registry_transaction: EMPTY_EVIDENCE_POINTERS.registryTransaction,
-        registry_record_id: EMPTY_EVIDENCE_POINTERS.registryRecordId,
-      },
-    };
-    const params = new URLSearchParams({ select: "*" });
-    const rows = await this.#rows(await this.#fetcher(this.#url(params), {
-      method: "POST",
-      headers: this.#headers(true),
-      body: JSON.stringify(body),
-    }));
+    const rows = await this.#rpc("proofrail_job_create", {
+      p_owner_id: input.ownerId ?? null,
+      p_artifact_kind: input.artifactKind ?? "software",
+      p_project_id: input.projectId,
+      p_source_repository: input.sourceRepository,
+      p_source_commit_sha: input.sourceCommitSha,
+      p_source_subdirectory: input.sourceSubdirectory ?? null,
+      p_publisher_artifact_name: input.publisherArtifactName,
+      p_publisher_artifact_sha256: input.publisherArtifactSha256 ?? null,
+    });
     if (rows.length !== 1) throw new Error(`Expected one created verification job, received ${rows.length}`);
     return rowToJob(rows[0]!);
   }
 
   async get(id: string): Promise<VerificationJob | null> {
-    const params = new URLSearchParams({ select: "*", id: `eq.${id}`, limit: "1" });
-    const rows = await this.#rows(await this.#fetcher(this.#url(params), { headers: this.#headers() }));
+    const rows = await this.#rpc("proofrail_job_get", { p_id: id });
     return rows[0] ? rowToJob(rows[0]) : null;
   }
 
   async list(ownerId?: string | null): Promise<VerificationJob[]> {
-    const params = new URLSearchParams({ select: "*", order: "created_at.desc" });
-    if (ownerId !== undefined) params.set("owner_id", ownerId === null ? "is.null" : `eq.${ownerId}`);
-    const rows = await this.#rows(await this.#fetcher(this.#url(params), { headers: this.#headers() }));
+    const rows = await this.#rpc("proofrail_job_list", {
+      p_filter_owner: ownerId !== undefined,
+      p_owner_id: ownerId ?? null,
+    });
     return rows.map(rowToJob);
   }
 
   async update(id: string, patch: VerificationJobPatch): Promise<VerificationJob> {
-    const params = new URLSearchParams({ select: "*", id: `eq.${id}` });
-    const rows = await this.#rows(await this.#fetcher(this.#url(params), {
-      method: "PATCH",
-      headers: this.#headers(true),
-      body: JSON.stringify(patchToRow(patch)),
-    }));
+    const rows = await this.#rpc("proofrail_job_update", { p_id: id, p_patch: patchToRow(patch) });
     if (rows.length !== 1) throw new Error(`Unknown verification job: ${id}`);
     return rowToJob(rows[0]!);
   }
