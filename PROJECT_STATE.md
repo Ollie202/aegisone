@@ -1,7 +1,7 @@
 # Project State
 
-**Last updated:** 2026-08-17  
-**Phase:** M5 Aristotle mainnet anchor verified — final CI/merge pending
+**Last updated:** 2026-08-18  
+**Phase:** M5 complete — Aristotle mainnet anchor verified and merged
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -34,27 +34,25 @@ not merely "hash + blockchain".
 - CLI inspection and the web viewer derive status through the shared integrity-checked `createVerificationView()` core projection rather than UI logic.
 - 0G Aristotle mainnet network used for the final anchor: chain ID `16661`, RPC `https://evmrpc.0g.ai`, explorer `https://chainscan.0g.ai`.
 - The user-approved mainnet safety envelope was capped at `0.002246628007863198 0G` for exactly two transactions.
-- `ProofRailRegistry` is now deployed on Aristotle at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
+- `ProofRailRegistry` is deployed on Aristotle at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
 - Deployment transaction: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`, block `41916904`, gas used `299829`.
 - M5 record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e` is registered in that contract.
 - Registration transaction: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`, block `41916913`, gas used `161135`.
 - Independent secret-free GitHub Actions verification at block `41917073` confirmed contract code, deployment receipt, registration event, exact commitment read-back, submitter, nonce progression, and fee cap.
 - Actual combined mainnet fee was `0.001843856003226748 0G`, below the approved cap.
 - Ending signer nonce is `2`; ending observed balance is `0.618043437732865255 0G`.
-- Mainnet execution tokens were cleared immediately after verification. M3/M4 temporary branch handoffs and Railway configs were restored, and the temporary signer service was marked for removal.
-- Durable final mainnet evidence: `hackathon/m5-aristotle-mainnet.json`.
+- Mainnet execution tokens were cleared immediately after verification. M3/M4 temporary branch handoffs and Railway configs were restored.
+- Durable final mainnet evidence is `hackathon/m5-aristotle-mainnet.json`.
+- Final completed-head CI passed.
+- PR #10 was marked ready and squash-merged into `main` as `38c427c3beadca008430ce86fde4238afcdd8db9`.
+- Issue #5 is closed as completed.
+- The temporary Railway signer service is staged for deletion; Railway requires dashboard two-factor verification to finalize that deletion.
 
-## Current completion gate
+## M5 status
 
-The technical M5 acceptance path is proven end-to-end through real 0G infrastructure and an independently verified Aristotle mainnet anchor.
+M5 is **COMPLETE**. The required path is proven end-to-end through real 0G Sandbox execution, proof-verified Storage, and an independently verified Aristotle mainnet registry anchor.
 
-Remaining repository operations only:
-
-1. run final CI on the completed evidence head;
-2. update PR #10 to the final verified state;
-3. mark PR #10 ready for review;
-4. merge it into `main`;
-5. confirm Issue #5 closes and `main` contains the completed M5 implementation/evidence.
+The only remaining cleanup item is non-product infrastructure hygiene: apply the staged Railway deletion of the disposable `m5-aristotle-anchor-temp` service from the Railway dashboard because the platform requires two-factor verification for that destructive action.
 
 ## Highest-risk unknowns after M5
 
