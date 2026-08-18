@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-18  
-**Phase:** M6 final merge gate — product runtime + persistent Supabase job index proven
+**Phase:** M6 product runtime proven; M7 Agent Skills next
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -32,18 +32,18 @@ Railway worker = controlled secret-bearing worker, standby by default
 
 Supabase is **not** a proof authority. The schema deliberately has no mutable verdict column. Cached verification JSON can display MATCH/MISMATCH only after the existing ProofRail core integrity checks accept it.
 
-## What M6 has proven
+## What M6 proved
 
 - `packages/job-store` provides a database-independent job model with `queued`, `running`, `verified`, and `failed` pipeline states.
-- Artifact families already distinguish `software` and `agent-skill` without changing core correspondence semantics.
+- Artifact families distinguish `software` and `agent-skill` without changing core correspondence semantics.
 - A dedicated Supabase project named `ProofRail` exists in `eu-west-1`; provider-reported project cost is `$0/month` for the current organization.
 - `verification_jobs` is RLS-enabled and stores application metadata plus 0G evidence pointers, not a mutable verdict.
 - Railway talks to Supabase through an authenticated `proofrail-jobs` Edge Function. Supabase keeps its service-role credential inside the Edge Function; Railway holds only a separate ProofRail app token plus a publishable key.
 - Supabase security advisor is clean after the final schema. Performance advisor only reports unused-index informational notices expected for a new table.
 - `proofrail-app` is live on Railway and backed by Supabase rather than the temporary memory store.
 - A live external API smoke test returned `/health` 200, created job `085e2667-c2ca-4d98-919b-106eb2ff4334`, read it back through the app, and independent SQL confirmed the exact same persisted row.
-- `packages/sandbox-0g/scripts/inspect-live.ts` now reports expected TEE capability limitations without exiting as a Railway crash.
-- A permanent `proofrail-worker` Railway service is proven healthy on the service-neutral M6 code.
+- `packages/sandbox-0g/scripts/inspect-live.ts` reports expected TEE capability limitations without exiting as a Railway crash.
+- A permanent `proofrail-worker` Railway service is proven healthy.
 - Worker startup confirms the shared signer secret is configured while public signing remains disabled. The signer is stored as the project-level shared `ZEROG_STORAGE_PRIVATE_KEY`; it was not copied into GitHub or exposed.
 - The repository root Railway config is service-neutral so new services cannot accidentally inherit the historical M2 Storage round-trip command.
 - The five milestone-only Railway services are staged for deletion. Railway requires dashboard 2FA to finalize those destructive removals; `proofrail-app`, `proofrail-worker`, and the shared signer secret are explicitly excluded from deletion.
@@ -58,14 +58,13 @@ After the staged deletions are confirmed in the Railway dashboard, the visible p
 
 ## M7 — Agent Skills next
 
-Issue #12 makes Agent Skills the first new auditable artifact family. ProofRail will keep two independent answers:
+Issue #12 makes Agent Skills the first new auditable artifact family. ProofRail keeps two independent answers:
 
 1. **Correspondence:** do distributed skill-package bytes match the deterministic package independently produced from the exact publisher-declared source commit? → `MATCH` / `MISMATCH`.
 2. **Security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, hidden payloads, or persistence behaviors exist? → separate findings and severity.
 
 A `MATCH` never means “safe,” and a security finding never rewrites the cryptographic correspondence result.
 
-## Remaining gates
+## Manual infrastructure hygiene
 
-- Final CI must pass on the completed M6 branch head, then PR #13 can be marked ready and squash-merged and Issue #11 must close.
-- Separately, the five already-staged Railway service deletions require interactive dashboard 2FA to become permanent.
+The five legacy Railway service removals are already staged. Railway requires interactive dashboard 2FA to make those destructive deletions permanent.
