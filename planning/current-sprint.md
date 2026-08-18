@@ -24,8 +24,9 @@ Turn the proven M1–M5 verification engine into one understandable product runt
 - [x] Make root `railway.json` service-neutral so future services cannot accidentally inherit the old M2 live command.
 - [x] Stage removal of all five milestone-only M2/M3/M4/M5 Railway services after app + worker replacement topology is proven.
 - [x] Preserve all historical GitHub/0G evidence independently of Railway cleanup.
+- [x] Final completed-head CI passed (run #81 on `34120a18445cf59562649c2af4715791fd095df1`).
 - [ ] Apply the already-staged legacy-service deletions in the Railway dashboard; Railway requires interactive 2FA and the connector cannot complete this destructive confirmation.
-- [ ] Final CI on the documentation head, mark PR #13 ready, squash-merge, and confirm Issue #11 closes.
+- [ ] Mark PR #13 ready, squash-merge, and confirm Issue #11 closes.
 
 ## Target product topology
 
