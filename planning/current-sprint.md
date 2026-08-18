@@ -11,7 +11,7 @@ Preserve completed M1–M4 and connect them into one judgeable ProofRail flow wi
 - [x] M3 minimal registry contract/client, Galileo deploy/register/read-back, gas measurement.
 - [x] M4 real hosted 0G Sandbox exact-commit build, artifact retrieval, provider TDX evidence, precise unsupported output-binding classification, cleanup.
 
-## M5 — Issue #5
+## M5 — Issue #5 — COMPLETE
 
 - [x] Source claim and assurance level are inspectable in the end-to-end flow.
 - [x] Publisher artifact bytes and exact immutable commit/build recipe flow through the same core model.
@@ -30,15 +30,25 @@ Preserve completed M1–M4 and connect them into one judgeable ProofRail flow wi
 - [x] Register M5 evidence record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
 - [x] Independently verify deployment receipt, registration event, exact contract read-back, submitter, and actual fees without access to the signer secret.
 - [x] Record durable final Aristotle evidence in `hackathon/m5-aristotle-mainnet.json`.
-- [ ] Final CI green on the completed mainnet-evidence head.
-- [ ] Mark PR #10 ready, merge it, and confirm Issue #5 closes.
+- [x] Final CI green on the completed mainnet-evidence head.
+- [x] Mark PR #10 ready, squash-merge it, and confirm Issue #5 closes.
 
 ## Final Aristotle evidence
 
+- contract: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`;
 - deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
 - registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
+- record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`;
 - actual combined fee: `0.001843856003226748 0G`;
-- independent verification: GitHub Actions run `32068243865`, job `95506685727`, status `VERIFIED`.
+- independent verification: GitHub Actions run `32068243865`, job `95506685727`, status `VERIFIED`;
+- PR #10 squash merge: `38c427c3beadca008430ce86fde4238afcdd8db9`;
+- Issue #5: closed/completed.
+
+## Infrastructure cleanup
+
+- [x] Aristotle execution tokens cleared.
+- [x] M3 and M4 branch/config handoffs restored.
+- [ ] Permanently delete temporary Railway service `m5-aristotle-anchor-temp`; deletion is staged, but Railway requires dashboard two-factor verification to apply it.
 
 ## Explicitly out of scope now
 
