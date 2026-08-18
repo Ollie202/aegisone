@@ -44,7 +44,7 @@ test("environment factory only uses memory when explicitly requested", () => {
   }) instanceof SupabaseJobStore);
 });
 
-test("Supabase adapter uses token-gated RPC without inventing a verdict", async () => {
+test("Supabase adapter uses token-gated Edge Function without inventing a verdict", async () => {
   const requests: Array<{ url: string; init?: RequestInit }> = [];
   const row = {
     id: "11111111-1111-4111-8111-111111111111",
@@ -71,7 +71,7 @@ test("Supabase adapter uses token-gated RPC without inventing a verdict", async 
   };
   const fakeFetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
     requests.push({ url: String(url), init });
-    return new Response(JSON.stringify([row]), { status: 200, headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ rows: [row] }), { status: 200, headers: { "content-type": "application/json" } });
   };
   const store = new SupabaseJobStore({
     url: "https://proofrail.supabase.co",
@@ -86,8 +86,9 @@ test("Supabase adapter uses token-gated RPC without inventing a verdict", async 
   assert.equal(requests[0]!.init?.method, "POST");
   const headers = requests[0]!.init?.headers as Record<string, string>;
   assert.equal(headers.authorization, "Bearer sb_publishable_test");
-  assert.match(requests[0]!.url, /rest\/v1\/rpc\/proofrail_job_create$/);
+  assert.equal(headers["x-proofrail-app-token"], "server-app-secret");
+  assert.match(requests[0]!.url, /functions\/v1\/proofrail-jobs$/);
   const body = JSON.parse(String(requests[0]!.init?.body));
-  assert.equal(body.p_token, "server-app-secret");
-  assert.equal(body.p_project_id, baseJob.projectId);
+  assert.equal(body.action, "create");
+  assert.equal(body.input.projectId, baseJob.projectId);
 });
