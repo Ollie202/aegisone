@@ -2,7 +2,7 @@
 
 > Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
 
-**Status:** M1 local independent-reproduction kernel complete
+**Status:** M5 end-to-end slice proven through 0G Aristotle mainnet  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
@@ -21,29 +21,64 @@ ProofRail must never pretend it can magically discover the "official" repository
 
 A tiny source change creates a new Git commit and therefore a new release claim. Historical verification records remain pinned to the exact immutable commit used for that release.
 
-## The core Wave 3 demo
+## Proven Wave 3 slice
+
+The real M5 path is now:
 
 ```text
-Publisher says:
-  source = github.com/acme/wallet @ commit 7c91ab...
-  artifact = wallet-linux.tar.gz
-
-Published artifact SHA-256       ABC123
-Independent 0G rebuild SHA-256   ABC123
-                                 -------
-                                 MATCH ✓
+explicit source claim
+  -> publisher artifact bytes
+  -> exact immutable Git commit
+  -> independent 0G Sandbox rebuild
+  -> core SHA-256 comparison
+  -> MATCH / MISMATCH
+  -> canonical verification evidence
+  -> proof-verified 0G Storage round trip
+  -> 0G Aristotle mainnet registry anchor
+  -> shared CLI/web verification projection
 ```
 
-Then replace or alter the published artifact:
+Observed genuine result:
 
 ```text
-Published artifact SHA-256       999XYZ
-Independent 0G rebuild SHA-256   ABC123
-                                 -------
-                                 MISMATCH ✕
+Publisher artifact SHA-256       9978d500...d9aa154
+Independent 0G rebuild SHA-256   9978d500...d9aa154
+                                 ----------------
+                                 MATCH
 ```
 
-That is the product's core security behavior.
+Then ProofRail flips one byte of the publisher artifact while keeping the independently reproduced bytes unchanged:
+
+```text
+Substituted publisher SHA-256     d5318963...1f8889
+Independent 0G rebuild SHA-256   9978d500...d9aa154
+                                 ----------------
+                                 MISMATCH
+```
+
+The canonical genuine verification was `3080` bytes with SHA-256 `4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec`. 0G Storage returned root `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`, transaction `0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6`, and sequence `147016`; proof verification and exact-byte equality both passed.
+
+Those commitments are now anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`:
+
+- deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
+- M5 registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
+- record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`;
+- exact contract read-back: `true`;
+- actual combined mainnet fee: `0.001843856003226748 0G`, below the approved cap of `0.002246628007863198 0G`.
+
+A separate GitHub Actions verifier with **no signer secret** independently confirmed contract code, deployment and registration receipts, the registration event, the exact stored commitments, submitter, and fee cap.
+
+See `hackathon/m5-live-evidence.json`, `hackathon/m5-aristotle-mainnet.json`, and `hackathon/evidence.md` for the durable evidence summary.
+
+## TEE evidence: precise boundary
+
+The live provider returned real TDX evidence, but its v5 quote uses the legacy provider-signer-padded `report_data`. The caller artifact digest is **not** cryptographically bound into that quote, and the public toolbox build is not proven to execute inside the TEE.
+
+ProofRail therefore displays the M5/M4 classification as:
+
+`PROVIDER_EVIDENCE_ONLY`
+
+not `OUTPUT_DIGEST_BOUND` and not "TEE-attested build".
 
 ## What ProofRail is not
 
@@ -56,80 +91,72 @@ That is the product's core security behavior.
 
 A malicious project can publish malicious source and receive a valid correspondence result if the released artifact really came from that source. ProofRail proves **correspondence and evidence**, not benevolence.
 
-## Why not just GitHub?
-
-GitHub Artifact Attestations already provide strong signed provenance for software built in GitHub workflows. ProofRail should interoperate with that ecosystem rather than duplicate it.
-
-Our intended wedge is **independent reproduction**: corroborate a publisher's release using a builder outside the publisher's own build pipeline, then aggregate portable evidence and explicit trust policies. SLSA describes this general pattern as verified reproducibility when independent build systems corroborate provenance.
-
-See `research/competitors.md` and `research/prior-art.md`.
-
 ## Why 0G?
 
-- **0G Sandbox / Tapp** — run the independent build in confidential/attestable execution where the supported evidence path allows it.
-- **0G Storage** — preserve full provenance and build evidence outside a private ProofRail database.
+- **0G Sandbox / Tapp** — independent external execution plus the provider/runtime evidence the live surface actually supports.
+- **0G Storage** — preserve full canonical verification evidence outside a private ProofRail database.
 - **0G Chain** — anchor compact historical commitments on mainnet so ProofRail cannot silently rewrite them later.
 - **0G Agentic ID / ERC-8004 direction** — later identify independent builder/verifier agents and attach track records to them.
 - **0G Compute** — later diagnose *why* two legitimate rebuilds diverge; it does not decide MATCH/MISMATCH.
 
-## Humans and agents use the same verification engine
+## Run the repository checks
 
-Wave 3 exposes deterministic CLI/JSON output. An agent does not need an MCP server to consume ProofRail initially:
-
-```bash
-proofrail verify \
-  --claim claim.json \
-  --recipe recipe.json \
-  --artifact wallet-linux.tar.gz \
-  --source-repository /path/to/explicit/repository \
-  --json
-```
-
-Later interfaces can include REST, SDK, and MCP without changing the cryptographic core.
-
-## Scale model
-
-Verification is cheap; rebuilding is expensive. ProofRail should rebuild a release once per builder/policy and let many consumers verify the resulting evidence. Wave 3 supports a narrow, constrained build family and explicit resource limits rather than arbitrary huge repositories.
-
-## Wave 3 definition of done
-
-1. Accept an explicit public-repository source/release claim.
-2. Resolve the source to an exact immutable commit.
-3. Rebuild a supported target independently using 0G execution where proven feasible.
-4. Hash both the publisher artifact and reproduced artifact.
-5. Generate canonical provenance and comparison evidence.
-6. Store evidence on 0G Storage.
-7. Anchor the compact record on 0G Chain mainnet.
-8. Verify through CLI/JSON and a public human-readable page.
-9. Show the genuine artifact pass and a tampered artifact fail.
-10. Label every guarantee according to the evidence actually available.
-
-No mocked 0G integration counts as completion.
-
-## M1 implementation
-
-M1 is fully offline and has no third-party runtime dependency. `packages/core` owns explicit claim validation, SHA-256 hashing, canonical manifests, and deterministic comparison. `packages/runner-local` clones and checks out an exact commit before rebuilding the controlled fixture. `packages/cli` exposes the versioned JSON result.
-
-Run the complete M1 suite on Node.js 22 or newer:
+Requires Node.js 22+ and pnpm 10.15.0.
 
 ```bash
-node --experimental-strip-types --test \
-  packages/core/test/core.test.ts \
-  packages/runner-local/test/runner.test.ts \
-  packages/cli/test/cli.test.ts
+corepack enable
+corepack prepare pnpm@10.15.0 --activate
+pnpm install
+pnpm check
+pnpm test
 ```
 
-The suite proves the genuine publisher artifact returns `MATCH`, a one-byte substitution returns `MISMATCH`, and logically identical manifests produce identical commitment bytes. The local runner is not an arbitrary-code sandbox; real 0G execution and its precise attestation boundary remain M4 work.
+Those checks include core MATCH/MISMATCH behavior, Storage orchestration, registry commitments/contracts, Sandbox/Tapp parsing/live-ABI fixtures, the M5 genuine/substitution flow, CLI inspection, web rendering, guarded Aristotle execution syntax, and secret-free Aristotle mainnet verification.
+
+## CLI and web status share one core projection
+
+CLI inspection reads a canonical `VerificationJson` and calls the same integrity-checked `createVerificationView()` function as the web renderer. Neither interface is permitted to recalculate or override the verdict.
+
+```bash
+node --experimental-strip-types packages/cli/src/cli.ts \
+  inspect --evidence verification.json --json
+
+PROOFRAIL_EVIDENCE_FILE=verification.json \
+  pnpm --filter @proofrail/web start
+```
+
+The input must be a real canonical ProofRail verification object. `hackathon/m5-live-evidence.json` is intentionally a **summary**, not a substitute for that canonical object; the actual live canonical object is identified by its 0G Storage root/transaction/SHA above.
+
+## Live M5 runner
+
+`pnpm m5:live` performs real Galileo Sandbox and Storage writes. It is not part of the default demo/check command and requires a disposable funded Galileo private key in `ZEROG_SANDBOX_PRIVATE_KEY` (optionally a separate `ZEROG_STORAGE_PRIVATE_KEY`). It enforces chain ID `16602`, a bounded Sandbox deposit, exact fixture hashes, proof-enabled Storage retrieval, guaranteed sandbox cleanup, and contains **no Aristotle signer/submission path**.
+
+Do not run it casually; the successful evidence is already recorded in the repository.
+
+## Aristotle mainnet anchor
+
+M5's compact commitments were submitted only after a read-only balance/nonce/fee gate and explicit user approval of a maximum combined fee. The guarded write path enforced:
+
+- Aristotle chain ID `16661`;
+- exact signer address;
+- nonce `0` before deployment;
+- exact compiled deployment bytecode hash;
+- exact M5 record ID and registration calldata hash;
+- predicted empty contract address;
+- final fee refresh immediately before signing;
+- a hard combined approval cap of `0.002246628007863198 0G`.
+
+The two successful transactions consumed `0.001843856003226748 0G` total. Afterward, a secret-free verifier independently read the chain and confirmed the exact M5 commitments. Durable final evidence is in `hackathon/m5-aristotle-mainnet.json`.
 
 ## Start here
 
 1. `AGENTS.md`
 2. `PROJECT_STATE.md`
-3. `docs/00-vision.md`
-4. `docs/01-prd.md`
-5. `docs/03-architecture.md`
-6. `docs/11-trust-model.md`
-7. `docs/12-agent-consumption.md`
+3. `hackathon/m5-live-evidence.json`
+4. `hackathon/m5-aristotle-mainnet.json`
+5. `hackathon/evidence.md`
+6. `docs/03-architecture.md`
+7. `docs/11-trust-model.md`
 8. `planning/current-sprint.md`
 
 ## License

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1",
+  "kind": "ProofRailM5LiveRunSummary",
+  "status": "GALILEO_SLICE_PROVEN_MAINNET_PENDING",
+  "railwayDeployment": "cd9faa4c-4c02-4532-8f13-f4e41da19096",
+  "implementationCommit": "eb96681ff683a25a56741b8ceaab8918cbceecac",
+  "sourceClaim": {
+    "assuranceLevel": "DECLARED",
+    "repository": "https://github.com/Ollie202/proofrail-0g.git",
+    "commitSha": "e9c82277cef2f7630977e2473664e14eed2f860d",
+    "artifactPath": "examples/hello-proofrail/fixtures/publisher/hello-proofrail.json"
+  },
+  "independentBuild": {
+    "network": "0G Galileo Testnet",
+    "chainId": 16602,
+    "provider": "0xa19C4E672576E186AF81548E950Bf74A736220C3",
+    "providerUrl": "https://provider-private-sandbox.0g.ai",
+    "sandboxId": "aa09bb88-1154-4454-bb74-cd8aec00225f",
+    "runtime": "node v22.14.0",
+    "exactCommitVerified": true,
+    "cleanupDeleted": true
+  },
+  "correspondence": {
+    "genuineVerdict": "MATCH",
+    "publisherBytes": 53,
+    "publisherSha256": "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+    "reproducedBytes": 53,
+    "reproducedSha256": "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+    "substitutionProbeVerdict": "MISMATCH",
+    "substitutedPublisherSha256": "d5318963f53126b4c4bd448bffca222a8e08f068764e379516fc0ad3bd1f8889"
+  },
+  "attestation": {
+    "classification": "PROVIDER_EVIDENCE_ONLY",
+    "teeType": "Tdx",
+    "evidenceBytes": 44897,
+    "evidenceSha256": "7e1f1ae8a6c344b3c0f62853796e260c9a148e5c4cdefd9c25a45c14bc2740fe",
+    "quoteVersion": 5,
+    "quoteMatchesLegacySignerPadding": true,
+    "artifactDigestChallengeBinding": false,
+    "artifactComputedInTee": false
+  },
+  "canonicalEvidence": {
+    "manifestSha256": "b0ac39ac60df76f427311e3d1fce665b820b81a9c4b39481ce16843804419a54",
+    "sha256": "4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec",
+    "byteLength": 3080
+  },
+  "storage": {
+    "network": "0G Galileo Testnet",
+    "chainId": 16602,
+    "root": "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181",
+    "transactionHash": "0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6",
+    "sequence": 147016,
+    "uploadedSha256": "4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec",
+    "downloadedSha256": "4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec",
+    "proofVerified": true,
+    "bytesMatch": true
+  },
+  "aristotle": {
+    "network": "0G Aristotle Mainnet",
+    "chainId": 16661,
+    "status": "PREPARED_NOT_SUBMITTED",
+    "contractAddress": null,
+    "transactionHash": null,
+    "commitments": {
+      "manifestDigest": "0xb0ac39ac60df76f427311e3d1fce665b820b81a9c4b39481ce16843804419a54",
+      "sourceClaimDigest": "0xfcb0a23bcdf13648437b160e5a6dbc04b24f2399460c030753e194606e4e611a",
+      "publisherArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "reproducedArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "provenanceRoot": "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181"
+    }
+  },
+  "note": "This is a durable summary of the live Railway run, not a replacement for the canonical 3080-byte verification object stored on 0G Storage. The storage root, transaction, sequence, byte length, and SHA-256 above identify that canonical object."
+}

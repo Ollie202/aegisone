@@ -1,0 +1,32 @@
+name: Aristotle Mainnet Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/m5-judgeable-slice]
+    paths:
+      - .github/workflows/aristotle-mainnet-verify.yml
+      - packages/m5-flow/scripts/verify-aristotle.ts
+      - contracts/src/ProofRailRegistry.sol
+
+concurrency:
+  group: aristotle-mainnet-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack prepare pnpm@10.15.0 --activate
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @proofrail/contracts compile
+      - name: Verify Aristotle deployment, registration, readback and fee cap
+        run: node --experimental-strip-types packages/m5-flow/scripts/verify-aristotle.ts

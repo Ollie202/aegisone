@@ -1,7 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
 import { readFile } from "node:fs/promises";
-import type { BuildRecipe, ReleaseClaim } from "../../core/src/model.ts";
+import type { BuildRecipe, ReleaseClaim, VerificationJson } from "../../core/src/model.ts";
 import { canonicalJson } from "../../core/src/canonical.ts";
+import { inspectVerification } from "./inspect.ts";
 import { verifyLocalRelease } from "./verify.ts";
 
 function valueAfter(name: string): string {
@@ -12,20 +13,34 @@ function valueAfter(name: string): string {
 }
 
 async function main(): Promise<void> {
-  if (process.argv[2] !== "verify") {
-    throw new Error("Usage: proofrail verify --claim claim.json --recipe recipe.json --artifact release.bin --source-repository path --json");
+  const command = process.argv[2];
+  if (!process.argv.includes("--json")) throw new Error("ProofRail CLI currently requires --json");
+
+  if (command === "verify") {
+    const claim = JSON.parse(await readFile(valueAfter("--claim"), "utf8")) as ReleaseClaim;
+    const recipe = JSON.parse(await readFile(valueAfter("--recipe"), "utf8")) as BuildRecipe;
+    const result = await verifyLocalRelease({
+      claim,
+      recipe,
+      publisherArtifactPath: valueAfter("--artifact"),
+      sourceRepositoryPath: valueAfter("--source-repository"),
+    });
+    process.stdout.write(canonicalJson(result) + "\n");
+    process.exitCode = result.correspondence.status === "MATCH" ? 0 : 1;
+    return;
   }
-  if (!process.argv.includes("--json")) throw new Error("M1 CLI currently requires --json");
-  const claim = JSON.parse(await readFile(valueAfter("--claim"), "utf8")) as ReleaseClaim;
-  const recipe = JSON.parse(await readFile(valueAfter("--recipe"), "utf8")) as BuildRecipe;
-  const result = await verifyLocalRelease({
-    claim,
-    recipe,
-    publisherArtifactPath: valueAfter("--artifact"),
-    sourceRepositoryPath: valueAfter("--source-repository"),
-  });
-  process.stdout.write(canonicalJson(result) + "\n");
-  process.exitCode = result.correspondence.status === "MATCH" ? 0 : 1;
+
+  if (command === "inspect") {
+    const verification = JSON.parse(await readFile(valueAfter("--evidence"), "utf8")) as VerificationJson;
+    const view = inspectVerification(verification);
+    process.stdout.write(canonicalJson(view) + "\n");
+    process.exitCode = view.verdict === "MATCH" ? 0 : 1;
+    return;
+  }
+
+  throw new Error(
+    "Usage: proofrail verify --claim claim.json --recipe recipe.json --artifact release.bin --source-repository path --json | proofrail inspect --evidence verification.json --json",
+  );
 }
 
 main().catch((error: unknown) => {

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1",
+  "kind": "ProofRailAristotleMainnetVerification",
+  "verifiedAt": "2026-08-17T20:59:22Z",
+  "independentVerification": {
+    "githubActionsRunId": 32068243865,
+    "githubActionsJobId": 95506685727,
+    "verifiedAtBlock": 41917073,
+    "signerSecretAvailableToVerifier": false,
+    "status": "VERIFIED"
+  },
+  "network": {
+    "name": "0G Mainnet / Aristotle",
+    "chainId": 16661,
+    "rpc": "https://evmrpc.0g.ai",
+    "explorer": "https://chainscan.0g.ai"
+  },
+  "wallet": {
+    "address": "0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb",
+    "endingNonce": 2,
+    "endingBalanceWei": "618043437732865255",
+    "endingBalance0G": "0.618043437732865255"
+  },
+  "contract": {
+    "address": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+    "codePresent": true,
+    "compiler": "0.8.24",
+    "evmVersion": "cancun",
+    "deploymentBytecodeKeccak256": "0x25e077f4adb8082bfb85b28ee7f90d0257b6f96fbfd79a529d65815960cdd0cd",
+    "deploymentTransactionHash": "0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c",
+    "deploymentBlock": 41916904,
+    "deploymentGasUsed": "299829",
+    "deploymentGasPriceWei": "4000000007",
+    "deploymentFeeWei": "1199316002098803",
+    "deploymentFee0G": "0.001199316002098803"
+  },
+  "registration": {
+    "recordId": "0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e",
+    "transactionHash": "0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac",
+    "blockNumber": 41916913,
+    "gasUsed": "161135",
+    "gasPriceWei": "4000000007",
+    "feeWei": "644540001127945",
+    "fee0G": "0.000644540001127945",
+    "registeredAt": "1787000205",
+    "submitter": "0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb",
+    "readbackMatches": true,
+    "calldataKeccak256": "0x9312e036d22d405998b17325cba4039c6bbddf0259189fe998e12838927b15be",
+    "commitments": {
+      "manifestDigest": "0xb0ac39ac60df76f427311e3d1fce665b820b81a9c4b39481ce16843804419a54",
+      "sourceClaimDigest": "0xfcb0a23bcdf13648437b160e5a6dbc04b24f2399460c030753e194606e4e611a",
+      "publisherArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "reproducedArtifactDigest": "0x9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154",
+      "provenanceRoot": "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181"
+    }
+  },
+  "cost": {
+    "approvedMaxFeeWei": "2246628007863198",
+    "approvedMaxFee0G": "0.002246628007863198",
+    "actualTotalFeeWei": "1843856003226748",
+    "actualTotalFee0G": "0.001843856003226748",
+    "withinApprovedCap": true
+  },
+  "explorer": {
+    "contract": "https://chainscan.0g.ai/address/0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+    "deploymentTransaction": "https://chainscan.0g.ai/tx/0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c",
+    "registrationTransaction": "https://chainscan.0g.ai/tx/0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac"
+  },
+  "safety": {
+    "mainnetWriteApprovalCapEnforced": true,
+    "executionTokensClearedAfterWrite": true,
+    "independentReadbackVerifiedWithoutSignerSecret": true,
+    "temporarySignerServiceRemovalRequested": true
+  },
+  "status": "VERIFIED"
+}

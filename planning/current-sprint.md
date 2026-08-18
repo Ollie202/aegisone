@@ -4,54 +4,41 @@
 
 Preserve completed M1–M4 and connect them into one judgeable ProofRail flow without weakening the trust model or replacing independent reproduction with publisher-provided hash anchoring.
 
-## M1 complete
+## M1–M4
 
-- [x] Deterministic `hello-proofrail` fixture and publisher artifact.
-- [x] Explicit source/release claim structures and immutable Git revision.
-- [x] SHA-256, canonical evidence, independent local rebuild, `MATCH` and one-byte `MISMATCH`.
-- [x] Stable provider-independent core and CLI JSON shape.
+- [x] M1 deterministic provider-independent verification kernel, local rebuild, canonical evidence, MATCH/MISMATCH, CLI JSON.
+- [x] M2 real Galileo 0G Storage upload/retrieval with proof verification and exact-byte equality.
+- [x] M3 minimal registry contract/client, Galileo deploy/register/read-back, gas measurement.
+- [x] M4 real hosted 0G Sandbox exact-commit build, artifact retrieval, provider TDX evidence, precise unsupported output-binding classification, cleanup.
 
-## M2 complete
+## M5 — Issue #5
 
-- [x] Pinned official 0G Storage SDK adapter.
-- [x] Real Galileo upload/download with retrieval proof verification.
-- [x] Exact uploaded/downloaded byte equality and durable evidence ledger entry.
+- [x] Source claim and assurance level are inspectable in the end-to-end flow.
+- [x] Publisher artifact bytes and exact immutable commit/build recipe flow through the same core model.
+- [x] Independent build routes through the proven real 0G Sandbox path.
+- [x] Genuine artifact returns `MATCH` through the shared digest-comparison core.
+- [x] Deterministic one-byte publisher substitution returns `MISMATCH` with unchanged reproduced bytes.
+- [x] Canonical genuine evidence completes a real proof-verified exact-byte 0G Storage round trip.
+- [x] Registry commitments are derived from the exact stored evidence without changing M3 semantics.
+- [x] Stable CLI inspection and web view derive status from the same integrity-checked core projection.
+- [x] M4 TDX evidence is surfaced as `PROVIDER_EVIDENCE_ONLY`; unsupported TEE-bound output is not implied.
+- [x] Durable M5 live evidence summary and README demo/evidence instructions are in the repository.
+- [x] Re-confirm Aristotle network details and run read-only mainnet deploy/register fee gates.
+- [x] Fund the selected Aristotle wallet and refresh balance/nonce/fee state.
+- [x] Obtain explicit user approval for exactly two Aristotle transactions under a `0.002246628007863198 0G` combined fee cap.
+- [x] Deploy `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`.
+- [x] Register M5 evidence record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
+- [x] Independently verify deployment receipt, registration event, exact contract read-back, submitter, and actual fees without access to the signer secret.
+- [x] Record durable final Aristotle evidence in `hackathon/m5-aristotle-mainnet.json`.
+- [ ] Final CI green on the completed mainnet-evidence head.
+- [ ] Mark PR #10 ready, merge it, and confirm Issue #5 closes.
 
-## M3 complete
+## Final Aristotle evidence
 
-- [x] Minimal append-only registry contract and typed client.
-- [x] Local contract/client tests.
-- [x] Real Galileo deploy, register, and exact read-back.
-- [x] Gas/cost measurement with Aristotle queried read-only only.
-- [x] No mainnet transaction.
-
-## M4 complete
-
-- [x] Reconfirmed the live hosted 0G Sandbox/Tapp API and provider surface.
-- [x] Created/accessed a real sandbox programmatically.
-- [x] Toolbox-cloned exact public commit `e9c82277cef2f7630977e2473664e14eed2f860d` and independently verified detached `.git/HEAD`.
-- [x] Ran the committed Node.js build under sandbox Node `v22.14.0`.
-- [x] Retrieved the built 53-byte artifact and matched SHA-256 `9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154` exactly.
-- [x] Captured live TappRegistry node identity/code hashes and real TDX quote evidence.
-- [x] Tested artifact-digest challenge binding against the live TDX quote.
-- [x] Classified provider TDX evidence as `PROVEN`, live artifact-digest challenge binding as `NOT AVAILABLE`, and artifact computation inside the TEE as `NOT AVAILABLE` on the public toolbox flow.
-- [x] Measured authoritative on-chain Sandbox fee/resource terms and observed testnet-token balance deltas.
-- [x] Updated architecture, trust model, threat model, budget, evidence ledger, and ADR language to match only what M4 proves.
-- [x] Deleted the successful sandbox and returned Railway to read-only inspection mode.
-
-## M5 active tasks — Issue #5
-
-- [ ] Make the source claim and assurance level inspectable in the end-to-end flow.
-- [ ] Feed the publisher artifact bytes and exact immutable commit/build recipe through the same core model.
-- [ ] Route the independent build through the proven real 0G Sandbox path.
-- [ ] Return `MATCH` for the genuine artifact using the same digest comparison core.
-- [ ] Return `MISMATCH` for a one-byte/substituted artifact.
-- [ ] Package the resulting canonical evidence and pass it through real 0G Storage.
-- [ ] Connect the registry commitment path without changing its M3 semantics.
-- [ ] Expose one stable CLI/JSON result and a web view derived from the same core checks.
-- [ ] Surface M4 TDX evidence as provider/runtime evidence only; do not imply TEE-bound output.
-- [ ] Add reproducible README/demo instructions and evidence links.
-- [ ] Re-run the pre-mainnet gate before any Aristotle action; obtain explicit approval before any mainnet transaction.
+- deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
+- registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
+- actual combined fee: `0.001843856003226748 0G`;
+- independent verification: GitHub Actions run `32068243865`, job `95506685727`, status `VERIFIED`.
 
 ## Explicitly out of scope now
 
@@ -63,5 +50,4 @@ Preserve completed M1–M4 and connect them into one judgeable ProofRail flow wi
 - MCP server;
 - 0G Compute;
 - token/rewards/marketplace;
-- production branding;
-- any Aristotle mainnet write before the separate pre-mainnet gate and explicit approval.
+- production branding.

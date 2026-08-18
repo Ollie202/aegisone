@@ -1,3 +1,3 @@
-# apps
+# Applications
 
-This directory is reserved by the initial architecture. Implementation begins only when the current milestone requires it. See `docs/03-architecture.md` and `planning/current-sprint.md`.
+- `web/` — judge-facing ProofRail evidence viewer. It reads canonical `VerificationJson` and renders status through the same `createVerificationView()` core projection used by CLI inspection. It does not calculate or override MATCH/MISMATCH itself.

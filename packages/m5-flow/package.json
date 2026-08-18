@@ -1,0 +1,14 @@
+{
+  "name": "@proofrail/m5-flow",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "ethers": "6.13.1"
+  },
+  "scripts": {
+    "check": "node --experimental-strip-types --check scripts/run-live.ts && node --experimental-strip-types --check scripts/pre-mainnet.ts && node --experimental-strip-types --check scripts/aristotle-mainnet.ts && node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --check scripts/run-live.ts && node --experimental-strip-types --check scripts/pre-mainnet.ts && node --experimental-strip-types --check scripts/aristotle-mainnet.ts && node --experimental-strip-types --test test/*.test.ts",
+    "test:live": "node --experimental-strip-types scripts/run-live.ts"
+  }
+}
