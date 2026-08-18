@@ -22,6 +22,8 @@ const DEPOSIT_TARGET = parseEther("0.07");
 const HARD_DEPOSIT_DELTA_CAP = parseEther("0.07");
 const GAS_RESERVE = parseEther("0.02");
 const BUDGETED_MINUTES = 5n;
+const TOOLBOX_READY_ATTEMPTS = 8;
+const TOOLBOX_READY_DELAY_MS = 1_500;
 
 if (!/^[0-9a-f]{40}$/.test(SOURCE_COMMIT)) throw new Error("PROOFRAIL_M7_SOURCE_COMMIT must be an exact lowercase 40-character Git commit SHA");
 if (WRITE_GATE !== REQUIRED_GATE) throw new Error(`Refusing Galileo writes without PROOFRAIL_M7_GALILEO_WRITE=${REQUIRED_GATE}`);
@@ -49,6 +51,22 @@ function assertExecSucceeded(value: unknown, command: string): void {
   const exitCode = candidate.exitCode ?? candidate.exit_code ?? candidate.code;
   if (typeof exitCode === "number" && exitCode !== 0) throw new Error(`Sandbox command failed (${exitCode}): ${command}`);
   if (typeof exitCode === "string" && /^\d+$/.test(exitCode) && Number(exitCode) !== 0) throw new Error(`Sandbox command failed (${exitCode}): ${command}`);
+}
+
+async function waitForToolboxReady(client: SandboxApiClient, id: string): Promise<number> {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= TOOLBOX_READY_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await client.exec(id, "true", 10);
+      assertExecSucceeded(response, "true");
+      return attempt;
+    } catch (error) {
+      lastError = error;
+      if (attempt === TOOLBOX_READY_ATTEMPTS) break;
+      await new Promise((resolve) => setTimeout(resolve, TOOLBOX_READY_DELAY_MS));
+    }
+  }
+  throw new Error(`0G Sandbox toolbox did not become ready: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
 }
 
 function assertCommitmentsEqual(actual: Awaited<ReturnType<typeof readEvidence>>, expected: ReturnType<typeof attachM7StorageEvidence>["preparedAristotleAnchor"]["commitments"]): void {
@@ -131,6 +149,8 @@ try {
     snapshot: selected.snapshot,
   };
 
+  const toolboxReadyAttempt = await waitForToolboxReady(sandboxClient, createdSandboxId);
+  output.toolboxReadiness = { ready: true, attempt: toolboxReadyAttempt };
   await sandboxClient.gitClone(createdSandboxId, SOURCE_REPO, SOURCE_PATH, SOURCE_COMMIT);
   const headBytes = await sandboxClient.downloadFile(createdSandboxId, `${SOURCE_PATH}/.git/HEAD`);
   const resolvedHead = Buffer.from(headBytes).toString("utf8").trim();
