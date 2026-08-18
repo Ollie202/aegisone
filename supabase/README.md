@@ -11,8 +11,11 @@ ProofRail uses Supabase for mutable product state such as verification-job lifec
 - Compact immutable commitments belong on 0G Aristotle.
 - Deleting or corrupting Supabase must not invalidate an already-published ProofRail proof.
 
-## Migration
+## Migrations
 
-Apply `migrations/202608180001_m6_verification_jobs.sql` to the dedicated ProofRail Supabase project.
+1. `migrations/202608180001_m6_verification_jobs.sql` creates the RLS-enabled application index.
+2. `migrations/202608180002_m6_app_rpc.sql` adds a narrow token-gated server-to-server RPC surface.
 
-The migration enables RLS and creates authenticated-owner policies. The Railway backend uses a server-side service-role key; that key must never be shipped to browser code, committed to Git, printed in logs, or stored in a database row.
+The Railway backend does **not** need the Supabase service-role secret. It uses a normal Supabase publishable key plus a separate high-entropy `PROOFRAIL_SUPABASE_APP_TOKEN` held only in Railway. Supabase stores only SHA-256 of that app token in the private `proofrail_private.app_auth` table. The RPC functions are security-definer functions with fixed empty search paths and only expose the job operations ProofRail needs.
+
+Authenticated-user RLS policies remain in place for future direct user-scoped access. No service-role secret, app token, private key, or other credential belongs in browser code, Git history, logs, or a public database row.
