@@ -18,6 +18,47 @@ function decodeScalar(raw: string): string {
   return value;
 }
 
+function blockScalar(lines: string[], start: number, end: number, marker: string): { value: string; nextIndex: number } {
+  let nextIndex = start;
+  const rawLines: string[] = [];
+  while (nextIndex < end) {
+    const raw = lines[nextIndex]!;
+    if (raw.trim() && raw.length === raw.trimStart().length) break;
+    rawLines.push(raw);
+    nextIndex += 1;
+  }
+  const indents = rawLines.filter((line) => line.trim()).map((line) => line.length - line.trimStart().length);
+  if (indents.length === 0) return { value: "", nextIndex };
+  const indent = Math.min(...indents);
+  const content = rawLines.map((line) => line.trim() ? line.slice(Math.min(indent, line.length)) : "");
+  const style = marker[0];
+  let value: string;
+  if (style === "|") {
+    value = content.join("\n");
+  } else {
+    const folded: string[] = [];
+    let paragraph: string[] = [];
+    const flush = () => {
+      if (paragraph.length) folded.push(paragraph.join(" "));
+      paragraph = [];
+    };
+    for (const line of content) {
+      if (line === "") {
+        flush();
+        folded.push("");
+      } else {
+        paragraph.push(line);
+      }
+    }
+    flush();
+    value = folded.join("\n");
+  }
+  const chomp = marker.slice(1);
+  if (chomp === "+") value += "\n";
+  else if (chomp !== "-") value += "\n";
+  return { value, nextIndex };
+}
+
 function parseFrontmatter(text: string): { fields: Record<string, string>; metadata: Record<string, string>; body: string; issues: SkillFormatIssue[] } {
   const lines = text.split(/\r?\n/);
   if (lines[0] !== "---") return { fields: {}, metadata: {}, body: text, issues: [issue("missing_frontmatter", "SKILL.md must start with YAML frontmatter", 1)] };
@@ -28,15 +69,20 @@ function parseFrontmatter(text: string): { fields: Record<string, string>; metad
   const metadata: Record<string, string> = {};
   const issues: SkillFormatIssue[] = [];
   let inMetadata = false;
+  let index = 1;
 
-  for (let index = 1; index < closeIndex; index += 1) {
-    const raw = lines[index];
-    if (!raw.trim() || raw.trimStart().startsWith("#")) continue;
+  while (index < closeIndex) {
+    const raw = lines[index]!;
+    if (!raw.trim() || raw.trimStart().startsWith("#")) {
+      index += 1;
+      continue;
+    }
     const indent = raw.length - raw.trimStart().length;
     const trimmed = raw.trim();
     const colon = trimmed.indexOf(":");
     if (colon < 1) {
       issues.push(issue("invalid_frontmatter", "Frontmatter entries must be key: value pairs", index + 1));
+      index += 1;
       continue;
     }
     const key = trimmed.slice(0, colon).trim();
@@ -45,10 +91,12 @@ function parseFrontmatter(text: string): { fields: Record<string, string>; metad
     if (indent > 0) {
       if (!inMetadata) {
         issues.push(issue("invalid_frontmatter", `Nested field ${key} is only supported under metadata`, index + 1));
+        index += 1;
         continue;
       }
       if (!rawValue.trim()) {
         issues.push(issue("invalid_metadata", `metadata.${key} must be a string value`, index + 1));
+        index += 1;
         continue;
       }
       try {
@@ -56,20 +104,31 @@ function parseFrontmatter(text: string): { fields: Record<string, string>; metad
       } catch (error) {
         issues.push(issue("invalid_metadata", error instanceof Error ? error.message : String(error), index + 1));
       }
+      index += 1;
       continue;
     }
 
     inMetadata = key === "metadata";
     if (inMetadata) {
       if (rawValue.trim()) issues.push(issue("invalid_metadata", "metadata must be a mapping of string keys to string values", index + 1));
-      continue;
-    }
-    if (!rawValue.trim()) {
-      issues.push(issue("invalid_frontmatter", `${key} must be a scalar value`, index + 1));
+      index += 1;
       continue;
     }
     if (Object.hasOwn(fields, key)) {
       issues.push(issue("invalid_frontmatter", `Duplicate frontmatter field: ${key}`, index + 1));
+      index += 1;
+      continue;
+    }
+    const scalarMarker = rawValue.trim();
+    if (/^[>|][+-]?$/.test(scalarMarker)) {
+      const block = blockScalar(lines, index + 1, closeIndex, scalarMarker);
+      fields[key] = block.value;
+      index = block.nextIndex;
+      continue;
+    }
+    if (!rawValue.trim()) {
+      issues.push(issue("invalid_frontmatter", `${key} must be a scalar value`, index + 1));
+      index += 1;
       continue;
     }
     try {
@@ -77,6 +136,7 @@ function parseFrontmatter(text: string): { fields: Record<string, string>; metad
     } catch (error) {
       issues.push(issue("invalid_frontmatter", error instanceof Error ? error.message : String(error), index + 1));
     }
+    index += 1;
   }
   return { fields, metadata, body: lines.slice(closeIndex + 1).join("\n"), issues };
 }
