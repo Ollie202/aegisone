@@ -9,7 +9,8 @@ import { SupabaseJobStore } from "./supabase.ts";
 export interface JobStoreEnvironment {
   PROOFRAIL_JOB_STORE?: string;
   SUPABASE_URL?: string;
-  SUPABASE_SERVICE_ROLE_KEY?: string;
+  SUPABASE_PUBLISHABLE_KEY?: string;
+  PROOFRAIL_SUPABASE_APP_TOKEN?: string;
 }
 
 export function createJobStoreFromEnv(env: JobStoreEnvironment = process.env): JobStore {
@@ -17,11 +18,14 @@ export function createJobStoreFromEnv(env: JobStoreEnvironment = process.env): J
   if (mode === "memory") return new InMemoryJobStore();
 
   const url = env.SUPABASE_URL?.trim();
-  const key = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (url && key) return new SupabaseJobStore({ url, serviceRoleKey: key });
+  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim();
+  const appToken = env.PROOFRAIL_SUPABASE_APP_TOKEN?.trim();
+  if (url && publishableKey && appToken) {
+    return new SupabaseJobStore({ url, publishableKey, appToken });
+  }
 
   throw new Error(
-    "ProofRail product mode requires SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY. " +
+    "ProofRail product mode requires SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY + PROOFRAIL_SUPABASE_APP_TOKEN. " +
     "Use PROOFRAIL_JOB_STORE=memory only for local smoke tests.",
   );
 }
