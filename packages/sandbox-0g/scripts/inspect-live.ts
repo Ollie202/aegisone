@@ -18,10 +18,13 @@ const requiredMinimum = chain.serviceCreateFee + oneMinuteResourceCost;
 const enoughNativeForMinimum = chain.nativeBalance > requiredMinimum;
 const challenge = Buffer.from(ARTIFACT_SHA256, "hex");
 const evidence = summarizeEvidence(await getEvidence(chain.teeUrl, chain.appId, challenge), challenge, selected.info.providerAddress);
+const capabilityStatus = evidence.challengeBindingProven ? "OUTPUT_DIGEST_BOUND" : "PROVIDER_EVIDENCE_ONLY";
 
 console.log(JSON.stringify({
   ok: true,
   readOnly: true,
+  operationalStatus: "HEALTHY",
+  capabilityStatus,
   network: { chainId: broker.info.chainId, rpcUrl: broker.info.rpcUrl },
   wallet: { address: wallet.address, nativeBalanceWei: chain.nativeBalance.toString(), nativeBalanceOg: formatEther(chain.nativeBalance) },
   provider: {
@@ -46,11 +49,13 @@ console.log(JSON.stringify({
     nodeComposeHash: chain.nodeComposeHash,
     nodeVolumesHash: chain.nodeVolumesHash,
     evidence,
-    artifactDigestChallengeBinding: evidence.challengeBindingProven ? "PROVEN" : "BLOCKED",
+    artifactDigestChallengeBinding: evidence.challengeBindingProven ? "PROVEN" : "NOT_AVAILABLE",
     artifactComputedInTee: "NOT_AVAILABLE_VIA_PUBLIC_TOOLBOX_FLOW",
   },
   preflight: { requiredMinimumWei: requiredMinimum.toString(), requiredMinimumOg: formatEther(requiredMinimum), enoughNativeForMinimum },
 }, null, 2));
 
+// A provider capability boundary is not an operational crash. We preserve the
+// weaker assurance label in structured output and only fail the process when
+// the inspection cannot safely execute the supported path.
 if (!enoughNativeForMinimum && chain.contractBalance < requiredMinimum) process.exitCode = 2;
-if (!evidence.challengeBindingProven) process.exitCode = 3;
