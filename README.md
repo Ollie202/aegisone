@@ -1,21 +1,21 @@
 # ProofRail *(working name)*
 
-> Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
+> Independently rebuild artifacts from publisher-declared source and give humans or AI agents evidence of whether the distributed bytes actually correspond.
 
-**Status:** M5 end-to-end slice proven through 0G Aristotle mainnet  
+**Status:** M5 proof path complete; M6 product runtime in progress  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
 ## The problem
 
-A public GitHub repository does **not** by itself prove that the binary, archive, package, or container users download was actually built from that source. A compromised release server, CI system, maintainer account, or distribution pipeline can serve different bytes while the public source still looks clean.
+A public source repository does **not** by itself prove that the binary, package, archive, agent skill, or other artifact users receive was actually produced from that source. A compromised release server, CI system, maintainer account, marketplace, or distribution pipeline can serve different bytes while the public source still looks clean.
 
 ## What ProofRail actually proves
 
 ProofRail separates two different claims:
 
-1. **Source claim** — the publisher declares which repository, exact commit, build recipe, and release artifact correspond to a release.
-2. **Build correspondence** — an independent builder rebuilds that exact source and compares the resulting artifact digest with the published artifact.
+1. **Source claim** — the publisher declares which repository, exact commit, build/package recipe, and distributed artifact correspond to a release.
+2. **Artifact correspondence** — an independent reproducer rebuilds or repackages that exact source and compares the resulting artifact digest with the distributed artifact.
 
 ProofRail must never pretend it can magically discover the "official" repository. If publisher ownership has not been authenticated, the UI says **Source Declared**, not **Official Source Verified**.
 
@@ -23,7 +23,7 @@ A tiny source change creates a new Git commit and therefore a new release claim.
 
 ## Proven Wave 3 slice
 
-The real M5 path is now:
+The real M5 path is:
 
 ```text
 explicit source claim
@@ -58,7 +58,7 @@ Independent 0G rebuild SHA-256   9978d500...d9aa154
 
 The canonical genuine verification was `3080` bytes with SHA-256 `4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec`. 0G Storage returned root `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`, transaction `0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6`, and sequence `147016`; proof verification and exact-byte equality both passed.
 
-Those commitments are now anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`:
+Those commitments are anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`:
 
 - deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
 - M5 registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
@@ -68,7 +68,32 @@ Those commitments are now anchored on 0G Aristotle mainnet in `ProofRailRegistry
 
 A separate GitHub Actions verifier with **no signer secret** independently confirmed contract code, deployment and registration receipts, the registration event, the exact stored commitments, submitter, and fee cap.
 
-See `hackathon/m5-live-evidence.json`, `hackathon/m5-aristotle-mainnet.json`, and `hackathon/evidence.md` for the durable evidence summary.
+See `hackathon/m5-live-evidence.json`, `hackathon/m5-aristotle-mainnet.json`, and `hackathon/evidence.md` for durable evidence.
+
+## M6: one understandable product runtime
+
+M1–M5 intentionally used separate Railway workers to isolate risky integration spikes. M6 replaces that milestone-oriented view with one primary `proofrail-app` runtime for normal product traffic.
+
+```text
+Supabase     = app/job memory
+Railway      = ProofRail app/API + controlled workers
+0G Sandbox   = independent builder
+0G Storage   = canonical evidence
+0G Aristotle = immutable commitment anchor
+```
+
+Supabase is **not** the proof authority. The M6 schema intentionally has no mutable `verdict` column. A database row may say a pipeline is `verified`, but the app can display MATCH/MISMATCH only after the cached canonical verification passes the existing ProofRail core integrity checks. Existing proofs remain independently inspectable from 0G evidence even if the app database is deleted or corrupted.
+
+Product mode exposes `/health` plus create/read verification-job endpoints. `PROOFRAIL_JOB_STORE=memory` exists only for local/Railway smoke testing; production uses a dedicated Supabase project with a server-only service-role credential.
+
+## Agent Skills: planned first new artifact family
+
+Agent Skills fit ProofRail because a skill can contain both human-readable instructions and executable resources. M7 keeps two answers independent:
+
+1. **Skill provenance/correspondence** — do the distributed skill-package bytes match a deterministic package independently produced from the exact publisher-declared source commit? → normal ProofRail `MATCH` / `MISMATCH`.
+2. **Skill security audit** — does the skill contain risky instructions/scripts such as credential harvesting, network exfiltration, destructive filesystem/shell operations, arbitrary download-and-execute behavior, hidden payloads, persistence, or undeclared executables? → a separate findings report.
+
+This lets ProofRail say things such as `MATCH + HIGH-RISK FINDINGS`. A MATCH never means “safe,” and a security finding never changes whether the bytes correspond.
 
 ## TEE evidence: precise boundary
 
@@ -78,18 +103,17 @@ ProofRail therefore displays the M5/M4 classification as:
 
 `PROVIDER_EVIDENCE_ONLY`
 
-not `OUTPUT_DIGEST_BOUND` and not "TEE-attested build".
+not `OUTPUT_DIGEST_BOUND` and not "TEE-attested build". M6 also treats that missing stronger capability as a structured limitation, not an operational process crash.
 
 ## What ProofRail is not
 
-- a malware scanner;
-- a code-quality grader;
-- an LLM deciding whether software is good or bad;
-- a guarantee that verified source code is safe;
-- a system that guesses which GitHub repository is official;
-- a blockchain hash database with no independent rebuild.
+- a guarantee that verified source code or a verified skill is safe;
+- an LLM deciding MATCH/MISMATCH;
+- a system that guesses which repository is official;
+- a blockchain hash database with no independent reproduction;
+- a mutable Supabase row pretending to be cryptographic evidence.
 
-A malicious project can publish malicious source and receive a valid correspondence result if the released artifact really came from that source. ProofRail proves **correspondence and evidence**, not benevolence.
+A malicious project can publish malicious source and receive a valid correspondence result if the released artifact really came from that source. ProofRail proves **correspondence and evidence**; security analysis is a separate layer.
 
 ## Why 0G?
 
@@ -111,7 +135,7 @@ pnpm check
 pnpm test
 ```
 
-Those checks include core MATCH/MISMATCH behavior, Storage orchestration, registry commitments/contracts, Sandbox/Tapp parsing/live-ABI fixtures, the M5 genuine/substitution flow, CLI inspection, web rendering, guarded Aristotle execution syntax, and secret-free Aristotle mainnet verification.
+Those checks include core MATCH/MISMATCH behavior, job-store trust boundaries, Storage orchestration, registry commitments/contracts, Sandbox/Tapp parsing/live-ABI fixtures, the M5 genuine/substitution flow, CLI inspection, web/product rendering, guarded Aristotle execution syntax, and secret-free Aristotle verification.
 
 ## CLI and web status share one core projection
 
@@ -125,39 +149,34 @@ PROOFRAIL_EVIDENCE_FILE=verification.json \
   pnpm --filter @proofrail/web start
 ```
 
-The input must be a real canonical ProofRail verification object. `hackathon/m5-live-evidence.json` is intentionally a **summary**, not a substitute for that canonical object; the actual live canonical object is identified by its 0G Storage root/transaction/SHA above.
+For M6 product-mode local smoke testing:
+
+```bash
+PROOFRAIL_JOB_STORE=memory \
+  pnpm --filter @proofrail/web start
+```
+
+Production product mode requires a dedicated Supabase project and server-only `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Live M5 runner
 
-`pnpm m5:live` performs real Galileo Sandbox and Storage writes. It is not part of the default demo/check command and requires a disposable funded Galileo private key in `ZEROG_SANDBOX_PRIVATE_KEY` (optionally a separate `ZEROG_STORAGE_PRIVATE_KEY`). It enforces chain ID `16602`, a bounded Sandbox deposit, exact fixture hashes, proof-enabled Storage retrieval, guaranteed sandbox cleanup, and contains **no Aristotle signer/submission path**.
-
-Do not run it casually; the successful evidence is already recorded in the repository.
+`pnpm m5:live` performs real Galileo Sandbox and Storage writes. It is not part of the default demo/check command and requires a disposable funded Galileo private key in `ZEROG_SANDBOX_PRIVATE_KEY` (optionally a separate `ZEROG_STORAGE_PRIVATE_KEY`). The successful evidence is already recorded in the repository; do not run it casually.
 
 ## Aristotle mainnet anchor
 
-M5's compact commitments were submitted only after a read-only balance/nonce/fee gate and explicit user approval of a maximum combined fee. The guarded write path enforced:
-
-- Aristotle chain ID `16661`;
-- exact signer address;
-- nonce `0` before deployment;
-- exact compiled deployment bytecode hash;
-- exact M5 record ID and registration calldata hash;
-- predicted empty contract address;
-- final fee refresh immediately before signing;
-- a hard combined approval cap of `0.002246628007863198 0G`.
-
-The two successful transactions consumed `0.001843856003226748 0G` total. Afterward, a secret-free verifier independently read the chain and confirmed the exact M5 commitments. Durable final evidence is in `hackathon/m5-aristotle-mainnet.json`.
+M5's compact commitments were submitted only after a read-only balance/nonce/fee gate and explicit user approval of a maximum combined fee. The two successful transactions consumed `0.001843856003226748 0G` total. Durable final evidence is in `hackathon/m5-aristotle-mainnet.json`.
 
 ## Start here
 
 1. `AGENTS.md`
 2. `PROJECT_STATE.md`
-3. `hackathon/m5-live-evidence.json`
-4. `hackathon/m5-aristotle-mainnet.json`
-5. `hackathon/evidence.md`
-6. `docs/03-architecture.md`
-7. `docs/11-trust-model.md`
-8. `planning/current-sprint.md`
+3. `planning/current-sprint.md`
+4. `docs/03-architecture.md`
+5. `docs/11-trust-model.md`
+6. `supabase/README.md`
+7. `hackathon/m5-live-evidence.json`
+8. `hackathon/m5-aristotle-mainnet.json`
+9. `hackathon/evidence.md`
 
 ## License
 
