@@ -13,7 +13,6 @@ const WRITE_GATE = process.env.PROOFRAIL_M7_GALILEO_WRITE?.trim();
 const REQUIRED_GATE = "I_UNDERSTAND_THIS_WRITES_GALILEO_TESTNET";
 const SOURCE_PATH = "/tmp/proofrail-m7";
 const SKILL_SUBDIRECTORY = "examples/agent-skills/clean-review";
-const SKILL_DIRECTORY = `${SOURCE_PATH}/${SKILL_SUBDIRECTORY}`;
 const PACKAGE_PATH = "/tmp/clean-review.skillpkg";
 const LOCAL_SKILL_DIRECTORY = SKILL_SUBDIRECTORY;
 const GALILEO_RPC = "https://evmrpc-testnet.0g.ai";
@@ -99,6 +98,7 @@ const output: Record<string, unknown> = {
 };
 
 let createdSandboxId: string | null = null;
+let sandboxClient: SandboxApiClient | null = null;
 let runError: string | null = null;
 let cleanupError: string | null = null;
 try {
@@ -121,8 +121,8 @@ try {
   const depositTx = depositDelta > 0n ? await depositForProvider(selected.info, sandboxWallet, formatEther(depositDelta)) : null;
   output.sandboxFunding = { acknowledgeTx, depositTx, depositedWei: depositDelta.toString() };
 
-  const client = new SandboxApiClient(selected.listing.url, sandboxWallet);
-  const created = await client.create({ image: selected.snapshot.name, name: `proofrail-m7-${Date.now()}`, sealed: false });
+  sandboxClient = new SandboxApiClient(selected.listing.url, sandboxWallet);
+  const created = await sandboxClient.create({ image: selected.snapshot.name, name: `proofrail-m7-${Date.now()}`, sealed: false });
   createdSandboxId = sandboxId(created);
   output.sandbox = {
     id: createdSandboxId,
@@ -131,8 +131,8 @@ try {
     snapshot: selected.snapshot,
   };
 
-  await client.gitClone(createdSandboxId, SOURCE_REPO, SOURCE_PATH, SOURCE_COMMIT);
-  const headBytes = await client.downloadFile(createdSandboxId, `${SOURCE_PATH}/.git/HEAD`);
+  await sandboxClient.gitClone(createdSandboxId, SOURCE_REPO, SOURCE_PATH, SOURCE_COMMIT);
+  const headBytes = await sandboxClient.downloadFile(createdSandboxId, `${SOURCE_PATH}/.git/HEAD`);
   const resolvedHead = Buffer.from(headBytes).toString("utf8").trim();
   if (resolvedHead !== SOURCE_COMMIT) throw new Error(`0G Sandbox checkout resolved ${resolvedHead}, expected ${SOURCE_COMMIT}`);
 
@@ -143,12 +143,12 @@ try {
   ];
   const execResults: Array<{ command: string; response: unknown }> = [];
   for (const command of commands) {
-    const response = await client.exec(createdSandboxId, command, 60);
+    const response = await sandboxClient.exec(createdSandboxId, command, 60);
     assertExecSucceeded(response, command);
     execResults.push({ command, response });
   }
 
-  const reproducedPackageBytes = await client.downloadFile(createdSandboxId, PACKAGE_PATH);
+  const reproducedPackageBytes = await sandboxClient.downloadFile(createdSandboxId, PACKAGE_PATH);
   const reproducedEntries = decodeCanonicalSkillPackage(reproducedPackageBytes);
   const reproducedSummary = summarizeSkillPackage(reproducedEntries);
   if (reproducedSummary.sha256 !== publisherSummary.sha256) {
@@ -238,13 +238,9 @@ try {
   runError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   output.error = runError;
 } finally {
-  if (createdSandboxId) {
+  if (createdSandboxId && sandboxClient) {
     try {
-      const broker = await discoverBroker();
-      const surfaces = await Promise.all(broker.providers.map(async (listing) => ({ listing, ...(await discoverProvider(listing)) })));
-      const selected = selectExecutionProvider(surfaces);
-      const client = new SandboxApiClient(selected.listing.url, sandboxWallet);
-      output.cleanup = { sandboxId: createdSandboxId, deleteResponse: await client.delete(createdSandboxId), deleted: true };
+      output.cleanup = { sandboxId: createdSandboxId, deleteResponse: await sandboxClient.delete(createdSandboxId), deleted: true };
     } catch (error) {
       cleanupError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
       output.cleanup = { sandboxId: createdSandboxId, deleted: false, error: cleanupError };
