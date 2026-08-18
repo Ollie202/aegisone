@@ -5,7 +5,7 @@
     "buildCommand": "corepack enable && corepack prepare pnpm@10.15.0 --activate && pnpm install --no-frozen-lockfile"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @proofrail/worker start",
+    "startCommand": "node --experimental-strip-types apps/worker/src/server.ts",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
