@@ -1,0 +1,98 @@
+import { readdir, readFile } from "node:fs/promises";
+import { basename, join, relative, resolve } from "node:path";
+import { sha256Bytes } from "../../core/src/hash.ts";
+import type { SkillPackageEntry, SkillPackageSummary } from "./model.ts";
+
+const HEADER = new TextEncoder().encode("proofrail-agent-skill-package-v1\n");
+
+function normalizeRelativePath(value: string): string {
+  const normalized = value.replaceAll("\\", "/");
+  if (!normalized || normalized.startsWith("/") || normalized.includes("\0")) {
+    throw new TypeError(`Invalid skill package path: ${JSON.stringify(value)}`);
+  }
+  const parts = normalized.split("/");
+  if (parts.some((part) => !part || part === "." || part === "..")) {
+    throw new TypeError(`Unsafe skill package path: ${JSON.stringify(value)}`);
+  }
+  return normalized;
+}
+
+function u32(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 0xffff_ffff) throw new RangeError("u32 overflow");
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setUint32(0, value, false);
+  return bytes;
+}
+
+function u64(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value) || value < 0) throw new RangeError("u64 unsafe integer");
+  const bytes = new Uint8Array(8);
+  new DataView(bytes.buffer).setBigUint64(0, BigInt(value), false);
+  return bytes;
+}
+
+function concat(parts: Uint8Array[]): Uint8Array {
+  const size = parts.reduce((total, part) => total + part.byteLength, 0);
+  const out = new Uint8Array(size);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.byteLength;
+  }
+  return out;
+}
+
+export function canonicalSkillPackageBytes(entries: readonly SkillPackageEntry[]): Uint8Array {
+  const normalized = entries.map((entry) => ({
+    path: normalizeRelativePath(entry.path),
+    bytes: new Uint8Array(entry.bytes),
+  }));
+  const seen = new Set<string>();
+  for (const entry of normalized) {
+    if (seen.has(entry.path)) throw new TypeError(`Duplicate skill package path: ${entry.path}`);
+    seen.add(entry.path);
+  }
+  normalized.sort((a, b) => Buffer.compare(Buffer.from(a.path, "utf8"), Buffer.from(b.path, "utf8")));
+
+  const parts: Uint8Array[] = [HEADER, u32(normalized.length)];
+  for (const entry of normalized) {
+    const pathBytes = new TextEncoder().encode(entry.path);
+    parts.push(u32(pathBytes.byteLength), u64(entry.bytes.byteLength), pathBytes, entry.bytes);
+  }
+  return concat(parts);
+}
+
+export function summarizeSkillPackage(entries: readonly SkillPackageEntry[]): SkillPackageSummary {
+  const bytes = canonicalSkillPackageBytes(entries);
+  const paths = entries.map((entry) => normalizeRelativePath(entry.path));
+  paths.sort((a, b) => Buffer.compare(Buffer.from(a, "utf8"), Buffer.from(b, "utf8")));
+  return {
+    format: "proofrail-agent-skill-package-v1",
+    fileCount: entries.length,
+    byteLength: bytes.byteLength,
+    sha256: sha256Bytes(bytes),
+    paths,
+  };
+}
+
+async function walk(root: string, directory: string, out: SkillPackageEntry[]): Promise<void> {
+  const items = await readdir(directory, { withFileTypes: true });
+  for (const item of items) {
+    if (item.name === ".git") continue;
+    const absolute = join(directory, item.name);
+    if (item.isSymbolicLink()) throw new TypeError(`Symlinks are not supported in skill package v1: ${absolute}`);
+    if (item.isDirectory()) {
+      await walk(root, absolute, out);
+      continue;
+    }
+    if (!item.isFile()) throw new TypeError(`Unsupported filesystem entry in skill package: ${absolute}`);
+    out.push({ path: normalizeRelativePath(relative(root, absolute)), bytes: await readFile(absolute) });
+  }
+}
+
+export async function readSkillDirectory(skillDirectory: string): Promise<{ directoryName: string; entries: SkillPackageEntry[] }> {
+  const root = resolve(skillDirectory);
+  const entries: SkillPackageEntry[] = [];
+  await walk(root, root, entries);
+  return { directoryName: basename(root), entries };
+}
