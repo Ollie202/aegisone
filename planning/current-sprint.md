@@ -4,7 +4,7 @@
 
 Turn the proven M1–M5 verification engine into one understandable product runtime without moving ProofRail's trust into a mutable database.
 
-## M6 — Issue #11 — COMPLETE
+## M6 — Issue #11 — IMPLEMENTATION COMPLETE
 
 - [x] Define database-independent verification-job lifecycle (`queued`, `running`, `verified`, `failed`).
 - [x] Keep pipeline status separate from cryptographic correspondence; no mutable database `verdict` field.
@@ -24,9 +24,7 @@ Turn the proven M1–M5 verification engine into one understandable product runt
 - [x] Make root `railway.json` service-neutral so future services cannot accidentally inherit the old M2 live command.
 - [x] Stage removal of all five milestone-only M2/M3/M4/M5 Railway services after app + worker replacement topology is proven.
 - [x] Preserve all historical GitHub/0G evidence independently of Railway cleanup.
-- [x] Final completed-head CI passed on the frozen M6 implementation before merge.
 - [ ] Apply the already-staged legacy-service deletions in the Railway dashboard; Railway requires interactive 2FA and the connector cannot complete this destructive confirmation.
-- [ ] Merge PR #13 and confirm Issue #11 closes.
 
 ## Target product topology
 
