@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-18  
-**Phase:** M6 complete — product runtime + persistent Supabase job index proven
+**Phase:** M6 merge gate — product runtime + persistent Supabase job index proven
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -22,17 +22,17 @@ The product trust boundary is:
 ## M6 product topology — proven
 
 ```text
-Supabase     = mutable app/job memory
-Railway app  = product API/UI
+Supabase       = mutable app/job memory
+Railway app    = product API/UI
 Railway worker = controlled secret-bearing worker, standby by default
-0G Sandbox   = independent build/execution
-0G Storage   = durable canonical evidence
-0G Aristotle = immutable compact commitment anchor
+0G Sandbox     = independent build/execution
+0G Storage     = durable canonical evidence
+0G Aristotle   = immutable compact commitment anchor
 ```
 
 Supabase is **not** a proof authority. The schema deliberately has no mutable verdict column. Cached verification JSON can display MATCH/MISMATCH only after the existing ProofRail core integrity checks accept it.
 
-## What M6 proved
+## What M6 has proven
 
 - `packages/job-store` provides a database-independent job model with `queued`, `running`, `verified`, and `failed` pipeline states.
 - Artifact families already distinguish `software` and `agent-skill` without changing core correspondence semantics.
@@ -47,7 +47,7 @@ Supabase is **not** a proof authority. The schema deliberately has no mutable ve
 - Worker startup confirms the shared signer secret is configured while public signing remains disabled. The signer is stored as the project-level shared `ZEROG_STORAGE_PRIVATE_KEY`; it was not copied into GitHub or exposed.
 - The repository root Railway config is now service-neutral so new services cannot accidentally inherit the historical M2 Storage round-trip command.
 - The five milestone-only Railway services are staged for deletion. Railway requires dashboard 2FA to finalize those destructive removals; `proofrail-app`, `proofrail-worker`, and the shared signer secret are explicitly excluded from deletion.
-- GitHub CI passed on the final neutral-root worker commit before final documentation updates.
+- Historical M1–M5 evidence remains in GitHub, 0G Storage, and Aristotle regardless of Railway service cleanup.
 
 ## Final Railway target
 
@@ -55,8 +55,6 @@ After the staged deletions are confirmed in the Railway dashboard, the visible p
 
 1. `proofrail-app` — API/UI + Supabase-backed job index.
 2. `proofrail-worker` — controlled worker/secret boundary; standby and non-public by default.
-
-Historical M1–M5 evidence remains in GitHub, 0G Storage, and Aristotle regardless of Railway service cleanup.
 
 ## M7 — Agent Skills next
 
@@ -67,6 +65,6 @@ Issue #12 makes Agent Skills the first new auditable artifact family. ProofRail 
 
 A `MATCH` never means “safe,” and a security finding never rewrites the cryptographic correspondence result.
 
-## Remaining manual infrastructure hygiene
+## Remaining gate
 
-Open the Railway project and apply the already-staged deletions of the five legacy M2/M3/M4/M5 services. Railway requires interactive two-factor verification for that destructive action and does not permit the connector to complete it.
+Final CI must pass on the completed M6 branch head, then PR #13 can be marked ready and merged. Separately, the five already-staged Railway service deletions require interactive dashboard 2FA to become permanent.
