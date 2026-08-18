@@ -2,11 +2,6 @@ name: Aristotle Read-Only Gate
 
 on:
   workflow_dispatch:
-  push:
-    branches: [agent/m5-judgeable-slice]
-    paths:
-      - .github/workflows/aristotle-readonly.yml
-      - packages/m5-flow/scripts/pre-mainnet.ts
 
 concurrency:
   group: aristotle-readonly-${{ github.ref }}
