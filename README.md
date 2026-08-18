@@ -2,7 +2,7 @@
 
 > Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
 
-**Status:** M6 product runtime proven  
+**Status:** M6 product runtime proven; Agent Skills are the next artifact family  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
@@ -58,7 +58,7 @@ Those commitments are anchored on 0G Aristotle mainnet in `ProofRailRegistry` at
 
 ## Product topology after M6
 
-ProofRail now separates ordinary product state from verification truth:
+ProofRail separates ordinary product state from verification truth:
 
 ```text
 Supabase         = mutable job/app memory
