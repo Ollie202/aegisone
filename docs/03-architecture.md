@@ -4,7 +4,7 @@
 
 Keep the trust model provider-independent while using 0G where independent execution, durable evidence, and public commitments materially reduce trust.
 
-## Wave 3 data flow
+## Proven verification data flow
 
 ```mermaid
 flowchart TD
@@ -25,10 +25,36 @@ flowchart TD
   G --> J["0G registry adapter"]
   I --> J
   J --> K["ProofRailRegistry"]
-  K --> L["CLI JSON / Web viewer / future agents"]
+  K --> L["CLI JSON / Web / agents"]
   H --> L
   T --> L
 ```
+
+## M6 product topology
+
+The production app adds mutable convenience state around the proven verification flow without moving the trust boundary into that state.
+
+```mermaid
+flowchart LR
+  U["User / agent"] --> A["ProofRail app/API on Railway"]
+  A <--> S["Supabase: job/app index"]
+  A --> Z["0G Sandbox: independent build"]
+  Z --> C["ProofRail core comparison"]
+  C --> O["0G Storage: canonical evidence"]
+  O --> R["0G Aristotle: compact anchor"]
+  O --> A
+  R --> A
+```
+
+Kid-simple roles:
+
+- **Supabase = app memory.** Who submitted a job, whether the pipeline is queued/running/verified/failed, and pointers to evidence.
+- **Railway = app + controlled workers.** HTTP/API lifecycle and orchestration.
+- **0G Sandbox = independent builder.** Rebuilds exact declared source.
+- **0G Storage = evidence store.** Holds canonical verification bytes.
+- **0G Aristotle = immutable anchor.** Holds compact commitments that make later rewriting detectable.
+
+Supabase deliberately has **no mutable correspondence verdict column**. Cached `VerificationJson` is convenience data only: every displayed MATCH/MISMATCH must pass through the same integrity-checked ProofRail core projection used by CLI/web evidence inspection. If Supabase disappears or is modified, an already-published proof must still be independently checkable from its canonical evidence and commitments.
 
 ## Two independent trust questions
 
@@ -41,17 +67,20 @@ Possible assurance levels evolve independently:
 - `SIGNED_RELEASE` — a recognized publisher key signed the mapping;
 - future domain/package/onchain bindings.
 
-Wave 3 may operate at `DECLARED` for the demo but must display that honestly.
+ProofRail may operate at `DECLARED`, but must display that honestly.
 
 ### 2. Build correspondence
 Does an independent rebuild of that exact source/recipe produce the same artifact bytes as the publisher distributes?
 
-This is the core Wave 3 proof.
+This is the core ProofRail proof.
 
 ## Component boundaries
 
 ### `packages/core`
-Owns source/release claim schema, artifact hashing, canonical evidence, verification statuses, trust-policy primitives, validation, and resource-limit models. It must not import 0G SDKs or LLM APIs.
+Owns source/release claim schema, artifact hashing, canonical evidence, verification statuses, trust-policy primitives, validation, and resource-limit models. It must not import 0G SDKs, Supabase clients, or LLM APIs.
+
+### `packages/job-store`
+M6 mutable application index boundary. Defines job lifecycle and evidence pointers behind a database-independent interface. The Supabase adapter is server-side only. A job's operational status must never override core correspondence.
 
 ### `packages/runner-local`
 Controlled deterministic runner used for development/tests and as a baseline independent reproducer.
@@ -71,6 +100,8 @@ The currently proven public build path is:
 
 M4 also reads TappRegistry metadata and obtains real TDX evidence from the provider's registered Tapp node. **These are separate evidence paths.** The live Tapp's quote v5 `report_data` is legacy provider-signer padding and does not bind the caller artifact digest. The public toolbox build is non-sealed, while the observed sealed-only provider rejects toolbox operations. Therefore the architecture must not describe the M4 build itself as confidential, sealed, TEE-computed, or output-attested.
 
+An unavailable output-binding capability is represented as `PROVIDER_EVIDENCE_ONLY` / `NOT_AVAILABLE`. It is not an operational crash condition.
+
 ### `packages/storage-0g`
 Stores canonical provenance/comparison evidence and retrieves it with proof verification where supported.
 
@@ -84,13 +115,29 @@ Typed client for registry reads/writes.
 Human and agent interface. Stable JSON is a product requirement.
 
 ### `apps/web`
-Evidence visualization only. The UI must never become the sole source of verification truth.
+M6 primary HTTP product runtime plus evidence visualization. It may read/write mutable job state, but it must never become the sole source of verification truth.
+
+## Agent Skills — planned M7 artifact family
+
+Agent Skills fit the existing proof model because they are distributed instruction/code bundles whose provenance matters. M7 adds a second analysis dimension without altering core correspondence:
+
+- **Skill correspondence:** canonicalize/package the distributed skill and an independently produced package from the exact declared source commit, then report normal ProofRail `MATCH` / `MISMATCH`.
+- **Skill security audit:** separately report deterministic static findings such as credential harvesting instructions, exfiltration patterns, destructive shell/filesystem operations, download-and-execute behavior, suspicious persistence, hidden/encoded payloads, or undeclared executable resources.
+
+These outputs are orthogonal. Examples the UI must support:
+
+- `MATCH + NO HIGH-RISK FINDINGS`
+- `MATCH + HIGH-RISK FINDINGS`
+- `MISMATCH + NO FINDINGS`
+- `MISMATCH + HIGH-RISK FINDINGS`
+
+A MATCH never means the skill is safe. An audit finding never changes whether the bytes correspond.
 
 ## Scaling architecture
 
 **Rebuilding is expensive; verifying is cheap.** A release is rebuilt once per selected builder/policy. Many consumers then hash their local artifact and verify existing evidence.
 
-Wave 3 accepts only explicitly supported build targets and enforces resource limits. Unsupported or excessive jobs fail instead of consuming unbounded compute.
+ProofRail accepts only explicitly supported build targets and enforces resource limits. Unsupported or excessive jobs fail instead of consuming unbounded compute.
 
 ## Verification/assurance dimensions
 
@@ -102,6 +149,7 @@ Do not collapse everything into one green badge.
 - **Independently Reproduced** — independent builder output matches publisher artifact bytes.
 - **TEE Provider Evidence** — real TEE evidence exists for the registered provider/runtime identity.
 - **TEE Attested Build** — reserve this stronger label for a future path where evidence actually proves the measured build execution and binds the relevant output/commitment. M4 does not satisfy it.
+- **Skill Audit Findings** — separate static/advisory security analysis for an Agent Skill package; does not alter correspondence.
 - **Consensus Verified** — explicit N-of-M independent-builder policy is satisfied.
 
-None of these means the source code is safe.
+None of these means the source code or skill is safe by default.
