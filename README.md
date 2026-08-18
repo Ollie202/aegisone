@@ -2,7 +2,7 @@
 
 > Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
 
-**Status:** M6 product runtime proven; final merge gate in progress  
+**Status:** M6 product runtime proven  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
@@ -61,12 +61,12 @@ Those commitments are anchored on 0G Aristotle mainnet in `ProofRailRegistry` at
 ProofRail now separates ordinary product state from verification truth:
 
 ```text
-Supabase       = mutable job/app memory
-proofrail-app  = API/UI and job access
+Supabase         = mutable job/app memory
+proofrail-app    = API/UI and job access
 proofrail-worker = controlled secret-bearing worker, standby by default
-0G Sandbox     = independent build/execution
-0G Storage     = durable canonical evidence
-0G Aristotle   = immutable compact commitment anchor
+0G Sandbox       = independent build/execution
+0G Storage       = durable canonical evidence
+0G Aristotle     = immutable compact commitment anchor
 ```
 
 The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. A cached verification result is rendered only after the same integrity-checked core projection used by CLI accepts the canonical evidence.
