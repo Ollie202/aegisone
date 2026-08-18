@@ -1,7 +1,9 @@
 import type { VerificationJson } from "../../core/src/model.ts";
+import type { SkillVerificationResult } from "../../skill-audit/src/model.ts";
 
 export type VerificationJobStatus = "queued" | "running" | "verified" | "failed";
 export type ArtifactKind = "software" | "agent-skill";
+export type PersistedVerificationResult = VerificationJson | SkillVerificationResult;
 
 export interface EvidencePointers {
   manifestSha256: string | null;
@@ -31,7 +33,7 @@ export interface VerificationJob {
   publisherArtifactName: string;
   publisherArtifactSha256: string | null;
   evidence: EvidencePointers;
-  verificationJson: VerificationJson | null;
+  verificationJson: PersistedVerificationResult | null;
   failure: VerificationJobFailure | null;
 }
 
@@ -50,7 +52,7 @@ export interface VerificationJobPatch {
   status?: VerificationJobStatus;
   publisherArtifactSha256?: string | null;
   evidence?: Partial<EvidencePointers>;
-  verificationJson?: VerificationJson | null;
+  verificationJson?: PersistedVerificationResult | null;
   failure?: VerificationJobFailure | null;
 }
 
