@@ -37,9 +37,14 @@ test("environment factory only uses memory when explicitly requested", () => {
   const store = createJobStoreFromEnv({ PROOFRAIL_JOB_STORE: "memory" });
   assert.ok(store instanceof InMemoryJobStore);
   assert.throws(() => createJobStoreFromEnv({}), /SUPABASE_URL/);
+  assert.ok(createJobStoreFromEnv({
+    SUPABASE_URL: "https://proofrail.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
+    PROOFRAIL_SUPABASE_APP_TOKEN: "app-secret",
+  }) instanceof SupabaseJobStore);
 });
 
-test("Supabase adapter maps server-side PostgREST rows without inventing a verdict", async () => {
+test("Supabase adapter uses token-gated RPC without inventing a verdict", async () => {
   const requests: Array<{ url: string; init?: RequestInit }> = [];
   const row = {
     id: "11111111-1111-4111-8111-111111111111",
@@ -68,13 +73,21 @@ test("Supabase adapter maps server-side PostgREST rows without inventing a verdi
     requests.push({ url: String(url), init });
     return new Response(JSON.stringify([row]), { status: 200, headers: { "content-type": "application/json" } });
   };
-  const store = new SupabaseJobStore({ url: "https://proofrail.supabase.co", serviceRoleKey: "server-secret", fetcher: fakeFetch as typeof fetch });
+  const store = new SupabaseJobStore({
+    url: "https://proofrail.supabase.co",
+    publishableKey: "sb_publishable_test",
+    appToken: "server-app-secret",
+    fetcher: fakeFetch as typeof fetch,
+  });
   const job = await store.create(baseJob);
   assert.equal(job.id, row.id);
   assert.equal("verdict" in job, false);
   assert.equal(requests.length, 1);
   assert.equal(requests[0]!.init?.method, "POST");
   const headers = requests[0]!.init?.headers as Record<string, string>;
-  assert.equal(headers.authorization, "Bearer server-secret");
-  assert.match(requests[0]!.url, /rest\/v1\/verification_jobs/);
+  assert.equal(headers.authorization, "Bearer sb_publishable_test");
+  assert.match(requests[0]!.url, /rest\/v1\/rpc\/proofrail_job_create$/);
+  const body = JSON.parse(String(requests[0]!.init?.body));
+  assert.equal(body.p_token, "server-app-secret");
+  assert.equal(body.p_project_id, baseJob.projectId);
 });
