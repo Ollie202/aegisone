@@ -113,10 +113,50 @@ Record real proof here immediately when created. Do not paste secrets.
 - Durable structured final evidence: `hackathon/m5-aristotle-mainnet.json`.
 - Status: VERIFIED / COMPLETE.
 
+## M7 — Agent Skill verification + audit
+- Railway live deployment: `6cec0482-813a-45d9-a831-0cea9dc3090e`.
+- Network / chain ID: 0G Galileo Testnet / `16602`.
+- Source repository: `https://github.com/Ollie202/proofrail-0g.git`.
+- Exact source commit requested and independently resolved: `2f193aad92d2f807c2e25f67eb28c5090fa945cf`.
+- Source acquisition inside 0G Sandbox: exact-SHA GitHub commit API verification + tarball for that exact SHA (`GITHUB_API_EXACT_SHA_TARBALL`).
+- Skill directory: `examples/agent-skills/clean-review`.
+- Package format: `proofrail-agent-skill-package-v1`.
+- Publisher package: `973` bytes / 2 files / SHA-256 `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878`.
+- Independent 0G package: SHA-256 `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878`.
+- Genuine correspondence: `MATCH`.
+- Substitution publisher SHA-256: `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb`.
+- Substitution correspondence: `MISMATCH`; reproduced package remained unchanged.
+- Deterministic static audit: `0` findings on the clean fixture; highest severity `INFO`.
+- LLM advisory: `NOT_RUN`.
+- Successful Sandbox ID: `d3d81adc-d7ba-4557-93e3-ae02fd1bf4ff`.
+- Successful sandbox cleanup/deletion: `true`.
+- Provider: `0xa19C4E672576E186AF81548E950Bf74A736220C3`.
+- TDX evidence SHA-256: `791501f7610de3f7deb827a845e73f76370bf29e926d084ac833919920efffd1`.
+- Provider TDX evidence: `PROVEN`.
+- Artifact-digest challenge binding: `NOT AVAILABLE ON LIVE LEGACY TAPP`.
+- Artifact computed inside TEE: `NOT AVAILABLE`.
+- Canonical evidence: `3470` bytes / SHA-256 `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`.
+- 0G Storage root: `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`.
+- 0G Storage transaction: `0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d`.
+- Storage sequence: `147101`.
+- Storage proof verified: `true`.
+- Storage exact-byte equality: `true`.
+- Galileo registry: `0x227Fcc243f25c395C93Df789EC72Bc75bf096017`.
+- Galileo record ID: `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`.
+- Galileo registration transaction: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`.
+- Galileo block / gas: `50237703` / `161135`.
+- Exact Galileo readback: `true`.
+- Prepared Aristotle target: existing registry `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`, record `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`, status `PREPARED_NOT_SUBMITTED`, transaction `null`.
+- M7 Aristotle mainnet writes: `false`.
+- Durable structured summary: `hackathon/m7-live-evidence.json`.
+- Status: GALILEO VERIFIED; MAINNET PREPARED ONLY.
+
 ## Product
-- Judge-facing shared core projection: IMPLEMENTED (`createVerificationView()` used by CLI and web renderer)
-- Live verifier URL: PENDING
-- Demo video: PENDING
+- Judge-facing shared integrity-checked projections: IMPLEMENTED for software and Agent Skills.
+- Railway production topology: `proofrail-app` + `proofrail-worker` only.
+- Supabase-backed job persistence: LIVE.
+- Public signing endpoint: NONE.
+- Demo video: PENDING.
 
 ## External validation
 - External repository #1: PENDING
