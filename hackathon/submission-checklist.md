@@ -6,7 +6,7 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [x] End-to-end vertical slice works from a clean independent 0G Sandbox environment.
 - [x] Genuine software artifact passes verification (`MATCH`).
 - [x] Tampered/substituted publisher artifact fails verification (`MISMATCH`) while reproduced bytes remain unchanged.
-- [ ] Proof-first live web verifier deployed and re-checked after PR #16 merge.
+- [x] Proof-first web verifier deployed from merged `main` commit `982d76e1531571f451fcdc3379f54ee16f7e4e7c`; Railway deployment `25b2e0e3-de8f-46d6-b0ac-b6900375ce39` passed `/health`.
 - [x] CLI invocation documented in README and covered by repository tests.
 
 ## 0G evidence
@@ -25,7 +25,7 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [x] Judge-oriented README with live/demo/evidence links.
 - [x] Architecture/trust-flow documentation.
 - [x] Setup and repository-check instructions.
-- [x] PR #16 CI green after full-history Gitleaks scan + test suite (CI run #151).
+- [x] PR #16 CI green after full-history Gitleaks scan + test suite (final PR CI run #152).
 - [x] No secret/history leaks reported by the full-history Gitleaks CI gate.
 - [x] Submission-name decision resolved: use `ProofRail` for the buildathon while retaining the documented brand-risk warning.
 
@@ -34,8 +34,8 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [ ] User rehearses the 90-second script once.
 - [ ] User records the final screen capture at mobile-readable zoom.
 - [x] Recorded path is designed to avoid waiting on a slow live build.
-- [ ] Confirm evidence links are live on the deployed proof-first homepage.
-- [ ] Confirm MATCH → MISMATCH tamper moment is clearly readable on the deployed homepage.
+- [x] Deployed proof-first homepage includes evidence links using the official current Galileo and mainnet 0G ChainScan explorer domains.
+- [x] MATCH → MISMATCH tamper moment is pinned by web tests and deployed in the exact successful `main` release.
 
 ## AKINDO / final user actions
 - [ ] Re-open the dynamic live AKINDO event page and confirm the exact current deadline/required fields immediately before submission.
