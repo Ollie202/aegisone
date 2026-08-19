@@ -64,11 +64,25 @@ function job(overrides: Partial<VerificationJob> = {}): VerificationJob {
   };
 }
 
-test("product home explains the mutable and immutable layers", () => {
+test("product home leads with real proven MATCH/MISMATCH evidence", () => {
   const html = renderProductHomeHtml();
-  assert.match(html, /Supabase = app\/job memory/);
-  assert.match(html, /0G Storage = canonical evidence/);
+  assert.match(html, /Don’t trust the release\. Rebuild it\./);
+  assert.match(html, /9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154/);
+  assert.match(html, /d5318963f53126b4c4bd448bffca222a8e08f068764e379516fc0ad3bd1f8889/);
+  assert.match(html, /fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878/);
+  assert.match(html, /da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb/);
+});
+
+test("product home exposes real 0G evidence and preserves honesty boundaries", () => {
+  const html = renderProductHomeHtml();
+  assert.match(html, /0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181/);
+  assert.match(html, /0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66/);
+  assert.match(html, /0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac/);
+  assert.match(html, /0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db/);
+  assert.match(html, /Provider evidence only/);
+  assert.match(html, /M7 is PREPARED_NOT_SUBMITTED/);
   assert.match(html, /MATCH never means safe/);
+  assert.match(html, /LLM advisory: NOT_RUN/);
 });
 
 test("pipeline status cannot override a core MISMATCH verdict", () => {
