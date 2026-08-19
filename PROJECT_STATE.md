@@ -1,70 +1,88 @@
 # Project State
 
-**Last updated:** 2026-08-18  
-**Phase:** M6 product runtime proven; M7 Agent Skills next
+**Last updated:** 2026-08-19  
+**Phase:** M7 Agent Skill verification/audit proven on Galileo  
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
 
-ProofRail independently rebuilds software from an explicit publisher source claim and compares the reproduced artifact bytes with the publisher artifact. Application state is never allowed to invent or override a cryptographic `MATCH` / `MISMATCH` result.
+ProofRail independently reproduces an artifact from an explicit publisher source claim, compares exact bytes, and records canonical evidence without allowing mutable application state to invent a verdict.
 
-The product trust boundary is:
+The core trust boundary remains:
 
-> **publisher artifact vs independent rebuild — verified from canonical evidence, not from mutable application state**
+> **publisher artifact vs independent reproduction — verified from canonical evidence, not from mutable application state**
+
+For Agent Skills, ProofRail deliberately exposes two independent answers:
+
+1. **Correspondence:** do the distributed skill-package bytes match the deterministic package independently produced from the exact declared source commit? → `MATCH` / `MISMATCH`.
+2. **Security audit:** what risky instructions, scripts, resources, exfiltration paths, destructive operations, hidden execution, or persistence behaviors are present? → separate findings + severity.
+
+A `MATCH` never means “safe,” and an audit finding never rewrites the cryptographic correspondence result.
 
 ## Proven foundation
 
-- M1–M5 are complete and merged.
-- Real 0G Sandbox reproduction, proof-verified 0G Storage, and Aristotle mainnet anchoring are proven.
-- The M5 Aristotle registry remains deployed at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4` with record `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`.
-- M4's current TDX surface remains honestly classified as `PROVIDER_EVIDENCE_ONLY`; missing artifact-digest binding is a capability boundary, not an operational failure.
+- M1–M6 are complete and merged.
+- M7 Agent Skill verification/auditing is live-proven on 0G Galileo and awaiting final PR merge only.
+- Real 0G Sandbox independent execution, proof-verified 0G Storage, Galileo registry readback, and the prior M5 Aristotle mainnet anchor are proven.
+- M4/M7 TDX evidence remains honestly classified as provider evidence only: the live legacy Tapp quote does not bind the artifact digest and does not prove the artifact was computed inside the TEE.
 
-## M6 product topology — proven
+## Stable product topology
 
 ```text
-Supabase       = mutable app/job memory
-Railway app    = product API/UI
-Railway worker = controlled secret-bearing worker, standby by default
-0G Sandbox     = independent build/execution
-0G Storage     = durable canonical evidence
-0G Aristotle   = immutable compact commitment anchor
+Supabase         = mutable app/job memory
+proofrail-app    = API/UI and job access
+proofrail-worker = controlled secret-bearing worker, standby by default
+0G Sandbox       = independent execution/reproduction
+0G Storage       = durable canonical evidence
+0G registry      = compact immutable commitments
 ```
 
-Supabase is **not** a proof authority. The schema deliberately has no mutable verdict column. Cached verification JSON can display MATCH/MISMATCH only after the existing ProofRail core integrity checks accept it.
+Railway cleanup is complete. Production intentionally contains only `proofrail-app` and `proofrail-worker`. The worker is restored to the canonical M6 standby deployment; startup confirms the signer is configured while public signing is disabled.
 
-## What M6 proved
+Supabase is **not** a proof authority. It stores product/job state and evidence pointers, not a mutable verdict. Cached verification data must pass ProofRail's integrity-checked presentation layer before MATCH/MISMATCH or skill-audit results are shown.
 
-- `packages/job-store` provides a database-independent job model with `queued`, `running`, `verified`, and `failed` pipeline states.
-- Artifact families distinguish `software` and `agent-skill` without changing core correspondence semantics.
-- A dedicated Supabase project named `ProofRail` exists in `eu-west-1`; provider-reported project cost is `$0/month` for the current organization.
-- `verification_jobs` is RLS-enabled and stores application metadata plus 0G evidence pointers, not a mutable verdict.
-- Railway talks to Supabase through an authenticated `proofrail-jobs` Edge Function. Supabase keeps its service-role credential inside the Edge Function; Railway holds only a separate ProofRail app token plus a publishable key.
-- Supabase security advisor is clean after the final schema. Performance advisor only reports unused-index informational notices expected for a new table.
-- `proofrail-app` is live on Railway and backed by Supabase rather than the temporary memory store.
-- A live external API smoke test returned `/health` 200, created job `085e2667-c2ca-4d98-919b-106eb2ff4334`, read it back through the app, and independent SQL confirmed the exact same persisted row.
-- `packages/sandbox-0g/scripts/inspect-live.ts` reports expected TEE capability limitations without exiting as a Railway crash.
-- A permanent `proofrail-worker` Railway service is proven healthy.
-- Worker startup confirms the shared signer secret is configured while public signing remains disabled. The signer is stored as the project-level shared `ZEROG_STORAGE_PRIVATE_KEY`; it was not copied into GitHub or exposed.
-- The repository root Railway config is service-neutral so new services cannot accidentally inherit the historical M2 Storage round-trip command.
-- The five milestone-only Railway services are staged for deletion. Railway requires dashboard 2FA to finalize those destructive removals; `proofrail-app`, `proofrail-worker`, and the shared signer secret are explicitly excluded from deletion.
-- Historical M1–M5 evidence remains in GitHub, 0G Storage, and Aristotle regardless of Railway service cleanup.
+## M7 — Agent Skills proven
 
-## Final Railway target
+Live evidence is recorded in `hackathon/m7-live-evidence.json`.
 
-After the staged deletions are confirmed in the Railway dashboard, the visible product topology is intentionally just:
+### Exact source + independent package
 
-1. `proofrail-app` — API/UI + Supabase-backed job index.
-2. `proofrail-worker` — controlled worker/secret boundary; standby and non-public by default.
+- Source repository: `https://github.com/Ollie202/proofrail-0g.git`
+- Exact source commit: `2f193aad92d2f807c2e25f67eb28c5090fa945cf`
+- Skill directory: `examples/agent-skills/clean-review`
+- Source acquisition: GitHub API exact-SHA lookup + tarball for that exact SHA inside 0G Sandbox.
+- Commit lookup resolved exactly to the requested 40-character SHA.
+- Publisher package: `973` bytes, 2 files, SHA-256 `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878`.
+- Independent 0G package: same SHA-256.
+- Genuine correspondence: `MATCH`.
+- Substitution probe: `MISMATCH` with publisher digest `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb` while reproduced bytes stayed unchanged.
 
-## M7 — Agent Skills next
+### Security audit
 
-Issue #12 makes Agent Skills the first new auditable artifact family. ProofRail keeps two independent answers:
+- Deterministic static audit: `0` findings on the clean fixture, highest severity `INFO`.
+- LLM advisory analysis: `NOT_RUN`.
+- Separate malicious fixtures/tests prove the UI and model can represent `MATCH + CRITICAL_FINDINGS` without calling the skill safe.
 
-1. **Correspondence:** do distributed skill-package bytes match the deterministic package independently produced from the exact publisher-declared source commit? → `MATCH` / `MISMATCH`.
-2. **Security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, hidden payloads, or persistence behaviors exist? → separate findings and severity.
+### 0G evidence
 
-A `MATCH` never means “safe,” and a security finding never rewrites the cryptographic correspondence result.
+- Successful Sandbox: `d3d81adc-d7ba-4557-93e3-ae02fd1bf4ff`; cleanup/deletion confirmed.
+- Provider: `0xa19C4E672576E186AF81548E950Bf74A736220C3`.
+- TDX evidence SHA-256: `791501f7610de3f7deb827a845e73f76370bf29e926d084ac833919920efffd1`.
+- Canonical evidence: `3470` bytes, SHA-256 `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`.
+- 0G Storage root: `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`.
+- Storage transaction: `0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d`.
+- Storage sequence: `147101`.
+- Storage proof verification: `true`; exact byte equality: `true`.
+- Galileo registry record: `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`.
+- Galileo registration transaction: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`.
+- Exact registry readback: `true`.
 
-## Manual infrastructure hygiene
+## Mainnet safety state
 
-The five legacy Railway service removals are already staged. Railway requires interactive dashboard 2FA to make those destructive deletions permanent.
+M7 derives the Aristotle registry commitments but leaves them `PREPARED_NOT_SUBMITTED`.
+
+No M7 Aristotle mainnet transaction has been signed or submitted. The existing M5 mainnet registry remains at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. Any new mainnet write requires a separate fresh preflight and explicit approval.
+
+## Next work
+
+Do not invent another milestone automatically. After PR #14 is merged, continue only from an explicitly defined issue/goal. Likely product-facing work includes external-skill validation and submission/demo hardening, but those are not M7 acceptance requirements.
