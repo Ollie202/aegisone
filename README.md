@@ -1,62 +1,100 @@
 # ProofRail *(working name)*
 
-> Independently rebuild software from its publisher-declared source and give humans or AI agents evidence of whether the published artifact actually matches.
+> Independently reproduce software or Agent Skills from publisher-declared source and give humans or AI agents evidence of whether the distributed artifact actually corresponds to that source.
 
-**Status:** M6 product runtime proven; Agent Skills are the next artifact family  
+**Status:** M7 Agent Skill verification/auditing live-proven on 0G Galileo  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
 
 ## The problem
 
-A public GitHub repository does **not** by itself prove that the binary, archive, package, or container users download was actually built from that source. A compromised release server, CI system, maintainer account, or distribution pipeline can serve different bytes while the public source still looks clean.
+A public source repository does **not** by itself prove that the binary, archive, package, container, or Agent Skill users receive actually corresponds to that source. A compromised release server, CI system, maintainer account, marketplace, or distribution pipeline can serve different bytes while the public source still looks clean.
 
-## What ProofRail actually proves
+ProofRail independently reproduces the artifact from an exact source claim and records evidence that can be checked without trusting mutable application state.
 
-ProofRail separates two different claims:
+## What ProofRail proves
 
-1. **Source claim** — the publisher declares which repository, exact commit, build recipe, and release artifact correspond to a release.
-2. **Build correspondence** — an independent builder rebuilds that exact source and compares the resulting artifact digest with the published artifact.
+ProofRail separates claims instead of collapsing them into one vague trust score.
 
-ProofRail must never pretend it can magically discover the "official" repository. If publisher ownership has not been authenticated, the UI says **Source Declared**, not **Official Source Verified**.
+### Software correspondence
 
-A tiny source change creates a new Git commit and therefore a new release claim. Historical verification records remain pinned to the exact immutable commit used for that release.
+1. The publisher declares the repository, exact commit, build recipe, and artifact.
+2. ProofRail independently rebuilds that exact source.
+3. Exact artifact digests are compared as `MATCH` / `MISMATCH`.
 
-## Proven 0G verification path
+### Agent Skill correspondence + security
+
+Agent Skills add a second independent dimension:
+
+1. **Correspondence** — do the distributed skill-package bytes match the deterministic package independently produced from the exact publisher-declared source commit?
+2. **Security audit** — what risky instructions, scripts, resources, exfiltration paths, destructive operations, encoded execution, or persistence behavior exist?
+
+Therefore a result can legitimately be:
+
+- `MATCH + NO FINDINGS`
+- `MATCH + CRITICAL FINDINGS`
+- `MISMATCH + NO FINDINGS`
+- `MISMATCH + CRITICAL FINDINGS`
+
+A `MATCH` never means “safe.” Audit findings never rewrite the cryptographic correspondence result.
+
+## Proven software path
 
 ```text
 explicit source claim
   -> publisher artifact bytes
   -> exact immutable Git commit
   -> independent 0G Sandbox rebuild
-  -> core SHA-256 comparison
+  -> SHA-256 correspondence
   -> MATCH / MISMATCH
-  -> canonical verification evidence
-  -> proof-verified 0G Storage round trip
-  -> 0G Aristotle mainnet registry anchor
-  -> shared CLI/web verification projection
+  -> canonical evidence
+  -> proof-verified 0G Storage
+  -> compact registry commitment
+  -> shared CLI/web projection
 ```
 
-Observed genuine result:
+The M5 genuine software artifact reproduced byte-for-byte at SHA-256 `9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`; a one-byte substituted publisher artifact produced `MISMATCH` while the reproduced bytes remained unchanged.
+
+The M5 canonical verification is anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. See `hackathon/m5-aristotle-mainnet.json` for the durable receipts.
+
+## Proven Agent Skill path — M7
+
+The live M7 proof used `examples/agent-skills/clean-review` at exact source commit:
+
+`2f193aad92d2f807c2e25f67eb28c5090fa945cf`
+
+Inside 0G Sandbox, ProofRail verified that exact SHA through GitHub's commit API, downloaded the tarball for that exact SHA, extracted it, deterministically packaged the skill directory, and compared the package with the publisher package.
+
+Observed result:
 
 ```text
-Publisher artifact SHA-256       9978d500...d9aa154
-Independent 0G rebuild SHA-256   9978d500...d9aa154
-                                 ----------------
-                                 MATCH
+Publisher skill package SHA-256       fb33d144...2b78e878
+Independent 0G package SHA-256        fb33d144...2b78e878
+                                      ----------------
+                                      MATCH
 ```
 
-A one-byte substituted publisher artifact produces a different digest while the independently reproduced bytes remain unchanged, so ProofRail reports `MISMATCH`.
+A controlled publisher substitution produced SHA-256 `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb`, so ProofRail reported `MISMATCH` while the independently reproduced package stayed unchanged.
 
-The canonical genuine verification was `3080` bytes with SHA-256 `4d5e01d343faada3649afb6d96574c3e96abaf8f189664ff787f330e9bc8c7ec`. 0G Storage returned root `0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181`, transaction `0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6`, and sequence `147016`; proof verification and exact-byte equality both passed.
+The clean fixture's deterministic static audit produced `0` findings. Separate malicious fixtures and tests prove that ProofRail can display `MATCH + CRITICAL_FINDINGS` without calling the skill safe. LLM advisory analysis is explicitly `NOT_RUN` in deterministic evidence.
 
-Those commitments are anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`:
+### M7 live evidence
 
-- deployment tx: `0x7a23a2564784252647505f21b714280d20d5c209785ff4a67c878e3bc684582c`;
-- M5 registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`;
-- record ID: `0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e`;
-- actual combined mainnet fee: `0.001843856003226748 0G`.
+- Package SHA-256: `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878`
+- Canonical evidence: `3470` bytes / SHA-256 `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`
+- 0G Storage root: `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`
+- 0G Storage tx: `0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d`
+- Storage sequence: `147101`
+- Storage proof verified: `true`
+- Exact downloaded bytes: `true`
+- Galileo registry record: `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`
+- Galileo registration tx: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`
+- Exact registry readback: `true`
+- Durable evidence: `hackathon/m7-live-evidence.json`
 
-## Product topology after M6
+M7 also prepares the equivalent Aristotle commitments, but their state is deliberately `PREPARED_NOT_SUBMITTED`. **No M7 mainnet transaction has been signed or submitted.**
+
+## Product topology
 
 ProofRail separates ordinary product state from verification truth:
 
@@ -64,44 +102,32 @@ ProofRail separates ordinary product state from verification truth:
 Supabase         = mutable job/app memory
 proofrail-app    = API/UI and job access
 proofrail-worker = controlled secret-bearing worker, standby by default
-0G Sandbox       = independent build/execution
+0G Sandbox       = independent execution/reproduction
 0G Storage       = durable canonical evidence
-0G Aristotle     = immutable compact commitment anchor
+0G registry      = compact immutable commitments
 ```
 
-The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. A cached verification result is rendered only after the same integrity-checked core projection used by CLI accepts the canonical evidence.
+Production Railway is intentionally consolidated to only `proofrail-app` and `proofrail-worker`. The old milestone-specific M2/M3/M4/M5 service boxes have been removed after their evidence was preserved.
 
-Railway does not hold a Supabase service-role secret. The app calls the authenticated `proofrail-jobs` Supabase Edge Function with a separate high-entropy app token; Supabase keeps privileged database access inside that function.
+The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. Cached verification results are rendered only after ProofRail's integrity-checked presentation layer accepts the evidence.
 
-The permanent `proofrail-worker` preserves the 0G signer as a Railway project-level shared secret. Its health/startup invariant explicitly reports that a signer is configured while public signing is disabled. There is no public signing endpoint.
-
-The old milestone-only M2/M3/M4/M5 Railway services are staged for deletion now that `proofrail-app` + `proofrail-worker` are proven replacements. Railway requires interactive dashboard 2FA to finalize those destructive deletions; historical evidence remains independently preserved in GitHub/0G.
-
-## Agent Skills — next artifact family
-
-Issue #12 extends ProofRail to Agent Skills while keeping two answers independent:
-
-1. **Correspondence:** do distributed skill-package bytes match the deterministic package independently produced from the exact publisher-declared source commit?
-2. **Security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, hidden payloads, or persistence behaviors exist?
-
-A result may therefore be `MATCH + HIGH-RISK FINDINGS`. A `MATCH` never means safe.
+The permanent `proofrail-worker` preserves the 0G signer as a Railway project-level shared secret. Its startup invariant confirms that the signer is configured while public signing is disabled; there is no public signing endpoint.
 
 ## TEE evidence: precise boundary
 
-The live provider returned real TDX evidence, but its v5 quote uses the legacy provider-signer-padded `report_data`. The caller artifact digest is **not** cryptographically bound into that quote, and the public toolbox build is not proven to execute inside the TEE.
+The live provider returned real TDX evidence. For M7 the TDX evidence SHA-256 is `791501f7610de3f7deb827a845e73f76370bf29e926d084ac833919920efffd1`.
 
-ProofRail therefore displays:
+However, the live legacy Tapp quote still uses provider-signer-padded report data. The caller artifact digest is **not** cryptographically bound into that quote, and the public toolbox flow does not prove the final artifact was computed inside the TEE.
 
-`PROVIDER_EVIDENCE_ONLY`
-
-not `OUTPUT_DIGEST_BOUND` and not "TEE-attested build".
+ProofRail therefore reports provider TDX evidence honestly rather than claiming an output-digest-bound TEE build.
 
 ## What ProofRail is not
 
 - a guarantee that matched source is benevolent;
 - an LLM deciding MATCH/MISMATCH;
 - a system that guesses the official repository;
-- a blockchain hash database with no independent rebuild.
+- a mutable database verdict service;
+- a blockchain hash database with no independent reproduction.
 
 ## Run the repository checks
 
@@ -124,7 +150,8 @@ pnpm test
 5. `planning/current-sprint.md`
 6. `hackathon/m5-live-evidence.json`
 7. `hackathon/m5-aristotle-mainnet.json`
-8. `hackathon/evidence.md`
+8. `hackathon/m7-live-evidence.json`
+9. `hackathon/evidence.md`
 
 ## License
 
