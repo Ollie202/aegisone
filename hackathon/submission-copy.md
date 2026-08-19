@@ -140,6 +140,31 @@ Use `hackathon/demo-plan.md` exactly unless the live UI materially changes. The 
 5. real 0G Storage / Chain evidence;
 6. the honesty boundary.
 
+## Demo media copy
+
+### Video title
+
+ProofRail — Verifiable Software & Agent Skill Reproduction on 0G
+
+### Short video description
+
+ProofRail independently reproduces software and Agent Skills from an exact source commit, compares the distributed bytes, stores canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. This demo shows a real software `MATCH`, a controlled tamper `MISMATCH`, Agent Skill provenance versus security-audit separation, and real 0G evidence.
+
+Live app: https://proofrail-app-production.up.railway.app
+
+Source: https://github.com/Ollie202/proofrail-0g
+
+### X post caption
+
+A public GitHub repo does not prove the file users download actually came from that source.
+
+Built **ProofRail** for the 0G Bridge Buildathon: exact-commit independent reproduction, real `MATCH` / `MISMATCH`, proof-verified 0G Storage evidence, 0G Chain commitments, and Agent Skill auditing where provenance stays separate from safety.
+
+Live: https://proofrail-app-production.up.railway.app
+Repo: https://github.com/Ollie202/proofrail-0g
+
+#0G #Buildathon #Web3Security #AI
+
 ## Claims not to make
 
 - Do not say ProofRail guarantees matched source is safe or benevolent.
