@@ -4,7 +4,7 @@
 
 Make Agent Skills a first-class ProofRail artifact family while keeping **source correspondence** and **security risk** as independent claims.
 
-## M7 — Issue #12 — IMPLEMENTATION + LIVE GALILEO PROOF COMPLETE
+## M7 — Issue #12 — COMPLETE / MERGED
 
 - [x] Define deterministic canonical Agent Skill packaging over exact sorted relative paths + bytes.
 - [x] Validate the current `SKILL.md` structure/frontmatter, including YAML block-scalar metadata.
@@ -19,7 +19,7 @@ Make Agent Skills a first-class ProofRail artifact family while keeping **source
 - [x] Keep Supabase as mutable job memory only; it cannot override either correspondence or audit evidence.
 - [x] Add provider-neutral canonical M7 evidence and derive Storage/registry commitments from those exact bytes.
 - [x] Add a Galileo-only live runner with no Aristotle mainnet signing path.
-- [x] Harden source acquisition after the provider's specialized toolbox clone endpoint proved unreliable: verify the exact GitHub commit through the GitHub API, fetch that exact SHA's tarball inside 0G Sandbox, and verify the resolved SHA before packaging.
+- [x] Harden source acquisition: verify the exact GitHub commit through the GitHub API, fetch that exact SHA's tarball inside 0G Sandbox, and verify the resolved SHA before packaging.
 - [x] Independently package `examples/agent-skills/clean-review` inside live 0G Sandbox from exact commit `2f193aad92d2f807c2e25f67eb28c5090fa945cf`.
 - [x] Prove publisher/reproduced package SHA-256 equality at `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878` → `MATCH`.
 - [x] Prove substitution digest `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb` → `MISMATCH` while reproduced bytes remain unchanged.
@@ -31,8 +31,9 @@ Make Agent Skills a first-class ProofRail artifact family while keeping **source
 - [x] Derive Aristotle commitments but leave M7 `PREPARED_NOT_SUBMITTED`; no M7 mainnet transaction.
 - [x] Restore Railway production to exactly `proofrail-app` + `proofrail-worker`; worker standby, signer configured, public signing disabled.
 - [x] Record durable structured proof in `hackathon/m7-live-evidence.json`.
-- [ ] Final CI on the completed evidence/docs head.
-- [ ] Mark PR #14 ready, squash-merge, and confirm Issue #12 closes.
+- [x] Final CI on completed PR head passed (run #140).
+- [x] PR #14 marked ready and squash-merged as `07da06180cb7e530f9b3b7820fc478ccb235884f`.
+- [x] Issue #12 closed as completed.
 
 ## Stable production topology
 
@@ -44,4 +45,6 @@ proofrail-worker -> controlled shared-signer boundary; standby, no public signin
 0G registry      -> compact immutable commitments
 ```
 
-No M7 Aristotle mainnet transaction is part of this sprint. Any future mainnet registration requires a fresh read-only preflight and separate explicit approval.
+No M7 Aristotle mainnet transaction was submitted. Any future mainnet registration requires a fresh read-only preflight and separate explicit approval.
+
+No next milestone is defined by this file. Start new work only from an explicitly scoped issue/goal.
