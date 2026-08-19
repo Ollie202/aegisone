@@ -102,7 +102,8 @@ function buildArchiveFetchCommand(): string {
   fs.writeFileSync(${JSON.stringify(SOURCE_MARKER)}, metadata.sha + "\\n", "utf8");
 })().catch((error) => { console.error(error); process.exit(1); });
 `;
-  return `node -e ${JSON.stringify(script)}`;
+  const encoded = Buffer.from(script, "utf8").toString("base64");
+  return `node -e "eval(Buffer.from('${encoded}','base64').toString('utf8'))"`;
 }
 
 const storagePrivateKeyRaw = process.env.ZEROG_STORAGE_PRIVATE_KEY?.trim();
