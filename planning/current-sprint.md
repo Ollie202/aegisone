@@ -34,6 +34,7 @@ Make Agent Skills a first-class ProofRail artifact family while keeping **source
 - [x] Final CI on completed PR head passed (run #140).
 - [x] PR #14 marked ready and squash-merged as `07da06180cb7e530f9b3b7820fc478ccb235884f`.
 - [x] Issue #12 closed as completed.
+- [x] Move both permanent Railway services to `main` and redeploy merged post-M7 commit `1e8789e54a6be569946e2d09cf509f1e816382c8`: app deployment `faada060-c657-4353-a9c2-c917058e11fd`, worker deployment `10b9d33a-df85-4f55-8ec7-dbc90d3140db`; both healthy.
 
 ## Stable production topology
 
@@ -45,6 +46,6 @@ proofrail-worker -> controlled shared-signer boundary; standby, no public signin
 0G registry      -> compact immutable commitments
 ```
 
-No M7 Aristotle mainnet transaction was submitted. Any future mainnet registration requires a fresh read-only preflight and separate explicit approval.
+Both permanent Railway services track `main`. No M7 Aristotle mainnet transaction was submitted. Any future mainnet registration requires a fresh read-only preflight and separate explicit approval.
 
 No next milestone is defined by this file. Start new work only from an explicitly scoped issue/goal.
