@@ -28,6 +28,7 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [x] PR #16 CI green after full-history Gitleaks scan + test suite (final PR CI run #152).
 - [x] No secret/history leaks reported by the full-history Gitleaks CI gate.
 - [x] Submission-name decision resolved: use `ProofRail` for the buildathon while retaining the documented brand-risk warning.
+- [x] Paste-ready AKINDO submission packet prepared in `hackathon/submission-copy.md`.
 
 ## Demo
 - [x] Recording-ready 90-second script uses real observed proof values.
@@ -38,11 +39,14 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [x] MATCH → MISMATCH tamper moment is pinned by web tests and deployed in the exact successful `main` release.
 
 ## AKINDO / final user actions
-- [ ] Re-open the dynamic live AKINDO event page and confirm the exact current deadline/required fields immediately before submission.
-- [ ] Complete all mandatory submission fields.
+
+Current Bridge Buildathon page: `https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd`
+
+- [ ] Sign in and confirm the exact current deadline + mandatory fields shown in the authenticated form.
+- [ ] Complete all mandatory submission fields using `hackathon/submission-copy.md` as the paste-ready source.
 - [ ] Paste the final live app, public repository, evidence, and required project links.
-- [ ] Upload/paste the required demo/social media.
-- [ ] Save/submit before the deadline and confirm the entry appears on AKINDO.
+- [ ] Upload/paste the final demo/social media URL and replace the placeholder in the submission packet if desired.
+- [ ] Save/submit before the deadline and confirm the ProofRail entry appears on AKINDO.
 
 ## Already-proven anchors to use in the form/demo
 
@@ -53,3 +57,4 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - M7 Galileo registration tx: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`
 - Evidence ledger: `hackathon/evidence.md`
 - Recording script: `hackathon/demo-plan.md`
+- Paste-ready submission copy: `hackathon/submission-copy.md`
