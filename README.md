@@ -1,10 +1,13 @@
-# ProofRail *(working name)*
+# ProofRail *(submission name / working brand)*
 
 > Independently reproduce software or Agent Skills from publisher-declared source and give humans or AI agents evidence of whether the distributed artifact actually corresponds to that source.
 
-**Status:** M7 Agent Skill verification/auditing live-proven on 0G Galileo  
+**Status:** M1–M7 live-proven; submission-readiness pass in progress  
 **Current target:** 0G Bridge Buildathon — Wave 3  
-**Working-name warning:** `ProofRail` is not considered brand-safe yet. An unrelated active public project already uses the name in the trust/verification space. See `research/brand-risk.md`.
+**Live app:** https://proofrail-app-production.up.railway.app  
+**Public source:** https://github.com/Ollie202/proofrail-0g
+
+`ProofRail` remains the submission name for this build. A separate brand-risk note is retained in `research/brand-risk.md`; the name is not being represented as a cleared production trademark.
 
 ## The problem
 
@@ -140,6 +143,40 @@ pnpm install
 pnpm check
 pnpm test
 ```
+
+## CLI quickstart
+
+The CLI emits machine-readable canonical JSON. It currently requires `--json` explicitly.
+
+Verify a publisher artifact against an independently built local source checkout:
+
+```bash
+node --experimental-strip-types packages/cli/src/cli.ts verify \
+  --claim /path/to/claim.json \
+  --recipe /path/to/recipe.json \
+  --artifact /path/to/publisher-artifact \
+  --source-repository /path/to/source-checkout \
+  --json
+```
+
+Inspect a canonical software verification file through the same integrity-checked presentation projection used by the web renderer:
+
+```bash
+node --experimental-strip-types packages/cli/src/cli.ts inspect \
+  --evidence /path/to/verification.json \
+  --json
+```
+
+`verify` exits `0` for `MATCH`, `1` for `MISMATCH`, and `2` for invalid invocation/input. CLI behavior is covered by `packages/cli/test` in the repository test suite.
+
+## Judge/demo links
+
+- Live app: https://proofrail-app-production.up.railway.app
+- Evidence ledger: `hackathon/evidence.md`
+- M5 mainnet receipt: `hackathon/m5-aristotle-mainnet.json`
+- M7 live Agent Skill receipt: `hackathon/m7-live-evidence.json`
+- Recording script: `hackathon/demo-plan.md`
+- Submission checklist: `hackathon/submission-checklist.md`
 
 ## Start here
 
