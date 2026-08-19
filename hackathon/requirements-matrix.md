@@ -12,7 +12,7 @@
 | Agent / Trust & Safety relevance | Trust/safety is an accepted 0G build category | Agent Skills get independent correspondence plus deterministic security findings; MATCH never means safe | M7 UI/tests/evidence | **PROVEN** |
 | Demo/submission media | Short judgeable demo expected | proof-first live page + recording-ready 90-second script | live app + `hackathon/demo-plan.md` | **READY; RECORDING PENDING** |
 | Public deliverable | Code must be inspectable | repository is public and evidence ledger is committed | https://github.com/Ollie202/proofrail-0g | **PROVEN** |
-| Repository hygiene | Submission should not expose credentials | signer remains in Railway; CI now scans full Git history with Gitleaks | `.github/workflows/ci.yml` + PR CI | **VERIFYING IN PR #16** |
+| Repository hygiene | Submission should not expose credentials | signer remains in Railway; full-history Gitleaks scan and complete test suite passed in final PR #16 CI | `.github/workflows/ci.yml` + PR #16 CI run #152 | **PROVEN** |
 
 ## Submission-day rule
 
