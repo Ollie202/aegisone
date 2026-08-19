@@ -25,8 +25,8 @@ This checklist records **judge-inspectable state**, not aspirations. Technical i
 - [x] Judge-oriented README with live/demo/evidence links.
 - [x] Architecture/trust-flow documentation.
 - [x] Setup and repository-check instructions.
-- [ ] Final PR #16 CI green after full-history Gitleaks scan + test suite.
-- [ ] No secret/history leaks according to the new full-history Gitleaks CI gate.
+- [x] PR #16 CI green after full-history Gitleaks scan + test suite (CI run #151).
+- [x] No secret/history leaks reported by the full-history Gitleaks CI gate.
 - [x] Submission-name decision resolved: use `ProofRail` for the buildathon while retaining the documented brand-risk warning.
 
 ## Demo
