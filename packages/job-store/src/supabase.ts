@@ -1,8 +1,8 @@
-import type { VerificationJson } from "../../core/src/model.ts";
 import type {
   EvidencePointers,
   JobStore,
   NewVerificationJob,
+  PersistedVerificationResult,
   VerificationJob,
   VerificationJobFailure,
   VerificationJobPatch,
@@ -29,7 +29,7 @@ interface SupabaseJobRow {
   registry_contract: string | null;
   registry_transaction: string | null;
   registry_record_id: string | null;
-  verification_json: VerificationJson | null;
+  verification_json: PersistedVerificationResult | null;
   failure_code: string | null;
   failure_message: string | null;
 }

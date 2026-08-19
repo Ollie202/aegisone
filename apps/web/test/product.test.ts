@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { createVerification, recipeDigest } from "../../../packages/core/src/index.ts";
 import type { BuildEnvironment, BuildRecipe, ReleaseClaim } from "../../../packages/core/src/index.ts";
 import type { VerificationJob } from "../../../packages/job-store/src/index.ts";
+import { readSkillDirectory, verifySkillPackages } from "../../../packages/skill-audit/src/index.ts";
 import { renderJobHtml, renderProductHomeHtml } from "../src/product.ts";
 
 const recipe: BuildRecipe = {
@@ -66,7 +68,7 @@ test("product home explains the mutable and immutable layers", () => {
   const html = renderProductHomeHtml();
   assert.match(html, /Supabase = app\/job memory/);
   assert.match(html, /0G Storage = canonical evidence/);
-  assert.match(html, /cannot decide MATCH or MISMATCH/);
+  assert.match(html, /MATCH never means safe/);
 });
 
 test("pipeline status cannot override a core MISMATCH verdict", () => {
@@ -80,6 +82,21 @@ test("pipeline status cannot override a core MISMATCH verdict", () => {
   const html = renderJobHtml(job({ status: "verified", verificationJson: verification }));
   assert.match(html, />MISMATCH</);
   assert.doesNotMatch(html, /class="badge match">MATCH/);
+});
+
+test("persisted agent-skill job renders correspondence and audit independently", async () => {
+  const maliciousPath = fileURLToPath(new URL("../../../examples/agent-skills/malicious-sync/", import.meta.url));
+  const skill = await readSkillDirectory(maliciousPath);
+  const verification = verifySkillPackages({
+    publisherEntries: skill.entries,
+    reproducedEntries: skill.entries,
+    publisherDirectoryName: skill.directoryName,
+    reproducedDirectoryName: skill.directoryName,
+  });
+  const html = renderJobHtml(job({ artifactKind: "agent-skill", status: "verified", verificationJson: verification }));
+  assert.match(html, />MATCH</);
+  assert.match(html, />CRITICAL_FINDINGS</);
+  assert.match(html, /does not mean the skill is safe or benevolent/);
 });
 
 test("job page does not invent a correspondence verdict before evidence exists", () => {

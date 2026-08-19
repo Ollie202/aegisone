@@ -1,46 +1,47 @@
-# Current Sprint — M6 Product Runtime
+# Current Sprint — M7 Agent Skills
 
 ## Primary objective
 
-Turn the proven M1–M5 verification engine into one understandable product runtime without moving ProofRail's trust into a mutable database.
+Make Agent Skills a first-class ProofRail artifact family while keeping **source correspondence** and **security risk** as independent claims.
 
-## M6 — Issue #11 — IMPLEMENTATION COMPLETE
+## M7 — Issue #12 — IMPLEMENTATION + LIVE GALILEO PROOF COMPLETE
 
-- [x] Define database-independent verification-job lifecycle (`queued`, `running`, `verified`, `failed`).
-- [x] Keep pipeline status separate from cryptographic correspondence; no mutable database `verdict` field.
-- [x] Add RLS-enabled Supabase job schema with ownership fields and 0G evidence pointers.
-- [x] Keep privileged Supabase DB access inside the authenticated `proofrail-jobs` Edge Function; Railway does not hold a service-role secret.
-- [x] Add in-memory store for local/CI smoke tests only.
-- [x] Turn `apps/web` into a product runtime with `/health`, job create/read API, and job pages.
-- [x] Require cached verification JSON to pass the existing integrity-checked core renderer before MATCH/MISMATCH is displayed.
-- [x] Add tests proving database pipeline status cannot override a core MISMATCH.
-- [x] Change M4 inspection so an expected missing output/TEE binding is a capability limitation, not an operational Railway crash.
-- [x] Create a dedicated ProofRail Supabase project after provider cost confirmation (`$0/month` in the current organization).
-- [x] Apply migrations and finish with a clean Supabase security advisor; performance advisor only reports expected unused-index informational notices on the new table.
-- [x] Deploy `proofrail-app` on Railway, switch it to real Supabase persistence, and pass `/health`.
-- [x] Prove a live app → Edge Function → Supabase round trip by creating/reading job `085e2667-c2ca-4d98-919b-106eb2ff4334` and independently confirming the same row with SQL.
-- [x] Add and prove `proofrail-worker` as the long-term secret boundary. Startup confirms signer configured and public signing disabled.
-- [x] Preserve the funded signer as a Railway project-level shared secret; do not expose or copy the private key.
-- [x] Make root `railway.json` service-neutral so future services cannot accidentally inherit the old M2 live command.
-- [x] Stage removal of all five milestone-only M2/M3/M4/M5 Railway services after app + worker replacement topology is proven.
-- [x] Preserve all historical GitHub/0G evidence independently of Railway cleanup.
-- [ ] Apply the already-staged legacy-service deletions in the Railway dashboard; Railway requires interactive 2FA and the connector cannot complete this destructive confirmation.
+- [x] Define deterministic canonical Agent Skill packaging over exact sorted relative paths + bytes.
+- [x] Validate the current `SKILL.md` structure/frontmatter, including YAML block-scalar metadata.
+- [x] Add safe package decoding with traversal, duplicate-path, truncation, and trailing-byte guards.
+- [x] Reuse normal ProofRail correspondence semantics: exact package bytes produce `MATCH`; substituted publisher bytes produce `MISMATCH`.
+- [x] Keep audit findings separate from correspondence.
+- [x] Add deterministic static audit findings with rule ID, severity, path, line, and evidence excerpt.
+- [x] Cover credential harvesting, secret exfiltration, destructive commands, download→execute, encoded execution, persistence, and undeclared executable resources.
+- [x] Keep LLM analysis explicitly advisory and `NOT_RUN` in deterministic evidence.
+- [x] Add clean/malicious fixtures proving combinations such as `MATCH + CRITICAL_FINDINGS` and `MISMATCH + NO_FINDINGS`.
+- [x] Add integrity-checked Agent Skill presentation and persisted job rendering.
+- [x] Keep Supabase as mutable job memory only; it cannot override either correspondence or audit evidence.
+- [x] Add provider-neutral canonical M7 evidence and derive Storage/registry commitments from those exact bytes.
+- [x] Add a Galileo-only live runner with no Aristotle mainnet signing path.
+- [x] Harden source acquisition after the provider's specialized toolbox clone endpoint proved unreliable: verify the exact GitHub commit through the GitHub API, fetch that exact SHA's tarball inside 0G Sandbox, and verify the resolved SHA before packaging.
+- [x] Independently package `examples/agent-skills/clean-review` inside live 0G Sandbox from exact commit `2f193aad92d2f807c2e25f67eb28c5090fa945cf`.
+- [x] Prove publisher/reproduced package SHA-256 equality at `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878` → `MATCH`.
+- [x] Prove substitution digest `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb` → `MISMATCH` while reproduced bytes remain unchanged.
+- [x] Produce canonical evidence: `3470` bytes / SHA-256 `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`.
+- [x] Complete proof-verified 0G Storage round trip: root `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`, tx `0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d`, sequence `147101`, exact bytes `true`.
+- [x] Register/read back the exact commitments on the existing Galileo registry: record `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`, tx `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`, exact readback `true`.
+- [x] Preserve honest TEE semantics: provider TDX evidence proven; artifact-digest challenge binding unavailable; artifact computed in TEE unavailable.
+- [x] Delete the successful live Sandbox after evidence creation.
+- [x] Derive Aristotle commitments but leave M7 `PREPARED_NOT_SUBMITTED`; no M7 mainnet transaction.
+- [x] Restore Railway production to exactly `proofrail-app` + `proofrail-worker`; worker standby, signer configured, public signing disabled.
+- [x] Record durable structured proof in `hackathon/m7-live-evidence.json`.
+- [ ] Final CI on the completed evidence/docs head.
+- [ ] Mark PR #14 ready, squash-merge, and confirm Issue #12 closes.
 
-## Target product topology
+## Stable production topology
 
 ```text
 proofrail-app    -> API/UI + Supabase-backed mutable job index
-proofrail-worker -> controlled worker + shared signer boundary; no public signing endpoint
-0G Sandbox       -> independent execution
+proofrail-worker -> controlled shared-signer boundary; standby, no public signing endpoint
+0G Sandbox       -> independent reproduction
 0G Storage       -> durable canonical evidence
-0G Aristotle     -> immutable compact commitments
+0G registry      -> compact immutable commitments
 ```
 
-## M7 — Issue #12 queued next
-
-Agent Skills become a first-class artifact family with two independent outputs:
-
-1. **Provenance/correspondence:** do the distributed skill bytes match the exact publisher-declared source commit? This remains normal ProofRail `MATCH` / `MISMATCH`.
-2. **Skill security audit:** what risky instructions, scripts, dependencies, exfiltration paths, destructive operations, or hidden payloads exist? This is a separate report and never rewrites the correspondence result.
-
-The UI must be able to show combinations such as `MATCH + HIGH-RISK FINDINGS` and `MISMATCH + NO FINDINGS`.
+No M7 Aristotle mainnet transaction is part of this sprint. Any future mainnet registration requires a fresh read-only preflight and separate explicit approval.

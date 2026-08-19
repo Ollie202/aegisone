@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1",
+  "milestone": "M7",
+  "artifactKind": "agent-skill",
+  "status": "GALILEO_VERIFIED",
+  "source": {
+    "repository": "https://github.com/Ollie202/proofrail-0g.git",
+    "commitSha": "2f193aad92d2f807c2e25f67eb28c5090fa945cf",
+    "subdirectory": "examples/agent-skills/clean-review",
+    "acquisitionMethod": "GITHUB_API_EXACT_SHA_TARBALL",
+    "commitApiVerified": true,
+    "resolvedCommitSha": "2f193aad92d2f807c2e25f67eb28c5090fa945cf"
+  },
+  "publisherPackage": {
+    "format": "proofrail-agent-skill-package-v1",
+    "fileCount": 2,
+    "byteLength": 973,
+    "sha256": "fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+    "paths": ["SKILL.md", "scripts/check.py"]
+  },
+  "reproducedPackage": {
+    "format": "proofrail-agent-skill-package-v1",
+    "fileCount": 2,
+    "byteLength": 973,
+    "sha256": "fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+    "runtime": "node-v22.14.0"
+  },
+  "correspondence": {
+    "genuine": "MATCH",
+    "publisherSha256": "fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+    "reproducedSha256": "fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+    "substitutionProbe": "MISMATCH",
+    "substitutedPublisherSha256": "da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb"
+  },
+  "audit": {
+    "analysisKind": "DETERMINISTIC_STATIC",
+    "highestSeverity": "INFO",
+    "findingCount": 0,
+    "llmAdvisory": "NOT_RUN"
+  },
+  "sandbox": {
+    "network": "0G Galileo Testnet",
+    "chainId": 16602,
+    "providerAddress": "0xa19C4E672576E186AF81548E950Bf74A736220C3",
+    "providerUrl": "https://provider-private-sandbox.0g.ai",
+    "sandboxId": "d3d81adc-d7ba-4557-93e3-ae02fd1bf4ff",
+    "snapshot": "daytonaio/sandbox:0.5.0-slim",
+    "depositTransaction": "0xae0b1eff100fe361c0b79d12f56320bdbe15977efab05653dd7fb054add04652",
+    "depositWei": "70000000000000000",
+    "toolboxReadyAttempt": 1,
+    "cleanupDeleted": true
+  },
+  "attestation": {
+    "providerTdxEvidence": "PROVEN",
+    "evidenceBytes": 44897,
+    "evidenceSha256": "791501f7610de3f7deb827a845e73f76370bf29e926d084ac833919920efffd1",
+    "quoteVersion": 5,
+    "artifactDigestChallengeBinding": "NOT_AVAILABLE_ON_LIVE_LEGACY_TAPP",
+    "artifactComputedInTee": "NOT_AVAILABLE",
+    "challengeBindingProven": false
+  },
+  "canonicalEvidence": {
+    "byteLength": 3470,
+    "sha256": "16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a"
+  },
+  "storage": {
+    "network": "0G Galileo Testnet",
+    "chainId": 16602,
+    "root": "0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66",
+    "transactionHash": "0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d",
+    "sequence": 147101,
+    "uploadedSha256": "16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a",
+    "downloadedSha256": "16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a",
+    "proofVerified": true,
+    "bytesMatch": true
+  },
+  "galileoRegistry": {
+    "chainId": 16602,
+    "contractAddress": "0x227Fcc243f25c395C93Df789EC72Bc75bf096017",
+    "recordId": "0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a",
+    "transactionHash": "0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db",
+    "blockNumber": 50237703,
+    "gasUsed": "161135",
+    "exactReadback": true
+  },
+  "preparedAristotleAnchor": {
+    "targetNetwork": "0G Aristotle Mainnet",
+    "chainId": 16661,
+    "status": "PREPARED_NOT_SUBMITTED",
+    "contractAddress": "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4",
+    "recordId": "0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a",
+    "transactionHash": null,
+    "commitments": {
+      "manifestDigest": "0x16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a",
+      "sourceClaimDigest": "0xbded5f7f00006131e5a70c428e5375d141da59da93dc20db7ab3f55daa1d4649",
+      "publisherArtifactDigest": "0xfb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+      "reproducedArtifactDigest": "0xfb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878",
+      "provenanceRoot": "0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66"
+    }
+  },
+  "safety": {
+    "aristotleMainnetWrites": false,
+    "mainnetSignerCodePresent": false
+  },
+  "railwayDeployment": "6cec0482-813a-45d9-a831-0cea9dc3090e"
+}
