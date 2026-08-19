@@ -37,7 +37,7 @@ proofrail-worker = controlled secret-bearing worker, standby by default
 0G registry      = compact immutable commitments
 ```
 
-Railway cleanup is complete. Production intentionally contains only `proofrail-app` and `proofrail-worker`. The worker is restored to the canonical M6 standby deployment; startup confirms the signer is configured while public signing is disabled.
+Railway cleanup is complete. Production intentionally contains only `proofrail-app` and `proofrail-worker`, and both permanent services now track the repository `main` branch. The app is healthy on merged post-M7 commit `1e8789e54a6be569946e2d09cf509f1e816382c8` via Railway deployment `faada060-c657-4353-a9c2-c917058e11fd`. The worker is healthy on the same commit via deployment `10b9d33a-df85-4f55-8ec7-dbc90d3140db`; startup confirms the signer is configured while public signing is disabled.
 
 Supabase is **not** a proof authority. It stores product/job state and evidence pointers, not a mutable verdict. Cached verification data must pass ProofRail's integrity-checked presentation layer before MATCH/MISMATCH or skill-audit results are shown.
 
@@ -88,6 +88,7 @@ No M7 Aristotle mainnet transaction has been signed or submitted. The existing M
 - PR #14 squash-merged to `main` as `07da06180cb7e530f9b3b7820fc478ccb235884f`.
 - Issue #12 closed as completed.
 - Final PR-head CI run #140 passed.
+- Permanent Railway production services were moved from the historical M6 branch to `main` and redeployed successfully from post-merge commit `1e8789e54a6be569946e2d09cf509f1e816382c8`.
 
 ## Next work
 
