@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-19  
-**Phase:** M7 Agent Skill verification/audit proven on Galileo  
+**Phase:** M7 Agent Skill verification/audit complete and merged  
 **Product name:** ProofRail *(working name only)*
 
 ## Current product thesis
@@ -21,8 +21,8 @@ A `MATCH` never means “safe,” and an audit finding never rewrites the crypto
 
 ## Proven foundation
 
-- M1–M6 are complete and merged.
-- M7 Agent Skill verification/auditing is live-proven on 0G Galileo and awaiting final PR merge only.
+- M1–M7 are complete and merged.
+- Agent Skill verification/auditing is live-proven on 0G Galileo with durable evidence in `hackathon/m7-live-evidence.json`.
 - Real 0G Sandbox independent execution, proof-verified 0G Storage, Galileo registry readback, and the prior M5 Aristotle mainnet anchor are proven.
 - M4/M7 TDX evidence remains honestly classified as provider evidence only: the live legacy Tapp quote does not bind the artifact digest and does not prove the artifact was computed inside the TEE.
 
@@ -83,6 +83,12 @@ M7 derives the Aristotle registry commitments but leaves them `PREPARED_NOT_SUBM
 
 No M7 Aristotle mainnet transaction has been signed or submitted. The existing M5 mainnet registry remains at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. Any new mainnet write requires a separate fresh preflight and explicit approval.
 
+## Repository completion
+
+- PR #14 squash-merged to `main` as `07da06180cb7e530f9b3b7820fc478ccb235884f`.
+- Issue #12 closed as completed.
+- Final PR-head CI run #140 passed.
+
 ## Next work
 
-Do not invent another milestone automatically. After PR #14 is merged, continue only from an explicitly defined issue/goal. Likely product-facing work includes external-skill validation and submission/demo hardening, but those are not M7 acceptance requirements.
+Do not invent another milestone automatically. Continue only from an explicitly defined issue/goal. Likely product-facing work includes external-skill validation and submission/demo hardening, but those were not M7 acceptance requirements.
