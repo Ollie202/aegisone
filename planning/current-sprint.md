@@ -1,16 +1,22 @@
-# Current Sprint — M8 Verified Capability Discovery
+# Current Sprint — M8 Backend First
 
 ## Primary objective
 
-Extend the proven M1–M7 verification engine into a trust-aware capability discovery hub for humans and agents without weakening ProofRail's existing evidence model.
+Complete ProofRail M8 as a **trust-aware capability discovery backend** before building the new human Hub frontend.
 
-The target flow is:
+Target flow:
 
 ```text
-intent -> capability discovery -> ProofRail evidence -> consumer trust policy -> ALLOW / REVIEW / DENY
+intent
+  -> capability discovery
+  -> source assurance
+  -> ProofRail evidence
+  -> consumer trust policy
+  -> ALLOW / REVIEW / DENY
 ```
 
-Issue #18 is the M8 master plan. Issue #19 / branch `agent/m8-capability-model` is the active M8.1 gate.
+M8 master: Issue #18.  
+Current implementation gate: **M8.2 / Issue #21 / branch `agent/m8-ard-discovery`**.
 
 ## Proven foundation — unchanged
 
@@ -23,52 +29,113 @@ Issue #18 is the M8 master plan. Issue #19 / branch `agent/m8-capability-model` 
 - [x] Production remains exactly `proofrail-app` + `proofrail-worker`.
 - [x] Worker signer boundary remains controlled; public signing disabled.
 
-## M8 scope
+## M8.1 — COMPLETE
 
-M8 makes discovery and policy first-class while preserving the existing trust boundary.
+Issue #19 / PR #20 merged.
 
-- Agent Skills: fully supported ProofRail verification target.
-- MCP servers: discovery/indexing may be added after the Skill vertical slice; `INDEXED` must not imply ProofRail verification.
-- A2A agents/APIs: model-ready, implementation is stretch scope only after the core demo works.
-- ARD: adapter only; do not couple the provider-independent core to an evolving draft specification.
-- Supabase: mutable catalog/job index only; cannot invent proof.
-- No paid runtime LLM, embedding API, vector database, creator marketplace, auto-install, or new mainnet write is required.
+- [x] `@proofrail/capability-model` provider-independent package.
+- [x] resource kinds: Agent Skill, MCP server, A2A agent, API.
+- [x] discovery metadata structurally separate from trust evidence.
+- [x] source inspection distinct from distribution correspondence.
+- [x] `MATCH` / `MISMATCH` require separate distributed + independent digests.
+- [x] deterministic `ALLOW` / `REVIEW` / `DENY` evaluator.
+- [x] policy ignores discovery relevance and handles missing evidence explicitly.
+- [x] ADR-010 records discovery/evidence/policy separation.
+- [x] final CI green before merge.
 
-## Active gate — M8.1 capability/evidence/policy model
+Do not redo M8.1.
 
-- [x] M8 master plan created as Issue #18.
-- [x] M8.1 created as Issue #19.
-- [x] `@proofrail/capability-model` package started.
-- [x] resource kinds distinguish Agent Skills, MCP servers, A2A agents, and APIs.
-- [x] discovery metadata is structurally separate from trust evidence.
-- [x] source inspection is distinct from distribution correspondence.
-- [x] `MATCH` / `MISMATCH` require distinct distributed + independently reproduced digests.
-- [x] deterministic `ALLOW` / `REVIEW` / `DENY` policy evaluator added.
-- [x] policy ignores discovery relevance and fails required missing evidence closed/review.
-- [x] ADR-010 records the separation.
-- [ ] run M8.1 package tests and complete repository test suite.
-- [ ] open M8.1 PR and merge only if CI is green.
+## Current gate — M8.2 ARD adapter
 
-## Next gates after M8.1
+Issue #21.
 
-1. M8.2 — pinned ARD discovery adapter and `POST /search`.
-2. M8.3 — real federated discovery sources with caching/failure isolation.
-3. M8.4 — Supabase catalog persistence.
-4. M8.5 — enrich Agent Skill resources with the existing ProofRail verification pipeline.
-5. M8.6 — human Hub + Evidence Passport.
-6. M8.7 — deterministic trust-policy API.
-7. M8.8 — Claude/MCP agent interface.
-8. M8.9 — real controlled substitution winner demo.
-9. M8.10 — MCP Registry indexing only after the core vertical slice works.
-10. M8.11 — final security/docs/demo/submission polish.
+Goal: make ProofRail itself expose a small pinned ARD-compatible local discovery surface before connecting real upstream providers.
 
-## Submission closure still pending
+Required:
 
-The previous technical submission packet remains complete, but user-authenticated/media actions remain separately pending: final recording, current AKINDO form confirmation, demo/social URL, and authenticated submission.
+- `@proofrail/discovery-ard`
+- ARD v0.9 pinned to `ards-project/ard-spec@1d25abcf07e081f604dba3ae5398b16c79f20b7b`
+- `GET /.well-known/ai-catalog.json`
+- `POST /search`
+- deterministic local fixture/catalog search
+- all four M8.1 resource kinds mapped/tested
+- strict request/result limits
+- unsupported filters fail explicitly
+- `INDEXED`/relevance/trustManifest metadata cannot upgrade ProofRail evidence
+- root tests/CI green
 
-## Safety boundary
+No federation, Supabase schema, GitHub OAuth, MCP, UI redesign or 0G write belongs in M8.2.
 
-- No M7 Aristotle mainnet write is authorized or needed.
-- Any future mainnet write still requires a fresh read-only preflight and separate explicit approval.
-- No public verification route may expose the wallet/signer or permit unbounded 0G spend.
-- Do not label discovered/indexed resources as verified unless canonical ProofRail evidence supports that claim.
+## Backend queue after M8.2
+
+1. **M8.3 / #22 — federated discovery**  
+   GitHub Agent Finder + Hugging Face Discover, provider isolation/limits/dedup.
+
+2. **M8.4 / #23 — Supabase capability catalog**  
+   Existing ProofRail project only; RLS; mutable catalog/version/ingestion state.
+
+3. **M8.5 / #24 — GitHub source authentication**  
+   Real GitHub App flow proving repository authority for exact source claims. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
+
+4. **M8.6 / #25 — Agent Skill verification enrichment**  
+   Connect resources/claims to existing M7 pipeline; source inspection remains separate from distribution correspondence.
+
+5. **M8.7 / #26 — stable read/evidence/policy API**  
+   Freeze machine-readable backend JSON.
+
+6. **M8.8 / #27 — MCP agent interface**  
+   Only `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`.
+
+7. **M8.9 / #28 — controlled substitution vertical slice**  
+   Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; real 0G evidence.
+
+8. **M8.10 / #29 — MCP Registry indexing (stretch)**  
+   Read-only official Registry ingestion; remains INDEXED unless stronger evidence actually exists.
+
+9. **M8.11 / #30 — hardening/deploy/backend freeze**  
+   Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze.
+
+## Frontend
+
+**M9 / Issue #31** starts only when M8.11 explicitly says the backend is frontend-ready.
+
+The frontend will add:
+
+- human capability search;
+- Evidence Passport;
+- GitHub publisher/source-claim UX;
+- deterministic policy playground;
+- 90–120 second judge path.
+
+It must consume the frozen backend and must not become a second trust engine.
+
+## Planning artifacts
+
+Coding agents should read:
+
+- `CODEX.md`
+- `docs/13-m8-backend-blueprint.md`
+- `docs/14-source-authentication.md`
+- `docs/15-m8-api-inventory.md`
+- `docs/16-m8-database-plan.md`
+- `docs/17-m8-security-boundaries.md`
+- `docs/18-m9-frontend-plan.md`
+- `docs/19-m8-implementation-checklist.md`
+
+## Cost / architecture boundary
+
+- Reuse exactly `proofrail-app` + `proofrail-worker`.
+- Extend the existing ProofRail Supabase project; do not create another one.
+- No runtime OpenAI/Anthropic API is required.
+- No embeddings/vector DB is required.
+- No third Railway service is required.
+- No new Aristotle mainnet write is required.
+- Public search/read routes must never trigger uncontrolled/funded 0G work.
+
+## User/manual dependency later
+
+At M8.5 live integration the user must create/install the GitHub App and add the generated client ID/client secret to the app service. Code/tests should be ready before asking for those values.
+
+## Submission closure remains separate
+
+The prior technical submission packet remains valid; user-authenticated/media actions (recording/current AKINDO form/demo URL/submission) are separate from this M8 product expansion.
