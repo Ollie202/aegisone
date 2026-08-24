@@ -4,99 +4,245 @@ This document answers the recurring question: **what exactly does ProofRail know
 
 ## ProofRail is not the source of truth
 
-The product should be designed so users do not need to trust ProofRail's opinion. ProofRail assembles independently checkable claims and evidence.
+ProofRail is designed so users/agents do not need to trust a mutable ProofRail opinion. It assembles independently checkable claims and evidence, then lets a consumer policy decide whether that evidence is sufficient.
 
-## Claim 1 — Which source belongs to the release?
+M8 adds discovery, but discovery does not become truth.
 
-ProofRail cannot discover this with certainty from arbitrary bytes. A publisher/declarant supplies project/release identity, repository, immutable commit, build recipe, and artifact reference/bytes.
+## The M8 trust questions are separate
 
-Assurance levels remain separate:
+For every capability, ProofRail may know different amounts about several independent dimensions:
 
-1. **DECLARED** — the mapping was supplied; ownership is not proven.
-2. **REPOSITORY_AUTHENTICATED** — later, a GitHub-authenticated identity with repository permission registered it.
-3. **SIGNED_RELEASE** — later, a recognized publisher key signs the release mapping.
-4. Future domain/package/onchain bindings can add context.
+1. **Discovery:** what resource might satisfy the requested intent?
+2. **Source assurance:** who, if anyone, authenticated the mapping between this resource/version and a source repository/revision?
+3. **Source inspection:** did ProofRail independently retrieve/inspect the exact immutable source snapshot?
+4. **Distribution correspondence:** do the distributed bytes correspond to independent reproduction from that exact claimed source?
+5. **Security assessment:** what deterministic findings were observed in the Skill/package?
+6. **Canonical evidence:** is there integrity-protected evidence/0G storage/registry data for the observation?
+7. **Consumer policy:** is this evidence sufficient for this consumer?
 
-Never collapse these into "official" without evidence.
+None of these dimensions silently rewrites another.
 
-## Claim 2 — Does the distributed artifact correspond to that source?
+## Claim 1 — Which source belongs to the release/capability?
 
-This is the main ProofRail job.
+ProofRail cannot infer the official source with certainty from arbitrary bytes or a search result.
+
+The source-assurance ladder is:
+
+### `NONE`
+
+A discovery provider/metadata may reference a repository, but ProofRail has not received an authenticated explicit source claim.
+
+### `DECLARED`
+
+An explicit mapping was supplied and the exact source may be resolved, but authority over that source mapping is not proven.
+
+### `REPOSITORY_AUTHENTICATED`
+
+M8.5 earns this only when a real GitHub App user authorization flow establishes that an authenticated GitHub identity has sufficient effective write/push or admin-equivalent authority over the stable claimed repository identity, and the exact immutable source claim is canonicalized/digested.
+
+The evidence records stable repository/user IDs, observed permission and authentication time in addition to human-readable names.
+
+This does **not** mean the account is uncompromised, the code is safe, or every stakeholder approves the release.
+
+### `SIGNED_RELEASE`
+
+A stronger cryptographic provenance/signature path verifies the artifact/source/signing identity under explicit expected constraints.
+
+For the current design, GitHub Artifact Attestations are the first candidate. Merely listing an attestation does not earn this level; cryptographic verification must succeed under expected repository/source/signer policy.
+
+If no verifier succeeds, this assurance remains unavailable.
+
+### Future adapters
+
+Domain, package-registry, Sigstore/npm provenance or on-chain bindings may add new evidence paths later without changing correspondence semantics.
+
+Never collapse any assurance level into “official/trusted/safe” without stating the exact evidence.
+
+Detailed implementation: `docs/14-source-authentication.md`.
+
+## Claim 2 — Was the exact source independently inspected?
+
+ProofRail may retrieve an exact immutable source commit and inspect/package/audit it.
+
+For Agent Skills this can legitimately produce:
+
+`sourceInspection = INSPECTED`
+
+But source inspection alone is **not distribution correspondence**.
+
+If there is no distinct distributed/publisher artifact, ProofRail must leave correspondence as `NOT_EVALUATED` or `INSUFFICIENT_EVIDENCE`.
+
+## Claim 3 — Does the distributed artifact correspond to that source?
+
+This is the core ProofRail correspondence job.
 
 ```text
-exact source commit + explicit build recipe
-                 ↓
-        independent build
-                 ↓
-       reproduced artifact
-                 ↓
-              SHA-256
-                 ↓
-compare with SHA-256 of publisher artifact
+separate distributed/publisher artifact
+                  ↓
+               SHA-256
+                  ↓
+                  VS
+                  ↓
+exact claimed source commit + constrained recipe/package rule
+                  ↓
+        independent reproduction
+                  ↓
+       reproduced artifact/package
+                  ↓
+               SHA-256
 ```
 
 - same bytes/hash → `MATCH`;
-- different bytes/hash → `MISMATCH` or `DIVERGED`, depending on context;
-- missing required evidence → `INSUFFICIENT_EVIDENCE`.
+- different bytes/hash → `MISMATCH` or `DIVERGED` according to context;
+- missing required evidence → `INSUFFICIENT_EVIDENCE` / not evaluated.
 
-No LLM is needed.
+No LLM is needed or permitted in this verdict.
 
-## M4 — what 0G Sandbox/Tapp evidence actually proves
+A repository/source archive cannot be compared against itself twice and called a meaningful `MATCH`. The publisher/distribution artifact must be distinct evidence from the independent exact-source reproduction.
 
-M4 independently proved that the hosted 0G Sandbox path can toolbox-clone an exact immutable ProofRail commit, execute the committed Node.js build, return the produced artifact bytes, and reproduce the expected 53-byte artifact SHA-256 exactly.
+## Claim 4 — Is the capability safe?
+
+ProofRail does not currently make a universal safety certification.
+
+For Agent Skills, deterministic static auditing is a separate evidence dimension that can identify known risky instruction/script/resource patterns.
+
+Valid combinations include:
+
+```text
+MATCH + CRITICAL findings
+MISMATCH + no findings
+MATCH + no findings
+```
+
+A `MATCH` never means safe. Zero deterministic findings never proves malware-free/secure behavior.
+
+## Claim 5 — What does discovery/relevance prove?
+
+Nothing about security or provenance by itself.
+
+ARD, GitHub Agent Finder, Hugging Face Discover and the MCP Registry help answer:
+
+> “what might help with this task?”
+
+Their identifiers, descriptions, scores and trust metadata are useful discovery context only until ProofRail separately validates evidence.
+
+Search relevance is explicitly excluded from the M8 deterministic trust-policy evaluator.
+
+## Claim 6 — What does canonical/0G evidence add?
+
+Supabase/application rows are mutable. Strong ProofRail observations therefore have canonical deterministic evidence whose digest can be stored/retrieved through 0G Storage and committed in the ProofRail registry.
+
+The database may cache summaries/pointers, but changing a row cannot create a cryptographic correspondence result or authenticated source claim.
+
+Consumers can inspect the underlying evidence rather than trust a screenshot/database boolean.
+
+## M4 / TEE boundary — unchanged
+
+M4 independently proved that the hosted 0G Sandbox path can toolbox-clone an exact immutable ProofRail commit, execute the committed Node.js build, return the produced artifact bytes, and reproduce the expected artifact SHA-256 exactly.
 
 M4 separately obtained real TDX quote evidence from the execution provider's TappRegistry node. That evidence is useful provider/runtime evidence, but it is **not evidence that the artifact was computed inside the TEE**:
 
 - the successful toolbox build ran in a non-sealed sandbox;
 - the observed sealed-only provider rejects toolbox operations;
 - the live Tapp quote v5 `report_data` is the provider signer address padded to 64 bytes;
-- it does not match the SHA-512 construction that would bind the supplied artifact-digest challenge;
-- the live evidence envelope also omits `runtime_data`.
+- it does not match the construction that would bind the supplied artifact-digest challenge;
+- the live evidence envelope omits the required artifact/runtime output binding.
 
-Therefore ProofRail may say **independent 0G rebuild** and **provider TDX evidence available**. It must not say **TEE-attested artifact build**, **TEE-computed artifact**, or **artifact digest bound to TDX attestation** for the M4 flow.
+Therefore ProofRail may say **independent 0G rebuild** and **provider TDX evidence available**. It must not say **TEE-attested artifact build**, **TEE-computed artifact**, or **artifact digest bound to TDX attestation** for the current flow.
 
-A future stronger path may earn those labels only if the measured execution/output binding is independently verifiable.
+A future stronger path may earn those labels only if measured execution/output binding is independently verifiable.
 
-## Why a tiny commit does not break the model
+## Source-claim conflicts
 
-Git commits identify exact source revisions. If one line changes, the commit changes. A release record stays pinned to its original commit; a later release gets a new record.
+ProofRail must not silently choose between conflicting source assertions.
 
-## Why GitHub alone is not the same thing
+Examples:
 
-GitHub can show source and can provide strong publisher-side build provenance/attestations. ProofRail's intended additional value is **corroboration outside the publisher's own build path**. The strongest future version asks multiple independent builders whether they can reproduce the exact release bytes and lets the consumer select a policy.
+- discovery provider says repository A, authenticated publisher claim says repository B;
+- authenticated claim pins commit A, verified signed provenance for the same purported release binds commit B;
+- version/distribution metadata conflicts with the authenticated claim.
 
-## What a PASS never means
+Represent a source-claim conflict explicitly and let policy return `REVIEW` or `DENY` according to consumer settings.
 
-A matching release can still contain intentionally malicious source code.
+Historical authenticated claims are not rewritten to make a newer claim look consistent.
 
-Therefore these phrases are forbidden unless separately proven:
-- "safe software";
-- "malware-free";
-- "secure code";
-- "trusted developer";
-- "official source" from an unauthenticated declaration;
-- "TEE-attested build" when only provider/runtime TEE evidence exists.
+## Why tiny source changes do not break the model
 
-## Scaling model
+Git commits identify exact source revisions. A one-line change creates a new commit. A release/source claim stays pinned to the original immutable SHA; a later revision gets a new claim/version/evidence record.
 
-Rebuild once per builder/policy, verify many times. Consumers normally hash the artifact they received and verify previously produced evidence. Builders perform the expensive work.
+## Why GitHub alone is not the same thing as ProofRail
 
-Wave 3 intentionally constrains supported repositories/build recipes and resource limits. Arbitrary-source build execution is a later operational problem, not an MVP requirement.
+GitHub can provide source hosting, repository authority, releases and strong publisher-side build provenance/attestations.
 
-## Future trust policy example
+ProofRail's additional value is **independent correspondence evidence and policy aggregation outside the publisher's build path**, plus a discovery layer that makes these evidence dimensions consumable by agents.
+
+Repository authentication says who had authority to make the source claim. Signed provenance can say what a publisher-side build identity produced. Independent 0G reproduction asks whether another environment can produce the same distributed bytes from the exact claimed source. These reinforce one another but are not interchangeable.
+
+## Consumer trust policy
+
+M8.1 implements deterministic consumer-side policy over independently available evidence dimensions.
+
+Example:
 
 ```yaml
 source:
   minimum_assurance: repository_authenticated
 
-reproduction:
-  minimum_builders: 3
-  require_exact_match: true
-  require_tee_builders: 1
-  require_output_binding_for_tee_label: true
+correspondence:
+  require: match
 
-on_failure:
-  refuse_execution: true
+security:
+  maximum_severity: medium
+
+evidence:
+  maximum_age_hours: 24
+
+missing_evidence:
+  decision: deny
 ```
 
-This is where ProofRail becomes useful infrastructure for autonomous agents and CI systems.
+Policy output is:
+
+- `ALLOW`
+- `REVIEW`
+- `DENY`
+
+with structured reasons.
+
+ProofRail supplies evidence; the consumer chooses requirements.
+
+Future policies may add multiple independent builders/TEE-output-binding constraints only after those evidence paths genuinely exist.
+
+## What ProofRail must never imply without separate proof
+
+Forbidden/misleading phrases include:
+
+- “safe software”;
+- “malware-free”;
+- “secure code”;
+- “trusted developer”;
+- “official source” from unauthenticated discovery/declaration;
+- “verified Skill” without identifying which evidence dimension is verified;
+- “TEE-attested build” when only provider/runtime TDX evidence exists.
+
+## Scaling model
+
+Discovery can operate over many indexed resources cheaply. Expensive independent verification is performed only for explicit supported jobs/versions, then consumers verify/reuse the resulting evidence many times.
+
+ProofRail therefore does **not** need to independently rebuild every Skill returned by search.
+
+Current resource/build limits remain part of the trust/security boundary. Arbitrary private-source and arbitrary build-recipe execution are not M8 MVP promises.
+
+## Agent usage
+
+Agents query ProofRail for discovery/evidence/policy; they do not need ProofRail to become a generic agent itself.
+
+M8 MCP surface is intentionally read/policy oriented:
+
+- search;
+- inspect;
+- evaluate.
+
+No automatic installation/execution/signing is part of the initial trust path.
+
+See `docs/12-agent-consumption.md` and `docs/17-m8-security-boundaries.md`.
