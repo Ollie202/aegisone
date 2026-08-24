@@ -9,40 +9,65 @@ Before making meaningful changes, read these files in order:
 1. `AGENTS.md`
 2. `PROJECT_STATE.md`
 3. `planning/current-sprint.md`
-4. `docs/01-prd.md`
-5. `docs/03-architecture.md`
-6. `docs/11-trust-model.md`
-7. relevant ADRs, security docs, and integration docs for the task
+4. `CODEX.md`
+5. `docs/13-m8-backend-blueprint.md`
+6. `docs/14-source-authentication.md`
+7. `docs/15-m8-api-inventory.md`
+8. `docs/16-m8-database-plan.md`
+9. `docs/17-m8-security-boundaries.md`
+10. relevant existing architecture/trust/ADR files for the issue
 
-Then inspect the existing implementation before proposing changes.
+Then read the **single GitHub issue** you are implementing and inspect the existing implementation before proposing changes.
 
-`AGENTS.md` is authoritative for coding-agent behavior and trust/product constraints. Do not duplicate or weaken its rules.
+`AGENTS.md` remains authoritative for coding-agent behavior and trust/product constraints. `CODEX.md` contains the active M8 execution order and detailed backend handoff; the same plan applies if Claude Code is used instead of Codex.
 
 ## Current state
 
 - M1–M7 are complete, live-proven, and merged into `main`.
-- The technical submission package and judge-facing proof surface are complete.
-- Production is intentionally limited to `proofrail-app` and `proofrail-worker`.
-- There is currently no M8. Do not invent a new milestone without an explicit product goal.
-- Remaining submission work described in `planning/current-sprint.md` is user-authenticated/media work unless the user explicitly changes scope.
+- M8 is now an explicit product milestone: ProofRail Hub / verified capability discovery.
+- M8.1 capability/evidence/policy model is complete and merged in PR #20.
+- M8.2 ARD adapter is the current implementation target, Issue #21, branch `agent/m8-ard-discovery`.
+- Issues #22–#30 define the remaining backend sequence through the M8.11 backend freeze.
+- M9 frontend is Issue #31 and must not begin until M8.11 explicitly declares the backend frontend-ready.
+- Production intentionally remains exactly `proofrail-app` + `proofrail-worker`.
+
+## M8 working sequence
+
+Do one issue at a time:
+
+1. M8.2 — pinned ARD adapter/local search (#21)
+2. M8.3 — federated discovery (#22)
+3. M8.4 — Supabase capability catalog (#23)
+4. M8.5 — GitHub source authentication (#24)
+5. M8.6 — Agent Skill verification enrichment (#25)
+6. M8.7 — stable resource/evidence/policy API (#26)
+7. M8.8 — MCP agent interface (#27)
+8. M8.9 — controlled substitution end-to-end proof (#28)
+9. M8.10 — MCP Registry indexing stretch (#29)
+10. M8.11 — backend hardening/deploy/contract freeze (#30)
+11. M9 frontend only after the backend freeze (#31)
+
+Do not roll multiple milestones into one unbounded context/PR.
 
 ## Working method
 
-For every new implementation request:
+For every issue:
 
-1. Restate the requested outcome as explicit acceptance criteria.
-2. Map it onto the current architecture instead of rebuilding existing components.
-3. Identify which trust boundary or external integration is affected.
-4. Check current official documentation for any evolving external dependency before changing integration code.
-5. Make the smallest coherent change that satisfies the requirement.
-6. Add or update tests for both success and failure paths.
-7. Run the relevant package tests, then run the repository-wide checks before declaring completion.
-8. Update project documentation only when project truth actually changes.
-9. Record real live-integration evidence in `hackathon/evidence.md` when applicable.
+1. Pull/read the latest project state and issue.
+2. Restate explicit acceptance criteria.
+3. Map the work onto current packages/services instead of rewriting working components.
+4. Identify the affected trust boundary/external integration.
+5. Use the pinned/researched integration contract in `docs/15-m8-api-inventory.md`; if a pin must change, explain and update tests/docs together.
+6. Make the smallest coherent implementation.
+7. Add success, failure, malformed-input, missing-evidence, and trust-escalation regression tests as applicable.
+8. Run relevant package checks, then `pnpm check` and `pnpm test`.
+9. Open/review PR; merge only with green CI and accurate claims.
+10. Update project truth/evidence only for capabilities actually completed/proven.
+11. Stop after the issue is merged.
 
 ## Verification commands
 
-Install and use the repository-pinned toolchain:
+Use the repository-pinned toolchain:
 
 ```bash
 pnpm install
@@ -52,33 +77,39 @@ pnpm test
 
 Node.js 22+ and pnpm 10.15.0 are expected by the workspace.
 
-Do not run live 0G/mainnet flows merely to prove local code changes. Live runs, paid services, large compute, or blockchain spending require the same approval discipline defined in `AGENTS.md` and project docs.
+Do not run live 0G/mainnet flows merely to prove ordinary code changes. Live funded work, paid services, large compute, or blockchain spending require the approval discipline defined in `AGENTS.md` and the issue.
 
 ## Non-negotiable ProofRail semantics
 
-Preserve these distinctions everywhere—code, APIs, UI, tests, and docs:
+Preserve these distinctions everywhere—code, APIs, UI, tests, docs, and agent interfaces:
 
-- deterministic artifact correspondence is `MATCH` / `MISMATCH` and must not depend on an LLM;
-- source identity/assurance is separate from artifact correspondence;
-- `MATCH` does not mean safe or malware-free;
-- Agent Skill security findings are separate from correspondence;
-- Supabase is mutable application/job memory, not proof authority;
-- 0G-specific behavior stays behind adapters and does not contaminate `packages/core`;
-- never claim TEE artifact/output binding unless the live attestation actually binds the relevant digest;
-- immutable source revisions must use commit SHAs, not mutable branch names, as security claims.
+- `INDEXED` is discovery state, not verification.
+- search relevance is not a trust/safety score.
+- a repository existing is not proof that the publisher authorized it as source.
+- source assurance is separate from source inspection and artifact correspondence.
+- `DECLARED`, `REPOSITORY_AUTHENTICATED`, and `SIGNED_RELEASE` mean different things.
+- `MATCH`/`MISMATCH` is deterministic and must not depend on an LLM.
+- `MATCH` requires a distinct distributed artifact and independent exact-source reproduction.
+- `MATCH` does not mean safe or malware-free.
+- Agent Skill security findings are separate from correspondence.
+- missing evidence never upgrades assurance.
+- Supabase is mutable application/catalog/job memory, not proof authority.
+- 0G-specific behavior stays behind adapters and does not contaminate provider-independent core/model packages.
+- never claim TEE artifact/output binding unless live evidence actually binds the relevant digest.
+- immutable source revisions use exact commit SHAs, not mutable branches.
+- no public endpoint may expose the 0G signer or automatically spend 0G.
+- no automatic installation/execution of discovered resources in M8.
 
-## When the user asks for a new feature
+## Architecture / cost guardrails
 
-Do not assume the old hackathon milestone sequence is the roadmap. First determine whether the request is:
+Reuse current topology:
 
-- a product feature on top of the completed M1–M7 foundation;
-- a hardening/refactor task;
-- a new artifact family;
-- a deployment/infrastructure change;
-- or a new hackathon/submission requirement.
+- `proofrail-app`: public discovery/read/source-auth/policy/MCP surface.
+- `proofrail-worker`: secret-bearing/internal verification and 0G operations.
+- existing ProofRail Supabase project: mutable catalog/job/source-claim index.
 
-Create a new issue/milestone only when that classification and acceptance criteria are clear.
+Do not add a third permanent Railway service, runtime OpenAI/Anthropic API dependency, embeddings service, paid vector database, or new mainnet write without explicit approval.
 
 ## Completion standard
 
-Do not report a task as complete until implementation, tests, documentation truth, and required evidence agree with each other. If a capability cannot be proven, label it unavailable instead of inferring or marketing around the gap.
+Do not report a task as complete until implementation, tests, documentation truth, deployment/evidence where required, and the issue acceptance criteria agree. If a capability cannot be proven, leave it explicitly unavailable/insufficient rather than inferring or marketing around the gap.
