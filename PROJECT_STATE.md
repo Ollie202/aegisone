@@ -1,116 +1,119 @@
 # Project State
 
-**Last updated:** 2026-08-20  
-**Phase:** Technical submission package complete; demo recording + authenticated AKINDO submission pending  
-**Product name:** ProofRail *(submission name / working brand)*
+**Last updated:** 2026-08-24  
+**Phase:** M8 active — verified capability discovery; M8.1 capability/evidence/policy model is the current merge gate  
+**Product name:** ProofRail
 
 ## Current product thesis
 
-ProofRail independently reproduces an artifact from an explicit publisher source claim, compares exact bytes, and records canonical evidence without allowing mutable application state to invent a verdict.
+ProofRail is evolving from a proof-first software/Agent Skill verifier into a **trust-aware discovery layer for agent capabilities**.
 
-The core trust boundary remains:
+The intended M8 flow is:
 
-> **publisher artifact vs independent reproduction — verified from canonical evidence, not from mutable application state**
+> **intent → capability discovery → ProofRail evidence → consumer trust policy → ALLOW / REVIEW / DENY**
 
-For Agent Skills, ProofRail deliberately exposes two independent answers:
+The original trust boundary remains unchanged:
 
-1. **Correspondence:** do the distributed skill-package bytes match the deterministic package independently produced from the exact declared source commit? → `MATCH` / `MISMATCH`.
-2. **Security audit:** what risky instructions, scripts, resources, exfiltration paths, destructive operations, hidden execution, or persistence behaviors are present? → separate findings + severity.
+> **publisher/distributed artifact vs independent reproduction — verified from canonical evidence, not from mutable application state**
 
-A `MATCH` never means “safe,” and an audit finding never rewrites the cryptographic correspondence result.
+Discovery adds a new question — *what resource might help?* — but does not change the existing verification questions. Search relevance, source assurance, correspondence, security findings, canonical evidence, and consumer policy remain separate dimensions.
 
-## Proven foundation
+## Proven foundation — M1–M7
 
 - M1–M7 are complete and merged.
 - Agent Skill verification/auditing is live-proven on 0G Galileo with durable evidence in `hackathon/m7-live-evidence.json`.
 - Real 0G Sandbox independent execution, proof-verified 0G Storage, Galileo registry readback, and the M5 Aristotle mainnet anchor are proven.
 - M4/M7 TDX evidence remains honestly classified as provider/runtime evidence only: the live legacy Tapp quote does not bind the artifact digest and does not prove the final artifact was computed inside the TEE.
+- For Agent Skills, correspondence and deterministic security findings remain independent. `MATCH` never means safe.
 
 ## Stable production topology
 
 ```text
-Supabase         = mutable app/job memory
-proofrail-app    = proof-first API/UI and job access
+Supabase         = mutable app/job memory and future catalog index
+proofrail-app    = proof-first API/UI and future Hub discovery surface
 proofrail-worker = controlled secret-bearing worker, standby by default
 0G Sandbox       = independent execution/reproduction
 0G Storage       = durable canonical evidence
 0G registry      = compact immutable commitments
 ```
 
-Railway cleanup is complete. Production intentionally contains only `proofrail-app` and `proofrail-worker`, and both permanent services track `main`. The proof-first app deployment `25b2e0e3-de8f-46d6-b0ac-b6900375ce39` is successful. The worker deployment `106a08b2-a8ff-4074-8c2e-b40d35a5c2da` is successful; its startup boundary remains signer configured, public signing disabled.
+Production intentionally remains exactly `proofrail-app` + `proofrail-worker`, both tracking `main`. Supabase is not a proof authority and must not be able to invent MATCH/MISMATCH or other canonical evidence.
 
-Supabase is **not** a proof authority. It stores product/job state and evidence pointers, not a mutable verdict. Cached verification data must pass ProofRail's integrity-checked presentation layer before MATCH/MISMATCH or skill-audit results are shown.
+## M7 live Agent Skill proof
 
-## M7 — Agent Skills proven
+Durable source of truth: `hackathon/m7-live-evidence.json`.
 
-Live evidence is recorded in `hackathon/m7-live-evidence.json`.
+Key observed proof:
 
-### Exact source + independent package
+- exact source commit: `2f193aad92d2f807c2e25f67eb28c5090fa945cf`
+- publisher + independent package SHA-256: `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878` → `MATCH`
+- controlled substituted publisher SHA-256: `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb` → `MISMATCH`
+- deterministic clean-fixture audit: 0 findings / `INFO`
+- canonical evidence SHA-256: `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`
+- 0G Storage root: `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`
+- Galileo registry record: `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`
+- Storage proof verification and exact byte equality: true
+- M7 Aristotle state: `PREPARED_NOT_SUBMITTED`
 
-- Source repository: `https://github.com/Ollie202/proofrail-0g.git`
-- Exact source commit: `2f193aad92d2f807c2e25f67eb28c5090fa945cf`
-- Skill directory: `examples/agent-skills/clean-review`
-- Source acquisition: GitHub API exact-SHA lookup + tarball for that exact SHA inside 0G Sandbox.
-- Publisher package: `973` bytes, 2 files, SHA-256 `fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878`.
-- Independent 0G package: same SHA-256.
-- Genuine correspondence: `MATCH`.
-- Substitution probe: `MISMATCH` with publisher digest `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb` while reproduced bytes stayed unchanged.
-- Deterministic clean-fixture audit: `0` findings, highest severity `INFO`.
-- LLM advisory analysis: `NOT_RUN`.
+## M8 — ProofRail Hub / verified capability discovery
 
-### 0G evidence
+Issue #18 defines the M8 master plan.
 
-- Successful Sandbox: `d3d81adc-d7ba-4557-93e3-ae02fd1bf4ff`; cleanup/deletion confirmed.
-- Provider: `0xa19C4E672576E186AF81548E950Bf74A736220C3`.
-- TDX evidence SHA-256: `791501f7610de3f7deb827a845e73f76370bf29e926d084ac833919920efffd1`.
-- Canonical evidence: `3470` bytes, SHA-256 `16bbfe2235cdb28cf3f5019c326edc9d619f7a920bee01dc120d7dced4f5837a`.
-- 0G Storage root: `0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66`.
-- Storage transaction: `0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d`.
-- Storage sequence: `147101`.
-- Storage proof verification: `true`; exact byte equality: `true`.
-- Galileo registry record: `0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a`.
-- Galileo registration transaction: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`.
-- Exact registry readback: `true`.
+M8 is intentionally narrower than a universal agent marketplace:
 
-## Submission-readiness pass — complete
+- **Agent Skills:** full ProofRail verification target using the existing M7 engine.
+- **MCP servers:** may be indexed/discovered after the Skill vertical slice; indexing alone is not verification.
+- **A2A agents / APIs:** represented in the provider-independent model; implementation remains stretch scope until the core demo works.
+- **ARD:** discovery adapter only. The provider-independent trust model must not depend on an evolving draft protocol.
+- **Trust policy:** deterministic consumer-side evaluation, not an LLM safety score.
 
-Issue #15 / PR #16 turned the proven system into a judge-facing submission surface without adding new trust claims or unnecessary backend scope.
+No paid runtime LLM/API, vector database, custom embeddings service, creator payments, auto-install, new Railway microservice, or new mainnet write is required for M8.
 
-Completed:
+## M8.1 — capability/evidence/policy model
 
-- proof-first homepage with real M5/M7 evidence and explicit `MATCH` / `MISMATCH` demonstration;
-- Agent Skill correspondence visibly separate from deterministic security findings;
-- direct evidence links for 0G Storage, Galileo registry, and the M5 Aristotle mainnet anchor;
-- mobile-first layout suitable for a short screen recording;
-- tests pinning proof values and honesty labels;
-- final PR #16 CI with complete tests + full-history Gitleaks scan;
-- public app deployed successfully from merged `main`;
-- `hackathon/demo-plan.md` finalized as a 90-second recording script;
-- `hackathon/submission-checklist.md` reconciled against real completion state;
-- `hackathon/requirements-matrix.md` reconciled against the current build;
-- `hackathon/submission-copy.md` prepared as paste-ready AKINDO/project/media copy.
+Issue #19 / PR #20 is the first M8 gate.
+
+Implemented on `agent/m8-capability-model`:
+
+- provider-independent `@proofrail/capability-model` package;
+- resource kinds for Agent Skills, MCP servers, A2A agents, and APIs;
+- mutable discovery/relevance metadata separated from ProofRail trust evidence;
+- exact source inspection separated from distribution correspondence;
+- validation that prevents source-only inspection from claiming `MATCH`/`MISMATCH`;
+- `MATCH`/`MISMATCH` require a distinct distributed artifact plus independently reproduced digest;
+- independent source-assurance, audit, canonical-evidence, and freshness dimensions;
+- deterministic `ALLOW` / `REVIEW` / `DENY` consumer policy evaluation;
+- missing required evidence fails closed or requires review according to explicit policy;
+- search relevance has no path into policy evaluation;
+- ADR-010 records the boundary.
+
+GitHub Actions CI #163 passed on the pre-state-reconciliation M8.1 head. The final documentation head must pass CI again before merge.
+
+## M8 sequence after M8.1
+
+1. M8.2 — pinned ARD adapter + catalog/search HTTP surface.
+2. M8.3 — real federated discovery source adapters with caching and failure isolation.
+3. M8.4 — Supabase catalog persistence while preserving proof authority outside mutable DB state.
+4. M8.5 — enrich Agent Skill resources with existing ProofRail verification evidence.
+5. M8.6 — human Hub + Evidence Passport UI.
+6. M8.7 — deterministic trust-policy API.
+7. M8.8 — Claude/MCP agent interface.
+8. M8.9 — controlled genuine-vs-substituted distribution demo with real 0G evidence.
+9. M8.10 — MCP Registry indexing only after the core vertical slice works.
+10. M8.11 — security/docs/demo/submission polish.
 
 ## Mainnet safety state
 
-M7 derives Aristotle registry commitments but leaves them `PREPARED_NOT_SUBMITTED`.
+The existing M5 Aristotle registry remains the only completed ProofRail mainnet anchor. M7 commitments remain `PREPARED_NOT_SUBMITTED`.
 
-No M7 Aristotle mainnet transaction has been signed or submitted. The existing M5 mainnet registry remains at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. No new blockchain transaction is required for submission closure. Any future mainnet write requires a separate fresh read-only preflight and explicit approval.
+No M8 mainnet transaction is required. Any future mainnet write requires a fresh read-only preflight and separate explicit approval.
 
-## Repository completion
+## Submission state
 
-- PR #14 / Issue #12: M7 complete and merged.
-- PR #16 / Issue #15: submission-readiness pass complete and merged.
-- Production Railway topology: exactly `proofrail-app` + `proofrail-worker`.
-- Technical submission packet: complete.
+The previous technical submission packet remains complete. Final user-authenticated/media actions still include recording the final demo, confirming the current AKINDO form/deadline, adding the demo/social URL, submitting, and confirming the entry appears.
 
-## Current blockers / next actions
+M8 engineering must improve the judgeable product without invalidating the already-proven M1–M7 evidence.
 
-There is **no M8 defined** and no open engineering issue.
+## Current next action
 
-The remaining work is intentionally user-authenticated / media work:
-
-1. Rehearse and record the final 90-second demo using `hackathon/demo-plan.md`.
-2. Sign in to the current 0G Bridge Buildathon page and confirm the exact live deadline + required fields shown by AKINDO.
-3. Fill the form from `hackathon/submission-copy.md`, add the final demo/social URL, submit, and confirm the ProofRail entry appears on AKINDO.
-
-Do not start another product milestone merely because these platform actions remain.
+Finish the M8.1 merge gate, then start M8.2. Do not begin discovery adapters before the capability/evidence/policy model is merged and green.
