@@ -53,18 +53,21 @@ Goal: make ProofRail itself expose a small pinned ARD-compatible local discovery
 
 Required:
 
-- `@proofrail/discovery-ard`
-- ARD v0.9 pinned to `ards-project/ard-spec@1d25abcf07e081f604dba3ae5398b16c79f20b7b`
-- `GET /.well-known/ai-catalog.json`
-- `POST /search`
-- deterministic local fixture/catalog search
-- all four M8.1 resource kinds mapped/tested
-- strict request/result limits
-- unsupported filters fail explicitly
-- `INDEXED`/relevance/trustManifest metadata cannot upgrade ProofRail evidence
-- root tests/CI green
+- [x] `@proofrail/discovery-ard`
+- [x] ARD v0.9 pinned to `ards-project/ard-spec@1d25abcf07e081f604dba3ae5398b16c79f20b7b`
+- [x] `GET /.well-known/ai-catalog.json`
+- [x] `POST /search`
+- [x] deterministic local fixture/catalog search
+- [x] all four M8.1 resource kinds mapped/tested
+- [x] strict request/result limits
+- [x] unsupported filters fail explicitly
+- [x] `INDEXED`/relevance/trustManifest metadata cannot upgrade ProofRail evidence
+- [x] local root `pnpm check` and `pnpm test` green
+- [ ] pull request CI green and M8.2 merged
 
 No federation, Supabase schema, GitHub OAuth, MCP, UI redesign or 0G write belongs in M8.2.
+
+Implementation is complete on `agent/m8-ard-discovery`. The active stop gate is PR review/CI/merge; do not start M8.3 from this branch or context.
 
 ## Backend queue after M8.2
 

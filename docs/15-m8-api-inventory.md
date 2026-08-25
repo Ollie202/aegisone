@@ -60,6 +60,25 @@ Search score is relevance only. It is not ProofRail trust/security evidence.
 - ProofRail-specific fields should be namespaced under `metadata.org.proofrail.*` or equivalent adapter namespace;
 - unsupported filters must be explicit errors instead of silently ignored security assumptions.
 
+### ProofRail M8.2 support profile
+
+The adapter implementation is isolated in `@proofrail/discovery-ard` and records both the immutable upstream commit and the exact Git blob IDs for:
+
+- `spec/ard.md`;
+- `spec/schemas/ai-catalog.schema.json`;
+- `spec/schemas/ard-entry.schema.json`;
+- `spec/schemas/ard.openapi.yaml`.
+
+M8.2 supports:
+
+- resource mappings `application/ai-skill`, `application/mcp-server-card+json`, `application/a2a-agent-card+json`, and generic API `application/openapi+json`;
+- `query.filter.type` only; every other filter is an explicit `unsupported_filter` error;
+- federation omitted or explicitly `none`; no upstream provider call;
+- body maximum 32 KiB, query maximum 2,000 Unicode code points, default page size 10, maximum 25;
+- deterministic lexical ranking over display name, description, tags, capabilities, and representative queries.
+
+ProofRail evidence states are emitted as flat namespaced `org.proofrail.*` metadata only after M8.1 validation. Inbound ARD metadata and `trustManifest` are always treated as discovery data and cannot populate ProofRail source assurance, inspection, correspondence, security, or canonical-evidence fields.
+
 ## 2. GitHub Agent Finder
 
 ### Contract reference pin

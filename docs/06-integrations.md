@@ -29,6 +29,8 @@ GET  /.well-known/ai-catalog.json
 POST /search
 ```
 
+The issue-branch implementation lives in `@proofrail/discovery-ard` and uses a deterministic in-memory catalog only. Its supported profile is deliberately narrow: `query.filter.type`, omitted/`none` federation, 32 KiB request bodies, 2,000-code-point queries, and at most 25 results. The generic API mapping is `application/openapi+json`. Upstream federation remains M8.3.
+
 ARD belongs in `@proofrail/discovery-ard`, not in the provider-independent capability/evidence model.
 
 Important boundary: ARD search score is relevance only. ARD `trustManifest`/metadata may be retained as upstream discovery metadata but cannot create ProofRail `REPOSITORY_AUTHENTICATED`, `MATCH`, audit findings, or canonical evidence.

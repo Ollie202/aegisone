@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-24  
-**Phase:** M8 active — backend-first verified capability discovery; M8.1 merged, M8.2 is the current implementation gate  
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 implemented and locally green on its issue branch, merge gate pending
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -112,6 +112,21 @@ Completed:
 
 Final M8.1 CI passed before merge. Do not redo this milestone.
 
+## M8.2 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #21 on `agent/m8-ard-discovery` now provides:
+
+- `@proofrail/discovery-ard`, isolated from the provider-independent capability model;
+- the exact ARD v0.9 upstream pin and schema/blob provenance;
+- `GET /.well-known/ai-catalog.json` and `POST /search` in `proofrail-app`;
+- deterministic bounded in-memory search across Agent Skill, MCP server, A2A agent, and generic OpenAPI resource fixtures;
+- strict JSON/body/query/page-size limits and explicit unsupported-filter/federation errors;
+- `url` xor `data` validation;
+- namespaced ProofRail evidence-state output only from validated M8.1 resources;
+- regression coverage proving ARD `trustManifest`, trust-looking metadata, `INDEXED` state, and relevance scores cannot upgrade ProofRail evidence or policy results.
+
+Local `pnpm check` and `pnpm test` are green. M8.2 is not recorded as merged until the pull request CI and merge gate complete. No federation, Supabase catalog, source authentication, MCP, frontend, or 0G write behavior was added.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — current:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -171,4 +186,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Implement **M8.2 / Issue #21 only** against the pinned ARD adapter plan. Merge with green CI, reconcile state, stop, then move to M8.3.
+Open/review the **M8.2 / Issue #21** pull request, require green CI, merge, reconcile the final merged state, and stop. Do not begin M8.3 in this context.
