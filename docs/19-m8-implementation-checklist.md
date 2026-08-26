@@ -134,18 +134,21 @@ Stop gate:
 
 ## M8.11 — backend hardening/freeze
 
+Status: **code/contract complete on `agent/m8-11-backend-freeze`** (Issue #30); production
+deployment verification deferred to the repo owner (`docs/23-m8-11-production-readiness.md`).
+
 Stop gate:
 
-- complete CI + Gitleaks green;
-- Supabase advisors clean/reviewed;
-- Railway services healthy;
-- `proofrail-app` has no 0G signer;
-- public endpoints cannot trigger unauthorized 0G spend;
-- SSRF/package/OAuth tests complete;
-- public JSON/API contract documented/frozen;
-- deployment watch paths include every M8 package;
-- project state reconciled;
-- backend ready for M9 frontend.
+- [x] complete CI + Gitleaks green (root `pnpm check`/`pnpm test`; CI's `gitleaks/gitleaks-action@v3` unmodified);
+- [ ] Supabase advisors clean/reviewed — deferred, needs repo-owner Supabase access (`docs/23-m8-11-production-readiness.md` item 2);
+- [ ] Railway services healthy — deferred, needs repo-owner Railway access (item 3);
+- [x] `proofrail-app` has no 0G signer — confirmed by static check (no `ZEROG_*` reference, no `packages/sandbox-0g`/`storage-0g`/`registry-0g` dependency anywhere in `apps/web`);
+- [x] public endpoints cannot trigger unauthorized 0G spend — confirmed by static check plus the existing/extended regression suite (`apps/web/test/m8-11-hostile-full-stack.test.ts`, `apps/web/test/m8-9-substitution-demo.test.ts`);
+- [x] SSRF/package/OAuth tests complete — reused from M8.5/M8.6, confirmed still green, cited in `docs/24-m8-11-contract-freeze.md`'s closure table;
+- [x] public JSON/API contract documented/frozen — `docs/24-m8-11-contract-freeze.md` (index) plus a new response-shapes section in `docs/14-source-authentication.md`;
+- [ ] deployment watch paths include every M8 package — deferred, needs repo-owner Railway dashboard access to confirm current config (item 5); the required package list is documented;
+- [x] project state reconciled — `PROJECT_STATE.md`/`planning/current-sprint.md` M8.5-M8.10 headers corrected from stale "merge gate pending" to "COMPLETE" (all confirmed merged via `git log`), M8.11 section added;
+- [x] backend ready for M9 frontend — declared conditionally: the **code/contract** is frontend-ready; production health/Supabase/GitHub-App items remain outstanding per `docs/23-m8-11-production-readiness.md` and do not block M9 code from starting against the frozen contract.
 
 ## M9 — frontend Hub
 

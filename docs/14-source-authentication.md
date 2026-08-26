@@ -259,6 +259,80 @@ Persist:
 
 Do **not** persist the GitHub access token as part of the claim.
 
+## Implemented HTTP response shapes (M8.11 contract freeze)
+
+The sections above describe the design; this section freezes the *actual* wire shapes
+`apps/web/src/source-auth.ts` returns, for M9 frontend consumption. All error responses in this
+router use `{ error: string, message: string }` (no `errorCode`/`details` fields — this differs
+from the M8.7 `docs/20-m8-api-contract.md` error taxonomy; see the consolidated error table in
+`docs/24-m8-11-contract-freeze.md`).
+
+### `GET /auth/github/start?returnTo=<local-path>`
+
+- `302` redirect to GitHub's authorize URL, `Set-Cookie: pr_gh_oauth_state=...` (HttpOnly, SameSite=Lax, ~10 min TTL).
+- `400 { error: "invalid_return_to", message }` when `returnTo` is not a local path.
+- `503 { error: "github_source_auth_unavailable", message }` when no GitHub App is configured on this deployment.
+
+### `GET /auth/github/callback?code=...&state=...`
+
+- `302` redirect to the original `returnTo` path with `Set-Cookie: pr_gh_session=...` (clears the state cookie unconditionally, win or lose) when `returnTo` was non-empty; otherwise `200 { authenticated: true, githubLogin: string, githubUserId: number }` with the same session cookie.
+- `400 { error: "invalid_request" | "oauth_state_invalid" | <GithubSourceAuthError code>, message }` on missing params, state mismatch, expired/replayed state, or a failed token exchange — the state cookie is always cleared on every error path too.
+- `503` when no GitHub App is configured.
+
+### `GET /api/v1/source-auth/github/repositories`
+
+Requires the `pr_gh_session` cookie from a completed callback.
+
+```ts
+interface RepositoryListResponse {
+  githubLogin: string;
+  repositories: Array<{
+    repositoryId: number;
+    nodeId: string;
+    fullName: string;
+    ownerLogin: string;
+    ownerId: number;
+    private: boolean;
+    defaultBranch: string;
+    permission: string;             // raw GitHub permission string
+    sufficientAuthority: boolean;   // true only for admin/write/maintain-as-push
+    supported: boolean;             // false for private repositories (M8 MVP: public only)
+  }>;
+}
+```
+
+- `401 { error: "source_auth_session_required", message }` with no session cookie.
+- `503` when no GitHub App is configured.
+
+### `POST /api/v1/source-claims`
+
+Body: `{ resourceId, resourceVersionId, repositoryFullName, ref?, subdirectory?, distributionUrl?, distributionSha256? }`. Works with or without a session cookie — an unauthenticated call always produces `DECLARED`; a session with sufficient repository authority produces `REPOSITORY_AUTHENTICATED`.
+
+`201` response is the store's `CreateSourceClaimResult` unchanged:
+
+```ts
+interface CreateSourceClaimResponse {
+  claim: SourceClaim;                                    // see model.ts; includes assuranceLevel, claimDigestSha256, canonicalClaimJson
+  authorityObservations: SourceClaimAuthorityObservation[]; // empty when unauthenticated
+  supersededClaimId: string | null;
+  conflict: { type: "SOURCE_CLAIM_CONFLICT"; conflictingClaimId: string } | null;
+}
+```
+
+Errors: `400 { error: "invalid_request" | "private_repository_unsupported", message }`, or any `GithubSourceAuthError` code (e.g. repository/commit not found) surfaced with its own status.
+
+### `GET /api/v1/source-claims/:claimId`
+
+```ts
+interface GetSourceClaimResponse {
+  claim: SourceClaim;
+  integrityVerified: true; // this field is only ever present when true
+}
+```
+
+- `404 { error: "source_claim_not_found" }` for an unknown id.
+- `409 { error: "source_claim_integrity_check_failed", message }` when the stored row's digest no longer matches its own `canonicalClaimJson` (Threat M8-012) — the claim is never returned in this case, not even with a downgraded level.
+
 ## Source conflicts
 
 A discovery record and an authenticated claim can disagree.

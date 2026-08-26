@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.10 / Issue #29 / branch `agent/m8-mcp-registry`** (M8.7/#26, M8.8/#27, and M8.9/#28 are merged to `main`; see `PROJECT_STATE.md` for authoritative per-milestone status).
+Current implementation gate: **M8.11 / Issue #30 / branch `agent/m8-11-backend-freeze`** (M8.2 through M8.10 are all merged to `main`, PRs #34-#42; see `PROJECT_STATE.md` for authoritative per-milestone status). M8.11 is the final backend gate — M9/Issue #31 begins only once M8.11 merges and the backend is declared frontend-ready (`docs/24-m8-11-contract-freeze.md`).
 
 ## Proven foundation — unchanged
 
@@ -166,7 +166,7 @@ Required:
 - [x] no new `apps/web`/`apps/worker` HTTP route was added in this issue — nothing public or otherwise can currently reach the expensive enrichment path except tests and the local fixture; `authorization.ts` exists so a future M8.7/M8.8 trigger surface reuses the same gate instead of skipping it
 - [x] local non-funded integration fixture (`packages/skill-verification-link/test/integration-fixture.test.ts`): a throwaway local Git repository plus a `127.0.0.1` HTTP server stand in for source/distribution, proving source-only `INSPECTED`/`NOT_EVALUATED` persistence and, once a genuine local distribution artifact is added, the same linkage upgrading to `MATCH` — no 0G Sandbox/Storage/registry call, no secret/signer material, no network egress
 - [x] local root `pnpm check` and `pnpm test` green (two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain, confirmed present on `main` before this change too, and are not part of M8.6)
-- [ ] pull request CI green and M8.6 merged
+- [x] pull request CI green and M8.6 merged (PR #38)
 
 Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-verifying every discovered Skill, UI/frontend, MCP Registry verification, any new mainnet transaction, any real/live/funded 0G run.
 
@@ -180,11 +180,15 @@ Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-ver
 3. **M8.9 / #28 — controlled substitution vertical slice — merged (PR #41).**  
    Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; local/deterministic proof complete, real 0G evidence still pending per `docs/22-m8-9-live-run-runbook.md`.
 
-4. **M8.10 / #29 — MCP Registry indexing (stretch) — implemented on `agent/m8-mcp-registry`, PR pending review/merge.**  
+4. **M8.10 / #29 — MCP Registry indexing (stretch) — merged (PR #42).**  
    Read-only official Registry ingestion (`packages/discovery-providers`'s `mcp-registry.ts`/`mcp-registry-sync.ts`); remains INDEXED unless stronger evidence actually exists; live-verified against production, no pin deviation required. See `PROJECT_STATE.md`'s "M8.10" section for full detail.
 
-5. **M8.11 / #30 — hardening/deploy/backend freeze**  
-   Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze. Begins after M8.10 merges.
+5. **M8.11 / #30 — hardening/deploy/backend freeze — code/contract complete on `agent/m8-11-backend-freeze`, PR pending review/merge.**  
+   Security regression closure (including a new cross-cutting hostile-full-stack test,
+   `apps/web/test/m8-11-hostile-full-stack.test.ts`), contract freeze
+   (`docs/24-m8-11-contract-freeze.md`), and an explicit production-readiness checklist
+   (`docs/23-m8-11-production-readiness.md`) for the deployment/Supabase/GitHub-App items this
+   agent environment cannot perform. See `PROJECT_STATE.md`'s "M8.11" section for full detail.
 
 ## Frontend
 
