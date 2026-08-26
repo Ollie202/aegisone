@@ -5,5 +5,8 @@ export * from "./dedupe.ts";
 export * from "./errors.ts";
 export * from "./github-agent-finder.ts";
 export * from "./hugging-face-discover.ts";
+export * from "./mcp-registry.ts";
+export * from "./mcp-registry-normalize.ts";
+export * from "./mcp-registry-sync.ts";
 export * from "./normalize.ts";
 export * from "./types.ts";

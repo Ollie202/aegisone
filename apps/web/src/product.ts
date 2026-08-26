@@ -10,8 +10,10 @@ import {
 import {
   GITHUB_AGENT_FINDER_PROVIDER_ID,
   HUGGING_FACE_DISCOVER_PROVIDER_ID,
+  MCP_OFFICIAL_REGISTRY_PROVIDER_ID,
   createGithubAgentFinderProvider,
   createHuggingFaceDiscoverProvider,
+  createMcpOfficialRegistryProvider,
   type DiscoveryProvider,
 } from "../../../packages/discovery-providers/src/index.ts";
 import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from "../../../packages/job-store/src/index.ts";
@@ -64,6 +66,7 @@ function defaultDiscoveryProviders(): ReadonlyMap<string, DiscoveryProvider> {
   return new Map([
     [GITHUB_AGENT_FINDER_PROVIDER_ID, createGithubAgentFinderProvider()],
     [HUGGING_FACE_DISCOVER_PROVIDER_ID, createHuggingFaceDiscoverProvider()],
+    [MCP_OFFICIAL_REGISTRY_PROVIDER_ID, createMcpOfficialRegistryProvider()],
   ]);
 }
 
