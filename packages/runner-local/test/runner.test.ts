@@ -18,7 +18,7 @@ test("independent checkout of the exact fixture commit reproduces publisher byte
   assert.equal(result.correspondence.status, "MATCH");
   assert.equal(result.artifacts.publisher.sha256, result.artifacts.reproduced.sha256);
   assert.equal(result.sourceClaim.commitSha, fixture.commitSha);
-  assert.equal(fixture.commitSha, "85ce179a7487605112dd3e36129896082cc2cff0");
+  assert.equal(fixture.commitSha, "db273bc1686e8906e3cd1fc1912f286f96cc51ca");
   assert.equal(result.manifest.environment.runnerType, "local");
 });
 
