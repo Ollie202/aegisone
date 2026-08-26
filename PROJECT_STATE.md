@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 (official MCP Registry indexing) implemented and green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 (backend security/deployment/contract-freeze, Issue #30) code/contract complete on `agent/m8-11-backend-freeze`, merge gate pending — the backend JSON/MCP contract is declared frontend-ready for M9, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -158,7 +158,7 @@ Issue #23 / PR #36 merged to `main`. Extends the existing ProofRail Supabase pro
 
 Local `pnpm check` and `pnpm test` were green for `@proofrail/catalog-store` and every other package before merge (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures noted below remain and are not part of M8.4). **The migration has not been applied to the production Supabase project** — no agent context in this environment has `SUPABASE_ACCESS_TOKEN`/project ref/db password. Applying `supabase/migrations/202608260001_m8_4_capability_catalog.sql` (and the M8.5 migration below) and reviewing the Supabase security/performance advisors afterward remains the repo owner's action (`supabase link` + `supabase db push`, or the dashboard SQL editor). source_claims / source_claim_authority_observations were deferred to M8.5 (below); capability_verifications remains deferred to M8.6 per `docs/16-m8-database-plan.md`.
 
-## M8.5 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.5 — COMPLETE
 
 Issue #24 on `agent/m8-github-source-auth` implements the first real source-authentication mechanism:
 
@@ -172,7 +172,7 @@ Local `pnpm check` and `pnpm test` are green for `@proofrail/source-auth-github`
 
 Issue #24 / PR #37 merged to `main`. M8.5 is complete; do not redo it.
 
-## M8.6 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.6 — COMPLETE
 
 Issue #25 on `agent/m8-skill-verification-enrichment` connects discovered/persisted Agent Skill resource versions and M8.5 source claims to the existing proven M7 Agent Skill verification pipeline, as orchestration/linkage only:
 
@@ -185,7 +185,7 @@ Issue #25 on `agent/m8-skill-verification-enrichment` connects discovered/persis
 
 Local `pnpm check` and `pnpm test` are green for `@proofrail/skill-verification-link`, `@proofrail/catalog-store`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before this change by stashing and re-running — and are unrelated to M8.6). No new HTTP route, no live/funded 0G run, no UI change, no MCP Registry work, and no mainnet transaction were part of this issue.
 
-## M8.7 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.7 — COMPLETE
 
 Issue #26 on `agent/m8-stable-api` freezes a small versioned machine-readable API over the M8.1-M8.6
 capability/evidence/policy model, so humans, CI, and later MCP/frontend clients consume stable
@@ -234,7 +234,7 @@ this change by stashing and re-running — and are unrelated to M8.7). The new m
 been applied to the production Supabase project, consistent with M8.4-M8.6 (repo-owner action,
 tracked below). No MCP transport, UI, auto-install, or new verification algorithm was added.
 
-## M8.8 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.8 — COMPLETE
 
 Issue #27 on `agent/m8-mcp-interface` exposes `proofrail_search`, `proofrail_inspect`, and
 `proofrail_evaluate` through MCP (docs/17-m8-security-boundaries.md Threat M8-018 "MCP becomes a
@@ -347,7 +347,7 @@ acceptance criteria; only the local/deterministic substitution invariant is prov
 Issue #28 / PR #41 merged to `main`. The local/deterministic proof above is complete; the live
 repository-authenticated + real-0G-evidence version remains pending per `docs/22-m8-9-live-run-runbook.md`.
 
-## M8.10 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.10 — COMPLETE
 
 Issue #29 on `agent/m8-mcp-registry` adds the official MCP Registry as a second real discovery
 provider family, following the exact M8.3 `DiscoveryProvider` boundary/safety envelope rather than
@@ -426,6 +426,73 @@ change, no new HTTP route beyond the existing `POST /search`/MCP surface already
 `federation` provider id, no GitHub source authentication, no Skill verification orchestration, no
 UI, and no 0G write was added.
 
+## M8.11 — CODE/CONTRACT COMPLETE / PRODUCTION DEPLOYMENT VERIFICATION DEFERRED
+
+Issue #30 on `agent/m8-11-backend-freeze` performs the final backend security/deployment pass and
+freezes the JSON/MCP contracts M9 will consume, per `docs/17-m8-security-boundaries.md`'s security
+test matrix and operational pre-frontend gate, and `docs/19-m8-implementation-checklist.md`:
+
+- **Security regression closure**: every item in the security gate was re-verified against current
+  `main`. Static checks (no live 0G import/dependency/env-var read anywhere in `apps/web`; the
+  worker exposes only `GET /health` and 404s everything else) confirm the two structural
+  guarantees the issue calls out by name. One genuine gap was found and closed: prior "DB/discovery
+  metadata cannot manufacture trust evidence" coverage (`apps/web/test/api-v1.test.ts`) called
+  `assembleTrustEvidence` directly at the unit level rather than through the live HTTP+MCP
+  transport. `apps/web/test/m8-11-hostile-full-stack.test.ts` closes that gap: a hostile
+  discovery-provider-shaped payload (forged `REPOSITORY_AUTHENTICATED`/`MATCH`/`AVAILABLE` trust,
+  submitted through the real `upsertDiscoveredResource` entry point every discovery/ingestion path
+  uses) plus a hostile catalog-store row (a `CatalogStore` subclass whose read paths return a
+  tampered source claim and a structurally-invalid capability-verification row, bypassing
+  write-time validation to model a mutated Supabase row rather than a rejected write) are both
+  proven, through a real `node:http` server and a real `@modelcontextprotocol/sdk` client, to never
+  reach `ALLOW`/`MATCH`/`REPOSITORY_AUTHENTICATED` on any of `GET /api/v1/resources/:id`,
+  `GET /api/v1/resources/:id/evidence`, `POST /api/v1/policy/evaluate`, `proofrail_inspect`, or
+  `proofrail_evaluate`. Every other security-matrix item already had adequate regression coverage
+  from M8.2–M8.10 and is cited (not duplicated) in `docs/24-m8-11-contract-freeze.md`'s closure
+  table;
+- **Contract freeze**: `docs/24-m8-11-contract-freeze.md` is the new consolidated index — a table
+  pointing to every already-frozen contract doc (`docs/20-m8-api-contract.md`,
+  `docs/21-m8-mcp-interface.md`, `docs/15-m8-api-inventory.md`), a new
+  "Implemented HTTP response shapes" section added to `docs/14-source-authentication.md` for the
+  five `/auth/github/*`/`/api/v1/source-claims*` routes (previously undocumented at the response-JSON
+  level), a single consolidated error-code reference across all three `apps/web` routers (they
+  intentionally do not share one error-envelope shape — `api-v1.ts`/`mcp.ts` use
+  `{error, errorCode, message, details?}`, `product.ts` uses `{error, errorCode, message}`,
+  `source-auth.ts` uses `{error, message}` — documented rather than silently normalized), and an
+  explicit confirmation that every M9 frontend-plan data point (search, resource detail/Evidence
+  Passport, GitHub source-claim UX, policy playground) has a corresponding JSON endpoint with no
+  direct Supabase access or HTML scraping required;
+- **Production readiness checklist**: `docs/23-m8-11-production-readiness.md` lists, as explicit
+  dated action items with exact commands/URLs, every item this agent environment cannot perform:
+  applying the four pending Supabase migrations (`202608260001`–`202608260004`) and reviewing the
+  security/performance advisors, confirming both Railway health endpoints and that production
+  topology is still exactly two services, confirming/updating Railway watch paths for the newer M8
+  packages, creating the GitHub App and completing one live `REPOSITORY_AUTHENTICATED` browser
+  authorization, a real external MCP client smoke test, and the live M8.9 evidence-ledger run (which
+  additionally requires separate explicit 0G testnet spend approval per `AGENTS.md`'s cost
+  discipline). None of these were fabricated, simulated, or marked done;
+- **Documentation reconciliation**: this file's M8.5/M8.6/M8.7/M8.8/M8.10 section headers were
+  corrected from a stale "IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING" to "COMPLETE" — `git
+  log` confirms PRs #37–#42 (covering all of M8.5 through M8.10) are already merged to `main`; the
+  prior wording no longer matched reality and is fixed here as part of "PROJECT_STATE reconciled";
+- **CI/evidence gate**: full root `pnpm check`/`pnpm test` green (71/71 in `@proofrail/web`,
+  including the new hostile full-stack test; the same two pre-existing, unrelated
+  `packages/cli`/`packages/runner-local` git-checkout fixture failures remain — confirmed present on
+  unmodified `main` by stashing this issue's changes and re-running, so they are not a regression
+  from this issue). CI's `gitleaks/gitleaks-action@v3` step (`.github/workflows/ci.yml`) was not
+  bypassed or modified by this issue and no secret-shaped value was added to any tracked file.
+  `apps/web/test/m8-9-substitution-demo.test.ts` still passes unmodified, confirming the M8.9 local
+  proof remains reproducible.
+
+**M9 declaration**: the backend JSON/MCP **contract and code** are frontend-ready as of this issue —
+M9 can build against `docs/24-m8-11-contract-freeze.md` today. This is explicitly **not** the same
+claim as "production is verified healthy": the eight items in
+`docs/23-m8-11-production-readiness.md` remain outstanding and are the repo owner's next action,
+independent of M9 code starting.
+
+Issue #30 on `agent/m8-11-backend-freeze`, PR not yet opened/merged at the time this section was
+written from within the issue's own branch — see the PR itself for final CI status.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -436,7 +503,7 @@ UI, and no 0G write was added.
 6. **M8.7 / Issue #26 — complete:** stable resource/evidence/policy API.
 7. **M8.8 / Issue #27 — complete:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
 8. **M8.9 / Issue #28 — current:** local/deterministic substitution proof implemented (repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY through REST and MCP; source assurance unchanged); the real-0G-evidence live run remains pending per `docs/22-m8-9-live-run-runbook.md`.
-9. **M8.10 / Issue #29 — implemented on issue branch, merge gate pending:** official MCP Registry indexing stretch, following the M8.3 provider/safety envelope; live-verified against production, no pin deviation required.
+9. **M8.10 / Issue #29 — complete (PR #42):** official MCP Registry indexing stretch, following the M8.3 provider/safety envelope; live-verified against production, no pin deviation required.
 10. **M8.11 / Issue #30:** security/deployment/backend contract freeze.
 
 **M9 / Issue #31** is the human Hub frontend and begins only after M8.11 declares the backend frontend-ready.
@@ -485,4 +552,21 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.10 / Issue #29** pull request (official MCP Registry indexing), require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced for earlier gates: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI; (4) follow `docs/22-m8-9-live-run-runbook.md` end-to-end (requires (2) above plus explicit approval for real 0G Galileo testnet spend) to produce the live M8.9 evidence ledger entry — this environment cannot perform any of (1)-(4). After M8.10 merges, proceed to **M8.11 / Issue #30** (backend hardening/deploy/contract freeze); do not begin M9 until M8.11 explicitly declares the backend frontend-ready.
+Open/review the **M8.11 / Issue #30** pull request (backend security regression closure, contract
+freeze, production-readiness checklist), require green CI, merge. This is the last backend gate:
+once merged, `PROJECT_STATE.md` (this file) declares the backend contract frontend-ready and
+**M9 / Issue #31** may begin, consuming `docs/24-m8-11-contract-freeze.md`.
+
+Repo-owner actions remain outstanding and do not block M9 **code** from starting, but are required
+before this can be called a verified-healthy production deployment or before M8's live-evidence
+acceptance criteria are fully met — the full list with exact commands/URLs is
+`docs/23-m8-11-production-readiness.md`: (1) apply the four pending Supabase migrations
+(`202608260001`–`202608260004`) and review the security/performance advisors; (2) confirm both
+Railway health endpoints and that production topology is still exactly two services after this and
+every other pending branch deploys; (3) create/install the `ProofRail Source Verifier` GitHub App
+and supply its credentials to `proofrail-app` via Railway, then complete one interactive browser
+authorization against a real public repository; (4) a human should point a real external MCP client
+at a running `proofrail-app` deployment to confirm the three tools render/behave correctly; (5)
+follow `docs/22-m8-9-live-run-runbook.md` end-to-end (requires (3) above plus explicit approval for
+real 0G Galileo testnet spend) to produce the live M8.9 evidence ledger entry. This environment
+cannot perform any of (1)-(5).
