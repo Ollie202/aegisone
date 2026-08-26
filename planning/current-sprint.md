@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.4 / Issue #23 / branch `agent/m8-supabase-catalog`**.
+Current implementation gate: **M8.5 / Issue #24 / branch `agent/m8-github-source-auth`**.
 
 ## Proven foundation — unchanged
 
@@ -114,33 +114,57 @@ Required:
 - [x] regression: a DB-only inserted `INDEXED` resource remains unverified end-to-end
 - [x] regression: provider outage/staleness (`markProviderDiscoveriesStale`) mutates `discovery_status` only, never resource/version identity or trust evidence
 - [x] local root `pnpm check` and `pnpm test` green
-- [ ] pull request CI green and M8.4 merged
+- [x] pull request CI green and M8.4 merged (PR #36)
 - [ ] migration applied to the production Supabase project (requires repo-owner Supabase credentials, not available to this agent)
 - [ ] Supabase security/performance advisors reviewed after that application
 
-`source_claims` / `source_claim_authority_observations` / `capability_verifications` are deferred to M8.5/M8.6; no foreign-key skeleton for them was added in M8.4.
+`source_claims` / `source_claim_authority_observations` were added in M8.5 (below); `capability_verifications` remains deferred to M8.6.
 
-## Backend queue after M8.4
+M8.4 is merged to `main`. M8.4 is complete; do not redo it.
 
-1. **M8.5 / #24 — GitHub source authentication**  
-   Real GitHub App flow proving repository authority for exact source claims. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
+## Current gate — M8.5 GitHub source authentication
 
-2. **M8.6 / #25 — Agent Skill verification enrichment**  
+Issue #24.
+
+Goal: implement the first real source-authentication mechanism so ProofRail can distinguish a random/declarative repository mapping from a source claim authenticated by a GitHub identity with real authority over the repository. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
+
+Required:
+
+- [x] `@proofrail/source-auth-github`: HMAC-signed/expiring/cookie-bound OAuth state, bounded GitHub REST client (token exchange, user, installations, installation repositories, collaborator permission, repository, exact-commit resolution), the M8 authority ladder (admin/write/maintain sufficient; read/triage/none/unknown insufficient), canonical source-claim construction + SHA-256 digest reusing `packages/core`'s canonical JSON, and a process-local non-persistent claim-session store (the GitHub access token is never written to Supabase or logged)
+- [x] `@proofrail/catalog-store` extended with `source_claims`/`source_claim_authority_observations` persistence and `source-claim-transition.ts` (new / supersede / explicit `SOURCE_CLAIM_CONFLICT`), implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`
+- [x] SQL migration `supabase/migrations/202608260002_m8_5_source_claims.sql`, same convention as `202608260001` (RLS, deny-by-default, CHECK constraints, indexes)
+- [x] `proofrail-catalog` Edge Function extended with `createSourceClaim`/`getSourceClaim`/`listActiveSourceClaimsByResourceVersion` actions
+- [x] `apps/web`: `GET /auth/github/start`, `GET /auth/github/callback`, `GET /api/v1/source-auth/github/repositories`, `POST /api/v1/source-claims`, `GET /api/v1/source-claims/:claimId`, wired into `createProductRequestHandler`/`server.ts`
+- [x] `/auth/github/*` and the repository-listing endpoint return `503` when the GitHub App is not configured; `POST /api/v1/source-claims` still works unauthenticated and always produces `DECLARED`, never `REPOSITORY_AUTHENTICATED`
+- [x] private repositories rejected explicitly (`private_repository_unsupported`)
+- [x] `GET /api/v1/source-claims/:claimId` recomputes/verifies the claim digest before responding
+- [x] regression: OAuth state signature/expiry/replay, full mocked OAuth round trip to `REPOSITORY_AUTHENTICATED`, read-only/triage authority never upgrades a claim, unauthenticated caller always `DECLARED`, private repo rejected, unresolvable repo never becomes a claim, same-repository claim supersedes without mutating prior evidence, different-repository claim produces an explicit `SOURCE_CLAIM_CONFLICT`
+- [x] local root `pnpm check` and `pnpm test` green
+- [ ] pull request CI green and M8.5 merged
+- [ ] GitHub App created/installed by the repo owner and `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` supplied to `proofrail-app` via Railway (not available to this agent)
+- [ ] one interactive browser authorization against a real public repository, proving `REPOSITORY_AUTHENTICATED` live
+- [ ] migration `202608260002_m8_5_source_claims.sql` applied to the production Supabase project
+
+`SIGNED_RELEASE` was not attempted in M8.5 and remains explicitly unavailable; no code path emits it.
+
+## Backend queue after M8.5
+
+1. **M8.6 / #25 — Agent Skill verification enrichment**  
    Connect resources/claims to existing M7 pipeline; source inspection remains separate from distribution correspondence.
 
-3. **M8.7 / #26 — stable read/evidence/policy API**  
+2. **M8.7 / #26 — stable read/evidence/policy API**  
    Freeze machine-readable backend JSON.
 
-4. **M8.8 / #27 — MCP agent interface**  
+3. **M8.8 / #27 — MCP agent interface**  
    Only `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`.
 
-5. **M8.9 / #28 — controlled substitution vertical slice**  
+4. **M8.9 / #28 — controlled substitution vertical slice**  
    Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; real 0G evidence.
 
-6. **M8.10 / #29 — MCP Registry indexing (stretch)**  
+5. **M8.10 / #29 — MCP Registry indexing (stretch)**  
    Read-only official Registry ingestion; remains INDEXED unless stronger evidence actually exists.
 
-7. **M8.11 / #30 — hardening/deploy/backend freeze**  
+6. **M8.11 / #30 — hardening/deploy/backend freeze**  
    Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze.
 
 ## Frontend
@@ -180,9 +204,9 @@ Coding agents should read:
 - No new Aristotle mainnet write is required.
 - Public search/read routes must never trigger uncontrolled/funded 0G work.
 
-## User/manual dependency later
+## User/manual dependency
 
-At M8.5 live integration the user must create/install the GitHub App and add the generated client ID/client secret to the app service. Code/tests should be ready before asking for those values.
+For M8.5 live integration the user must create/install the GitHub App and add the generated client ID/client secret (plus callback URL/state secret/app slug) to `proofrail-app`, then complete one interactive browser authorization. Code/tests are ready; this remains outstanding.
 
 ## Submission closure remains separate
 

@@ -1,10 +1,13 @@
 import type { CapabilityResource } from "../../capability-model/src/model.ts";
 import type {
   AgenticResource,
+  CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
+  NewSourceClaim,
   ResourceDiscovery,
   ResourceVersion,
+  SourceClaim,
   StaleMarkStatus,
   UpsertedCatalogRecord,
 } from "./model.ts";
@@ -35,4 +38,13 @@ export interface CatalogStore {
 
   getIngestionSource(id: string): Promise<IngestionSource | null>;
   upsertIngestionSource(id: string, providerType: string, patch?: IngestionSourcePatch): Promise<IngestionSource>;
+
+  /** Creates a new immutable source-claim row (docs/16 "Table: source_claims"). If an active
+   * claim already exists for `input.resourceVersionId`, this resolves the transition
+   * (`source-claim-transition.ts`): same stable repository supersedes it, a different
+   * repository is recorded as an explicit `SOURCE_CLAIM_CONFLICT`. Never mutates the immutable
+   * evidence fields of a prior claim; only its `claimStatus` may change. */
+  createSourceClaim(input: NewSourceClaim): Promise<CreateSourceClaimResult>;
+  getSourceClaim(id: string): Promise<SourceClaim | null>;
+  listActiveSourceClaimsByResourceVersion(resourceVersionId: string): Promise<SourceClaim[]>;
 }

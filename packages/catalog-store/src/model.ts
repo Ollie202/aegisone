@@ -90,3 +90,86 @@ export interface UpsertedCatalogRecord {
 }
 
 export type StaleMarkStatus = "STALE" | "UNAVAILABLE";
+
+/**
+ * M8.5 source-claim persistence (docs/16-m8-database-plan.md "Table: source_claims" /
+ * "Table: source_claim_authority_observations"). These rows are historical evidence:
+ * `claim_status` is the only field allowed to transition after creation (active -> superseded /
+ * conflicted / revoked); every other column — repository/commit/authority/digest/canonical JSON —
+ * is immutable once written. A new source mapping always creates a new claim row.
+ */
+export type SourceAssuranceLevel = "NONE" | "DECLARED" | "REPOSITORY_AUTHENTICATED" | "SIGNED_RELEASE";
+export type SourceClaimStatus = "active" | "superseded" | "conflicted" | "revoked";
+
+export interface SourceClaimAuthorityObservationInput {
+  readonly provider: string;
+  readonly subjectType: string;
+  readonly subjectId: string;
+  readonly subjectLogin: string | null;
+  readonly repositoryId: number | null;
+  readonly observedPermission: string | null;
+  readonly observedRoleName: string | null;
+  readonly observationJson: Record<string, unknown>;
+  readonly observedAt: string;
+}
+
+export interface SourceClaimAuthorityObservation extends SourceClaimAuthorityObservationInput {
+  readonly id: string;
+  readonly sourceClaimId: string;
+  readonly createdAt: string;
+}
+
+export interface NewSourceClaim {
+  readonly resourceVersionId: string;
+  readonly provider: string;
+  readonly assuranceLevel: SourceAssuranceLevel;
+  readonly sourceRepository: string;
+  readonly sourceRepositoryId: number | null;
+  readonly sourceRepositoryNodeId: string | null;
+  readonly sourceOwnerLogin: string | null;
+  readonly sourceOwnerId: number | null;
+  readonly sourceCommitSha: string;
+  readonly sourceSubdirectory: string | null;
+  readonly distributionUrl: string | null;
+  readonly distributionSha256: string | null;
+  readonly claimDigestSha256: string;
+  readonly canonicalClaimJson: Record<string, unknown>;
+  readonly authenticatedAt: string | null;
+  readonly authorityObservations: readonly SourceClaimAuthorityObservationInput[];
+}
+
+export interface SourceClaim {
+  readonly id: string;
+  readonly resourceVersionId: string;
+  readonly provider: string;
+  readonly assuranceLevel: SourceAssuranceLevel;
+  readonly claimStatus: SourceClaimStatus;
+  readonly sourceRepository: string;
+  readonly sourceRepositoryId: number | null;
+  readonly sourceRepositoryNodeId: string | null;
+  readonly sourceOwnerLogin: string | null;
+  readonly sourceOwnerId: number | null;
+  readonly sourceCommitSha: string;
+  readonly sourceSubdirectory: string | null;
+  readonly distributionUrl: string | null;
+  readonly distributionSha256: string | null;
+  readonly claimDigestSha256: string;
+  readonly canonicalClaimJson: Record<string, unknown>;
+  readonly authenticatedAt: string | null;
+  readonly createdAt: string;
+  readonly supersedesClaimId: string | null;
+}
+
+/** Explicit conflict representation (docs/14 "Source conflicts"): never silently resolved by
+ * picking the "stronger" claim. */
+export interface SourceClaimConflict {
+  readonly type: "SOURCE_CLAIM_CONFLICT";
+  readonly conflictingClaimId: string;
+}
+
+export interface CreateSourceClaimResult {
+  readonly claim: SourceClaim;
+  readonly authorityObservations: readonly SourceClaimAuthorityObservation[];
+  readonly supersededClaimId: string | null;
+  readonly conflict: SourceClaimConflict | null;
+}

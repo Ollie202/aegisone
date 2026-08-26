@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import type { VerificationJson } from "../../../packages/core/src/model.ts";
 import { createJobStoreFromEnv } from "../../../packages/job-store/src/index.ts";
+import { createCatalogStoreFromEnv } from "../../../packages/catalog-store/src/index.ts";
 import { createProductRequestHandler } from "./product.ts";
 import { renderVerificationHtml } from "./render.ts";
 
@@ -34,7 +35,19 @@ if (evidencePath) {
   server.listen(port, "0.0.0.0", () => process.stdout.write(`ProofRail evidence viewer listening on :${port}\n`));
 } else {
   const store = createJobStoreFromEnv();
-  const handler = createProductRequestHandler(store);
+  // The M8.4 Supabase migration has not been applied to production yet (PROJECT_STATE.md), and
+  // the M8.5 GitHub App does not exist yet either. Fall back to an in-memory catalog store
+  // rather than crashing app startup; source claims/discovery persistence is then unavailable
+  // (not silently faked) until the repo owner applies the migration/configures Supabase env.
+  let catalogStore;
+  try {
+    catalogStore = createCatalogStoreFromEnv();
+  } catch (error) {
+    process.stdout.write(
+      `ProofRail catalog store unavailable, falling back to in-memory (non-persistent): ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+  }
+  const handler = createProductRequestHandler(store, { catalogStore });
   const server = createServer((request, response) => {
     void handler(request, response).catch((error) => {
       response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });

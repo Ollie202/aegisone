@@ -1,10 +1,14 @@
 import type { CapabilityResource } from "../../capability-model/src/model.ts";
 import type {
   AgenticResource,
+  CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
+  NewSourceClaim,
   ResourceDiscovery,
   ResourceVersion,
+  SourceClaim,
+  SourceClaimAuthorityObservation,
   StaleMarkStatus,
   UpsertedCatalogRecord,
 } from "./model.ts";
@@ -74,14 +78,96 @@ interface IngestionSourceRow {
   updated_at: string;
 }
 
+interface SourceClaimRow {
+  id: string;
+  resource_version_id: string;
+  provider: string;
+  assurance_level: string;
+  claim_status: string;
+  source_repository: string;
+  source_repository_id: number | null;
+  source_repository_node_id: string | null;
+  source_owner_login: string | null;
+  source_owner_id: number | null;
+  source_commit_sha: string;
+  source_subdirectory: string | null;
+  distribution_url: string | null;
+  distribution_sha256: string | null;
+  claim_digest_sha256: string;
+  canonical_claim_json: Record<string, unknown>;
+  authenticated_at: string | null;
+  created_at: string;
+  supersedes_claim_id: string | null;
+}
+
+interface SourceClaimAuthorityObservationRow {
+  id: string;
+  source_claim_id: string;
+  provider: string;
+  subject_type: string;
+  subject_id: string;
+  subject_login: string | null;
+  repository_id: number | null;
+  observed_permission: string | null;
+  observed_role_name: string | null;
+  observation_json: Record<string, unknown>;
+  observed_at: string;
+  created_at: string;
+}
+
 interface EdgeResponse {
   resource?: AgenticResourceRow | null;
   discovery?: ResourceDiscoveryRow;
   version?: ResourceVersionRow | null;
   rows?: unknown[];
   ingestionSource?: IngestionSourceRow | null;
+  sourceClaim?: SourceClaimRow | null;
+  authorityObservations?: SourceClaimAuthorityObservationRow[];
+  supersededClaimId?: string | null;
+  conflict?: { type: "SOURCE_CLAIM_CONFLICT"; conflictingClaimId: string } | null;
   error?: string;
   message?: string;
+}
+
+function rowToSourceClaim(row: SourceClaimRow): SourceClaim {
+  return {
+    id: row.id,
+    resourceVersionId: row.resource_version_id,
+    provider: row.provider,
+    assuranceLevel: row.assurance_level as SourceClaim["assuranceLevel"],
+    claimStatus: row.claim_status as SourceClaim["claimStatus"],
+    sourceRepository: row.source_repository,
+    sourceRepositoryId: row.source_repository_id,
+    sourceRepositoryNodeId: row.source_repository_node_id,
+    sourceOwnerLogin: row.source_owner_login,
+    sourceOwnerId: row.source_owner_id,
+    sourceCommitSha: row.source_commit_sha,
+    sourceSubdirectory: row.source_subdirectory,
+    distributionUrl: row.distribution_url,
+    distributionSha256: row.distribution_sha256,
+    claimDigestSha256: row.claim_digest_sha256,
+    canonicalClaimJson: row.canonical_claim_json,
+    authenticatedAt: row.authenticated_at,
+    createdAt: row.created_at,
+    supersedesClaimId: row.supersedes_claim_id,
+  };
+}
+
+function rowToAuthorityObservation(row: SourceClaimAuthorityObservationRow): SourceClaimAuthorityObservation {
+  return {
+    id: row.id,
+    sourceClaimId: row.source_claim_id,
+    provider: row.provider,
+    subjectType: row.subject_type,
+    subjectId: row.subject_id,
+    subjectLogin: row.subject_login,
+    repositoryId: row.repository_id,
+    observedPermission: row.observed_permission,
+    observedRoleName: row.observed_role_name,
+    observationJson: row.observation_json,
+    observedAt: row.observed_at,
+    createdAt: row.created_at,
+  };
 }
 
 function rowToResource(row: AgenticResourceRow): AgenticResource {
@@ -268,5 +354,45 @@ export class SupabaseCatalogStore implements CatalogStore {
     });
     if (!result.ingestionSource) throw new Error(`Unknown ingestion source: ${id}`);
     return rowToIngestionSource(result.ingestionSource);
+  }
+
+  async createSourceClaim(input: NewSourceClaim): Promise<CreateSourceClaimResult> {
+    const result = await this.#invoke("createSourceClaim", {
+      resourceVersionId: input.resourceVersionId,
+      provider: input.provider,
+      assuranceLevel: input.assuranceLevel,
+      sourceRepository: input.sourceRepository,
+      sourceRepositoryId: input.sourceRepositoryId,
+      sourceRepositoryNodeId: input.sourceRepositoryNodeId,
+      sourceOwnerLogin: input.sourceOwnerLogin,
+      sourceOwnerId: input.sourceOwnerId,
+      sourceCommitSha: input.sourceCommitSha,
+      sourceSubdirectory: input.sourceSubdirectory,
+      distributionUrl: input.distributionUrl,
+      distributionSha256: input.distributionSha256,
+      claimDigestSha256: input.claimDigestSha256,
+      canonicalClaimJson: input.canonicalClaimJson,
+      authenticatedAt: input.authenticatedAt,
+      authorityObservations: input.authorityObservations,
+    });
+    if (!result.sourceClaim) {
+      throw new Error("Supabase catalog store did not return a source claim row");
+    }
+    return {
+      claim: rowToSourceClaim(result.sourceClaim),
+      authorityObservations: (result.authorityObservations ?? []).map(rowToAuthorityObservation),
+      supersededClaimId: result.supersededClaimId ?? null,
+      conflict: result.conflict ?? null,
+    };
+  }
+
+  async getSourceClaim(id: string): Promise<SourceClaim | null> {
+    const result = await this.#invoke("getSourceClaim", { id });
+    return result.sourceClaim ? rowToSourceClaim(result.sourceClaim) : null;
+  }
+
+  async listActiveSourceClaimsByResourceVersion(resourceVersionId: string): Promise<SourceClaim[]> {
+    const result = await this.#invoke("listActiveSourceClaimsByResourceVersion", { resourceVersionId });
+    return (result.rows ?? []).map((row) => rowToSourceClaim(row as SourceClaimRow));
   }
 }
