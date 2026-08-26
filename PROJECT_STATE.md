@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 implemented and locally green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 implemented and locally green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -185,6 +185,55 @@ Issue #25 on `agent/m8-skill-verification-enrichment` connects discovered/persis
 
 Local `pnpm check` and `pnpm test` are green for `@proofrail/skill-verification-link`, `@proofrail/catalog-store`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before this change by stashing and re-running — and are unrelated to M8.6). No new HTTP route, no live/funded 0G run, no UI change, no MCP Registry work, and no mainnet transaction were part of this issue.
 
+## M8.7 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #26 on `agent/m8-stable-api` freezes a small versioned machine-readable API over the M8.1-M8.6
+capability/evidence/policy model, so humans, CI, and later MCP/frontend clients consume stable
+ProofRail JSON instead of scraping HTML or reading Supabase directly:
+
+- `apps/web/src/api-v1.ts`: `GET /api/v1/resources/:resourceId`, `GET /api/v1/resources/:resourceId/versions/:versionId`,
+  `GET /api/v1/resources/:resourceId/evidence`, `POST /api/v1/policy/evaluate`, wired into
+  `createProductRequestHandler`. This is a read/serialization layer only — it adds no new
+  verification logic, wraps the existing M8.1 `evaluateTrustPolicy` unchanged, and never lets a
+  discovery/relevance score, ARD `trustManifest`, or raw catalog-store/provider row reach a
+  response;
+- every response exposes the M8 trust dimensions independently (discovery, source assurance,
+  source inspection, correspondence, security, canonical evidence) with a stable `schemaVersion`
+  and a stable `error`/`errorCode` taxonomy; no response anywhere contains an ambiguous
+  `verified: true`/`safe: true` field (docs/17-m8-security-boundaries.md Threat M8-020);
+- `assembleTrustEvidence` is the one place a stored row is allowed to produce a strong verdict
+  (`REPOSITORY_AUTHENTICATED`/`SIGNED_RELEASE`/`MATCH`/`MISMATCH`/`DIVERGED`) over HTTP: it
+  recomputes the M8.5 source-claim digest (`computeSourceClaimDigest`) and re-runs the M8.6
+  `validateNewCapabilityVerification` structural sanity check before presenting either dimension,
+  and fails closed (to `NONE`/`NOT_EVALUATED`/`NOT_RUN`, never a downgraded-but-trusted verdict)
+  the moment a stored row no longer satisfies its own invariants — covered by a direct simulated
+  DB-tampering regression test for both dimensions;
+- `@proofrail/catalog-store` gained `getResourceById`/`getResourceVersionById` (both stores + the
+  `proofrail-catalog` Edge Function) so the stable API can address catalog rows by their own stable
+  id, and a new nullable `capability_verifications.source_snapshot_sha256` column
+  (`supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql`, additive/backward-compatible)
+  so the exact-source-snapshot digest an M8.6 `INSPECTED` result already computes is no longer
+  dropped before it reaches this API — `@proofrail/skill-verification-link`'s
+  `buildCapabilityVerificationInput` now populates it; a row without it (including every row
+  written before this column existed) presents `sourceInspection` as `NOT_RUN` rather than a
+  partially-populated `INSPECTED`;
+- `docs/20-m8-api-contract.md`: the frozen contract doc for M8.8 (MCP) and M9 (frontend) to consume;
+- regression coverage (`apps/web/test/api-v1.test.ts`): 404 taxonomy for unknown/mismatched
+  resource and version ids; malformed policy/resource request validation (bad content type,
+  oversized body, missing/invalid policy fields, neither/both of `resource`/`resourceId`,
+  structurally invalid inline resource); policy ALLOW/REVIEW/DENY across missing evidence,
+  MISMATCH, exceeded audit severity, and stale canonical evidence; policy evaluation by
+  `resourceId` reusing the same integrity-checked assembly as the resource endpoint; the two
+  DB-tampering fail-closed cases above; and an explicit assertion that no response byte-string
+  contains a bare `"verified":true`/`"safe":true`.
+
+Local `pnpm check` and `pnpm test` are green for `@proofrail/web`, `@proofrail/catalog-store`, and
+`@proofrail/skill-verification-link` (the same two pre-existing, unrelated `packages/cli`/
+`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before
+this change by stashing and re-running — and are unrelated to M8.7). The new migration has not
+been applied to the production Supabase project, consistent with M8.4-M8.6 (repo-owner action,
+tracked below). No MCP transport, UI, auto-install, or new verification algorithm was added.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -244,4 +293,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.6 / Issue #25** pull request, require green CI, merge. Three repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, and `supabase/migrations/202608260003_m8_6_capability_verifications.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) none required specifically for M8.6 beyond the migration above, since M8.6 added no live/funded 0G path. Do not begin M8.7 in this context.
+Open/review the **M8.7 / Issue #26** pull request, require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository. Do not begin M8.8 in this context.

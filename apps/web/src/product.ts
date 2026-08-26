@@ -27,6 +27,7 @@ import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
 import { InMemoryCatalogStore, type CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { createGithubSourceAuthConfigFromEnv, type GithubSourceAuthConfig } from "../../../packages/source-auth-github/src/index.ts";
+import { createApiV1Router } from "./api-v1.ts";
 import { createSourceAuthRouter } from "./source-auth.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
 import { renderVerificationHtml } from "./render.ts";
@@ -325,6 +326,7 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
     secureCookies: options.secureSourceAuthCookies,
     fetcher: options.githubFetcher,
   });
+  const apiV1Router = createApiV1Router(catalogStore);
 
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
@@ -332,6 +334,7 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
       const url = new URL(request.url ?? "/", base);
 
       if (await sourceAuthRouter(request, response, url)) return;
+      if (await apiV1Router(request, response, url)) return;
 
       if (request.method === "GET" && url.pathname === "/health") {
         sendJson(response, 200, { ok: true, service: "proofrail", mode: "product" });

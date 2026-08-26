@@ -10,6 +10,7 @@ function base(overrides: Partial<NewCapabilityVerification> = {}): NewCapability
     verificationJobId: null,
     artifactKind: "agent-skill",
     sourceInspectionStatus: "NOT_RUN",
+    sourceSnapshotSha256: null,
     correspondenceStatus: "NOT_EVALUATED",
     publisherSha256: null,
     reproducedSha256: null,

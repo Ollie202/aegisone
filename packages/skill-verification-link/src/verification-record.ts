@@ -31,6 +31,7 @@ export function buildCapabilityVerificationInput(input: {
     verificationJobId: input.verificationJobId,
     artifactKind: input.result.artifactKind,
     sourceInspectionStatus: input.result.sourceInspection.status,
+    sourceSnapshotSha256: input.result.sourceInspection.sourceSnapshotSha256,
     correspondenceStatus: input.result.correspondence.status,
     publisherSha256: input.result.correspondence.publisherSha256,
     reproducedSha256: input.result.correspondence.reproducedSha256,

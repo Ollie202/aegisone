@@ -30,6 +30,9 @@ export function validateNewCapabilityVerification(input: NewCapabilityVerificati
   if (input.canonicalEvidenceSha256 !== null && !SHA256_RE.test(input.canonicalEvidenceSha256)) {
     push("invalid_canonical_evidence_sha256", "canonicalEvidenceSha256 must be a SHA-256 digest when present");
   }
+  if (input.sourceSnapshotSha256 !== null && !SHA256_RE.test(input.sourceSnapshotSha256)) {
+    push("invalid_source_snapshot_sha256", "sourceSnapshotSha256 must be a SHA-256 digest when present");
+  }
 
   const bothDigests = input.publisherSha256 !== null && input.reproducedSha256 !== null;
   switch (input.correspondenceStatus) {
