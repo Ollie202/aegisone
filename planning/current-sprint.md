@@ -192,17 +192,32 @@ Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-ver
 
 ## Frontend
 
-**M9 / Issue #31** starts only when M8.11 explicitly says the backend is frontend-ready.
+**M9 / Issue #31 — implemented on `agent/m9-hub-frontend`, PR pending review/merge.**
 
-The frontend will add:
+Built on the M8.11-frozen backend contract (`docs/24-m8-11-contract-freeze.md`) with no new
+production dependency/build step (ADR-013, Option A: evolve the existing lightweight Node app):
 
-- human capability search;
-- Evidence Passport;
-- GitHub publisher/source-claim UX;
-- deterministic policy playground;
-- 90–120 second judge path.
+- `/` — Hub/Search, server-rendered with a debounced client re-search against real `POST /search`
+  (local catalog and, optionally, federated providers);
+- `/resources/:resourceId` — Evidence Passport rendering every independent M8 dimension
+  (capability, source assurance, correspondence, security, independent execution, canonical
+  evidence, verification history) plus an embedded policy playground calling
+  `POST /api/v1/policy/evaluate` live, decision/reasons rendered verbatim;
+- `/source/claim` — the real M8.5 GitHub OAuth/source-claim flow, gracefully degrading (clearly
+  labeled, not crashing) when the GitHub App is not configured, matching M8.5's existing `503`
+  behavior;
+- a labeled demo-seed path (`apps/web/src/demo-seed.ts`) reusing M8.9's own tested fixture
+  identity/content, computing real SHA-256 digests through the real production hashing functions —
+  no invented evidence values, rendered through the exact same components as real data;
+- explicit XSS-sanitization and no-secret-in-frontend-bundle test coverage
+  (`apps/web/test/ui-render.test.ts`, `apps/web/test/m9-frontend-security-audit.test.ts`), and an
+  explicit no-`SAFE`/`TRUSTED`-badge, no-numeric-trust-score regression test.
 
-It must consume the frozen backend and must not become a second trust engine.
+Local `pnpm check`/`pnpm test` green except the same two pre-existing, unrelated
+`packages/cli`/`packages/runner-local` fixture git-checkout failures every prior M8 issue already
+noted (confirmed unrelated: this issue's diff touches only `apps/web` and `docs/`). Deferred to the
+repo owner, unchanged from M8.5/M8.9: a live GitHub OAuth click-through (no GitHub App credentials
+exist in this environment) and live 0G evidence links (no live M8.9 run has been performed yet).
 
 ## Planning artifacts
 

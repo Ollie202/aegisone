@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 (backend security/deployment/contract-freeze, Issue #30) code/contract complete on `agent/m8-11-backend-freeze`, merge gate pending — the backend JSON/MCP contract is declared frontend-ready for M9, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`
+**Phase:** M9 active — M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 merged (PR #43, backend security/deployment/contract-freeze) — the backend JSON/MCP contract is declared frontend-ready, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`; M9 (Issue #31, Hub frontend) implemented on `agent/m9-hub-frontend`, PR pending review/merge — see "M9" section below
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -493,6 +493,89 @@ independent of M9 code starting.
 Issue #30 on `agent/m8-11-backend-freeze`, PR not yet opened/merged at the time this section was
 written from within the issue's own branch — see the PR itself for final CI status.
 
+## M9 — HUB FRONTEND IMPLEMENTED / GITHUB OAUTH + LIVE 0G LINKS DEFERRED
+
+Issue #31 on `agent/m9-hub-frontend` builds the human-facing ProofRail Hub over the M8.11-frozen
+backend contract (`docs/24-m8-11-contract-freeze.md`).
+
+- **Technology decision (ADR-013, `docs/decisions/013-m9-hub-frontend-technology-and-visual-direction.md`)**:
+  Option A — evolve the existing lightweight Node-rendered `apps/web` app rather than introduce a
+  frontend framework/bundler. Four new server-rendered pages (`apps/web/src/pages/*.ts`) plus a
+  small set of isomorphic plain-JS render modules (`apps/web/src/ui/*.mjs`) shared byte-for-byte
+  between SSR and a vanilla progressive-enhancement client script (`apps/web/public/app.js`, no
+  framework, no build step) — production still runs exactly
+  `node --experimental-strip-types src/server.ts`, no new dependency, no new deploy step, one
+  Railway `proofrail-app` service unchanged;
+- **Visual direction**: light/modern (white background, dark text, restrained accent color,
+  Vercel/Linear/Stripe-docs register), per explicit repo-owner instruction overriding
+  `docs/18-m9-frontend-plan.md`'s dark-theme default — recorded in ADR-013. The pre-existing M1-M7
+  dark "proof-first" landing page is preserved unchanged and moved to `/proof` (still real M5
+  mainnet + M7 live-evidence content, not deleted);
+- **`/` (Hub/Search)**: `docs/18` primary page #1. Server-renders real results for a `?q=` query
+  (calling the exact `performCapabilitySearch` function `POST /search`/`proofrail_search` already
+  use) and a debounced client-side re-search (`POST /search`, local or federated) via
+  `apps/web/src/ui/result-card.mjs`. Local-catalog cards never read an ARD `trustManifest` as trust
+  evidence (tested); federated `CapabilityResource` cards render the real independent `trust`
+  dimensions; provider outage renders separately from trust evidence; relevance is always in its
+  own visually distinct, labeled slot;
+- **`/resources/:resourceId` (Evidence Passport)**: `docs/18` primary page #2, backed by
+  `GET /api/v1/resources/:resourceId` + `.../evidence` unchanged. Renders all seven named sections
+  (Capability, Source assurance, Distribution correspondence, Security audit, Independent
+  execution, Canonical evidence, Verification history) via `apps/web/src/ui/evidence-passport.mjs`;
+  never shows `MATCH`/`REPOSITORY_AUTHENTICATED` unless the backend's own integrity re-check
+  passed (same `integrity` object M8.7 already computes); an embedded Policy Playground
+  (`apps/web/src/ui/policy-form.mjs`/`policy-result.mjs`) calls `POST /api/v1/policy/evaluate` live
+  on every control change and renders `decision`/`reasons` verbatim — no client-side
+  recomputation of ALLOW/REVIEW/DENY anywhere;
+- **`/source/claim`**: `docs/18` primary page #3, a UI over the real M8.5 GitHub OAuth/source-claim
+  routes (`GET /auth/github/start`, `.../callback`, `GET /api/v1/source-auth/github/repositories`,
+  `POST /api/v1/source-claims`, `GET /api/v1/source-claims/:claimId`), unmodified. Surfaces the
+  existing `503 github_source_auth_unavailable` state clearly (no GitHub App exists in any
+  environment yet, unchanged from M8.5/M8.9) rather than crashing or hiding the DECLARED-claim path,
+  which still works without a configured GitHub App;
+- **Demo-seed path** (`apps/web/src/demo-seed.ts`, `docs/18` "Judge demo mode"): reuses M8.9's own
+  tested fixture repository identity (`proofrail-demo/m8-9-fixture-skill`) and the exact
+  genuine/substituted `SKILL.md` bodies `apps/web/test/m8-9-substitution-demo.test.ts` already
+  established, computing real SHA-256 digests through the same production hashing functions
+  (`canonicalSkillPackageBytes`, `buildCanonicalSourceClaim`/`computeSourceClaimDigest`) — no
+  invented evidence values. Reachable at `/?demo=1` -> a linked, clearly labeled
+  `/resources/:id?demo=1` ("DEMO FIXTURE ... not live production evidence" banner); rendering uses
+  the identical Evidence Passport components real catalog resources use, never a second rendering
+  path. Verified locally: the seeded resource's genuine `MATCH` row plus latest substituted
+  `MISMATCH` row correctly drives `POST /api/v1/policy/evaluate` (a policy requiring
+  `REPOSITORY_AUTHENTICATED` + `MATCH`) to `DENY` with reason `correspondence_not_match`,
+  reproducing the judge demo's decisive step;
+- **Security/XSS**: `apps/web/src/ui/escape.mjs` escapes every external/untrusted string before HTML
+  insertion (discovery-provider names/descriptions, GitHub repository identifiers, urls) and
+  restricts `href`/`src` output to `http:`/`https:` only; `apps/web/test/ui-render.test.ts` and
+  `apps/web/test/m9-frontend-security-audit.test.ts` cover XSS-payload sanitization, absence of any
+  `"verified":true`/generic `SAFE`/`TRUSTED` badge/numeric-trust-score anywhere in a rendered page,
+  and absence of any secret-shaped value or 0G/worker/GitHub-secret-bearing import in every
+  browser-reachable file (`apps/web/public/`, `apps/web/src/ui/`). Static assets are served through
+  a fixed filename allowlist (`apps/web/src/static-assets.ts`), never a general directory server, so
+  there is no path-traversal surface;
+- **Local verification**: the app was started locally
+  (`PROOFRAIL_JOB_STORE=memory node --experimental-strip-types src/server.ts`) and every new route
+  was exercised with real HTTP requests — `GET /`, `GET /?q=...`, `GET /proof`, `GET /source/claim`,
+  `GET /static/app.js`, `GET /static/ui/escape.mjs`, `GET /?demo=1` -> `GET /resources/:id?demo=1`
+  (200, containing `DEMO FIXTURE`/`REPOSITORY AUTHENTICATED`/`MATCH`/`MISMATCH`), `POST /search`
+  (real local-catalog results), and `POST /api/v1/policy/evaluate` against the seeded demo resource
+  (`DENY`/`correspondence_not_match`, as above) — all returned the expected status/content.
+
+Local `pnpm check`/`pnpm test` are green for every package this issue touched (`@proofrail/web`,
+101/101 tests including 34 new M9 tests). The same two pre-existing, unrelated
+`packages/cli`/`packages/runner-local` fixture git-checkout failures remain (confirmed present and
+unrelated: this issue's diff touches only `apps/web/`, `planning/`, `PROJECT_STATE.md`, and
+`docs/decisions/013-*.md`).
+
+**Explicitly deferred to the repo owner, unchanged from M8.5/M8.9**: a live interactive GitHub OAuth
+click-through (no `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET` exist in any environment yet);
+live 0G Storage/registry evidence links on the Evidence Passport (no live M8.9 run has been
+performed — `docs/22-m8-9-live-run-runbook.md` remains the path to produce one). Both are backend/
+credential gaps this frontend issue cannot close on its own, not frontend defects.
+
+Issue #31 on `agent/m9-hub-frontend`, PR pending review/merge at the time this section was written.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -552,10 +635,8 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.11 / Issue #30** pull request (backend security regression closure, contract
-freeze, production-readiness checklist), require green CI, merge. This is the last backend gate:
-once merged, `PROJECT_STATE.md` (this file) declares the backend contract frontend-ready and
-**M9 / Issue #31** may begin, consuming `docs/24-m8-11-contract-freeze.md`.
+Open/review the **M9 / Issue #31** pull request (`agent/m9-hub-frontend`) — the human-facing Hub
+built on the now-merged M8.11-frozen backend contract — require green CI, merge.
 
 Repo-owner actions remain outstanding and do not block M9 **code** from starting, but are required
 before this can be called a verified-healthy production deployment or before M8's live-evidence

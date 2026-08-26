@@ -20,13 +20,18 @@ import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
 import { InMemoryCatalogStore, type CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { createGithubSourceAuthConfigFromEnv, type GithubSourceAuthConfig } from "../../../packages/source-auth-github/src/index.ts";
-import { createApiV1Router } from "./api-v1.ts";
+import { createApiV1Router, buildEvidenceResponse, loadAssembledResource, toResourceApiResponse } from "./api-v1.ts";
 import { createSourceAuthRouter } from "./source-auth.ts";
 import { createMcpRequestHandler } from "./mcp.ts";
 import { ProductRequestError } from "./errors.ts";
 import { performCapabilitySearch } from "./search-service.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
 import { renderVerificationHtml } from "./render.ts";
+import { isStaticAssetPath, serveStaticAsset } from "./static-assets.ts";
+import { renderHubPageHtml } from "./pages/hub.ts";
+import { renderResourcePageHtml, renderResourceNotFoundHtml } from "./pages/resource.ts";
+import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
+import { seedDemoCatalog, type DemoSeedResult } from "./demo-seed.ts";
 
 const SOFTWARE_DIGEST = "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154";
 const SOFTWARE_TAMPER_DIGEST = "d5318963f53126b4c4bd448bffca222a8e08f068764e379516fc0ad3bd1f8889";
@@ -111,6 +116,14 @@ function requireJsonContentType(request: IncomingMessage): void {
   const contentType = request.headers["content-type"]?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/json") {
     throw new ProductRequestError("invalid_request", "Content-Type must be application/json", 415);
+  }
+}
+
+function requiredPathSegmentForPage(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    throw new ProductRequestError("invalid_request", "path segment was not valid percent-encoding");
   }
 }
 
@@ -264,10 +277,30 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
   // interpretation (docs/17-m8-security-boundaries.md Threat M8-018).
   const mcpRequestHandler = createMcpRequestHandler({ catalogStore, localCatalog, searchSource, discoveryProviders });
 
+  // M9: a lazily-seeded, in-process demo-fixture resource (docs/18 "Judge demo mode",
+  // apps/web/src/demo-seed.ts). Seeded on first access to `/?demo=1` or `/resources/:id?demo=1`
+  // so a demoless deployment/test never pays this cost, and any seeding failure degrades to
+  // "demo unavailable" rather than crashing the app.
+  let demoSeedPromise: Promise<DemoSeedResult> | null = null;
+  function ensureDemoSeeded(): Promise<DemoSeedResult> {
+    if (!demoSeedPromise) {
+      demoSeedPromise = seedDemoCatalog(catalogStore).catch((error) => {
+        demoSeedPromise = null;
+        throw error;
+      });
+    }
+    return demoSeedPromise;
+  }
+
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
       const base = `http://${request.headers.host ?? "localhost"}`;
       const url = new URL(request.url ?? "/", base);
+
+      if (request.method === "GET" && isStaticAssetPath(url.pathname)) {
+        await serveStaticAsset(url.pathname, response);
+        return;
+      }
 
       if (await sourceAuthRouter(request, response, url)) return;
       if (await apiV1Router(request, response, url)) return;
@@ -297,9 +330,76 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         sendJson(response, 405, { jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null });
         return;
       }
-      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+      // M9: `/proof` preserves the pre-existing M1-M7 dark "proof-first" landing page (real M5
+      // mainnet + M7 live-evidence content) unchanged (ADR-013). `/` now serves the new M9 Hub
+      // search page, per docs/18-m9-frontend-plan.md "Primary pages" #1.
+      if (request.method === "GET" && (url.pathname === "/proof" || url.pathname === "/index.html")) {
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
         response.end(renderProductHomeHtml());
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/") {
+        const query = url.searchParams.get("q") ?? "";
+        const wantsDemo = url.searchParams.get("demo") === "1";
+        let searchResponse: unknown | null = null;
+        let searchError: string | null = null;
+        if (query.trim() !== "") {
+          try {
+            searchResponse = await performCapabilitySearch({ query: { text: query } }, { localCatalog, searchSource, discoveryProviders });
+          } catch (error) {
+            searchError = error instanceof Error ? error.message : String(error);
+          }
+        }
+        let demoResourceId: string | null = null;
+        if (wantsDemo) {
+          try {
+            demoResourceId = (await ensureDemoSeeded()).resourceId;
+          } catch {
+            demoResourceId = null;
+          }
+        }
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderHubPageHtml({
+          query,
+          searchResponse,
+          searchError,
+          demoAvailable: wantsDemo && demoResourceId !== null,
+          demoResourceId,
+        }));
+        return;
+      }
+
+      const resourcePageMatch = url.pathname.match(/^\/resources\/([^/]+)$/);
+      if (request.method === "GET" && resourcePageMatch) {
+        let resourceId = requiredPathSegmentForPage(resourcePageMatch[1]!);
+        let isDemo = url.searchParams.get("demo") === "1";
+        if (isDemo) {
+          try {
+            resourceId = (await ensureDemoSeeded()).resourceId;
+          } catch {
+            isDemo = false;
+          }
+        }
+        const assembled = await loadAssembledResource(catalogStore, resourceId);
+        if (!assembled) {
+          response.writeHead(404, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+          response.end(renderResourceNotFoundHtml(resourceId));
+          return;
+        }
+        const evidenceApi = await buildEvidenceResponse(catalogStore, resourceId);
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderResourcePageHtml({
+          resourceApi: toResourceApiResponse(assembled),
+          evidenceApi: evidenceApi!,
+          isDemo,
+        }));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/source/claim") {
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderSourceClaimPageHtml({ githubConfigured: githubSourceAuthConfig !== null }));
         return;
       }
       if (request.method === "POST" && url.pathname === "/api/jobs") {
