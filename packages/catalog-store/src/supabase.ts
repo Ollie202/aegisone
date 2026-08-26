@@ -1,9 +1,12 @@
 import type { CapabilityResource } from "../../capability-model/src/model.ts";
+import { assertValidNewCapabilityVerification } from "./capability-verification-validation.ts";
 import type {
   AgenticResource,
+  CapabilityVerification,
   CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
+  NewCapabilityVerification,
   NewSourceClaim,
   ResourceDiscovery,
   ResourceVersion,
@@ -115,6 +118,29 @@ interface SourceClaimAuthorityObservationRow {
   created_at: string;
 }
 
+interface CapabilityVerificationRow {
+  id: string;
+  resource_version_id: string;
+  source_claim_id: string | null;
+  verification_job_id: string | null;
+  artifact_kind: string;
+  source_inspection_status: string;
+  correspondence_status: string;
+  publisher_sha256: string | null;
+  reproduced_sha256: string | null;
+  security_status: string;
+  security_highest_severity: string | null;
+  security_finding_count: number | null;
+  canonical_evidence_sha256: string | null;
+  storage_root: string | null;
+  storage_transaction: string | null;
+  registry_contract: string | null;
+  registry_record_id: string | null;
+  registry_transaction: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
 interface EdgeResponse {
   resource?: AgenticResourceRow | null;
   discovery?: ResourceDiscoveryRow;
@@ -125,8 +151,34 @@ interface EdgeResponse {
   authorityObservations?: SourceClaimAuthorityObservationRow[];
   supersededClaimId?: string | null;
   conflict?: { type: "SOURCE_CLAIM_CONFLICT"; conflictingClaimId: string } | null;
+  capabilityVerification?: CapabilityVerificationRow | null;
   error?: string;
   message?: string;
+}
+
+function rowToCapabilityVerification(row: CapabilityVerificationRow): CapabilityVerification {
+  return {
+    id: row.id,
+    resourceVersionId: row.resource_version_id,
+    sourceClaimId: row.source_claim_id,
+    verificationJobId: row.verification_job_id,
+    artifactKind: row.artifact_kind as CapabilityVerification["artifactKind"],
+    sourceInspectionStatus: row.source_inspection_status as CapabilityVerification["sourceInspectionStatus"],
+    correspondenceStatus: row.correspondence_status as CapabilityVerification["correspondenceStatus"],
+    publisherSha256: row.publisher_sha256,
+    reproducedSha256: row.reproduced_sha256,
+    securityStatus: row.security_status as CapabilityVerification["securityStatus"],
+    securityHighestSeverity: row.security_highest_severity as CapabilityVerification["securityHighestSeverity"],
+    securityFindingCount: row.security_finding_count,
+    canonicalEvidenceSha256: row.canonical_evidence_sha256,
+    storageRoot: row.storage_root,
+    storageTransaction: row.storage_transaction,
+    registryContract: row.registry_contract,
+    registryRecordId: row.registry_record_id,
+    registryTransaction: row.registry_transaction,
+    verifiedAt: row.verified_at,
+    createdAt: row.created_at,
+  };
 }
 
 function rowToSourceClaim(row: SourceClaimRow): SourceClaim {
@@ -394,5 +446,43 @@ export class SupabaseCatalogStore implements CatalogStore {
   async listActiveSourceClaimsByResourceVersion(resourceVersionId: string): Promise<SourceClaim[]> {
     const result = await this.#invoke("listActiveSourceClaimsByResourceVersion", { resourceVersionId });
     return (result.rows ?? []).map((row) => rowToSourceClaim(row as SourceClaimRow));
+  }
+
+  async createCapabilityVerification(input: NewCapabilityVerification): Promise<CapabilityVerification> {
+    assertValidNewCapabilityVerification(input);
+    const result = await this.#invoke("createCapabilityVerification", {
+      resourceVersionId: input.resourceVersionId,
+      sourceClaimId: input.sourceClaimId,
+      verificationJobId: input.verificationJobId,
+      artifactKind: input.artifactKind,
+      sourceInspectionStatus: input.sourceInspectionStatus,
+      correspondenceStatus: input.correspondenceStatus,
+      publisherSha256: input.publisherSha256,
+      reproducedSha256: input.reproducedSha256,
+      securityStatus: input.securityStatus,
+      securityHighestSeverity: input.securityHighestSeverity,
+      securityFindingCount: input.securityFindingCount,
+      canonicalEvidenceSha256: input.canonicalEvidenceSha256,
+      storageRoot: input.storageRoot,
+      storageTransaction: input.storageTransaction,
+      registryContract: input.registryContract,
+      registryRecordId: input.registryRecordId,
+      registryTransaction: input.registryTransaction,
+      verifiedAt: input.verifiedAt,
+    });
+    if (!result.capabilityVerification) {
+      throw new Error("Supabase catalog store did not return a capability verification row");
+    }
+    return rowToCapabilityVerification(result.capabilityVerification);
+  }
+
+  async getLatestCapabilityVerification(resourceVersionId: string): Promise<CapabilityVerification | null> {
+    const result = await this.#invoke("getLatestCapabilityVerification", { resourceVersionId });
+    return result.capabilityVerification ? rowToCapabilityVerification(result.capabilityVerification) : null;
+  }
+
+  async listCapabilityVerificationsByResourceVersion(resourceVersionId: string): Promise<CapabilityVerification[]> {
+    const result = await this.#invoke("listCapabilityVerificationsByResourceVersion", { resourceVersionId });
+    return (result.rows ?? []).map((row) => rowToCapabilityVerification(row as CapabilityVerificationRow));
   }
 }

@@ -1,9 +1,11 @@
 import type { CapabilityResource } from "../../capability-model/src/model.ts";
 import type {
   AgenticResource,
+  CapabilityVerification,
   CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
+  NewCapabilityVerification,
   NewSourceClaim,
   ResourceDiscovery,
   ResourceVersion,
@@ -47,4 +49,12 @@ export interface CatalogStore {
   createSourceClaim(input: NewSourceClaim): Promise<CreateSourceClaimResult>;
   getSourceClaim(id: string): Promise<SourceClaim | null>;
   listActiveSourceClaimsByResourceVersion(resourceVersionId: string): Promise<SourceClaim[]>;
+
+  /** Inserts a new immutable `capability_verifications` row (docs/16 "Table:
+   * capability_verifications"). Always creates a new row — never mutates a prior canonical
+   * verdict. Rejects rows that violate the MATCH/MISMATCH/DIVERGED digest-presence sanity
+   * rules before any network/storage write (`capability-verification-validation.ts`). */
+  createCapabilityVerification(input: NewCapabilityVerification): Promise<CapabilityVerification>;
+  getLatestCapabilityVerification(resourceVersionId: string): Promise<CapabilityVerification | null>;
+  listCapabilityVerificationsByResourceVersion(resourceVersionId: string): Promise<CapabilityVerification[]>;
 }
