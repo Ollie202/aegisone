@@ -125,6 +125,7 @@ interface CapabilityVerificationRow {
   verification_job_id: string | null;
   artifact_kind: string;
   source_inspection_status: string;
+  source_snapshot_sha256: string | null;
   correspondence_status: string;
   publisher_sha256: string | null;
   reproduced_sha256: string | null;
@@ -164,6 +165,7 @@ function rowToCapabilityVerification(row: CapabilityVerificationRow): Capability
     verificationJobId: row.verification_job_id,
     artifactKind: row.artifact_kind as CapabilityVerification["artifactKind"],
     sourceInspectionStatus: row.source_inspection_status as CapabilityVerification["sourceInspectionStatus"],
+    sourceSnapshotSha256: row.source_snapshot_sha256,
     correspondenceStatus: row.correspondence_status as CapabilityVerification["correspondenceStatus"],
     publisherSha256: row.publisher_sha256,
     reproducedSha256: row.reproduced_sha256,
@@ -383,6 +385,11 @@ export class SupabaseCatalogStore implements CatalogStore {
     return result.resource ? rowToResource(result.resource) : null;
   }
 
+  async getResourceById(resourceId: string): Promise<AgenticResource | null> {
+    const result = await this.#invoke("getResourceById", { resourceId });
+    return result.resource ? rowToResource(result.resource) : null;
+  }
+
   async listDiscoveriesByResource(resourceId: string): Promise<ResourceDiscovery[]> {
     const result = await this.#invoke("listDiscoveriesByResource", { resourceId });
     return (result.rows ?? []).map((row) => rowToDiscovery(row as ResourceDiscoveryRow));
@@ -391,6 +398,11 @@ export class SupabaseCatalogStore implements CatalogStore {
   async listVersionsByResource(resourceId: string): Promise<ResourceVersion[]> {
     const result = await this.#invoke("listVersionsByResource", { resourceId });
     return (result.rows ?? []).map((row) => rowToVersion(row as ResourceVersionRow));
+  }
+
+  async getResourceVersionById(versionId: string): Promise<ResourceVersion | null> {
+    const result = await this.#invoke("getResourceVersionById", { versionId });
+    return result.version ? rowToVersion(result.version) : null;
   }
 
   async getIngestionSource(id: string): Promise<IngestionSource | null> {
@@ -456,6 +468,7 @@ export class SupabaseCatalogStore implements CatalogStore {
       verificationJobId: input.verificationJobId,
       artifactKind: input.artifactKind,
       sourceInspectionStatus: input.sourceInspectionStatus,
+      sourceSnapshotSha256: input.sourceSnapshotSha256,
       correspondenceStatus: input.correspondenceStatus,
       publisherSha256: input.publisherSha256,
       reproducedSha256: input.reproducedSha256,

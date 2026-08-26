@@ -85,6 +85,10 @@ function validateNewCapabilityVerification(body: Record<string, unknown>): strin
   if (reproducedSha256 !== null && (typeof reproducedSha256 !== "string" || !DIGEST_SHA256_RE.test(reproducedSha256))) {
     return "invalid_reproduced_sha256";
   }
+  const sourceSnapshotSha256 = body.sourceSnapshotSha256 ?? null;
+  if (sourceSnapshotSha256 !== null && (typeof sourceSnapshotSha256 !== "string" || !DIGEST_SHA256_RE.test(sourceSnapshotSha256))) {
+    return "invalid_source_snapshot_sha256";
+  }
 
   switch (body.correspondenceStatus) {
     case "NOT_EVALUATED":
@@ -251,6 +255,32 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (error) return reply(400, { error: "database_error", message: error.message });
       return reply(200, { resource: data ?? null });
+    }
+
+    // M8.7: stable read API lookups by stable catalog id (agentic_resources.id /
+    // resource_versions.id), addressed by GET /api/v1/resources/:resourceId and
+    // GET /api/v1/resources/:resourceId/versions/:versionId. Read-only; no evidence is
+    // written or invented here.
+    if (body.action === "getResourceById") {
+      if (!isNonEmptyString(body.resourceId)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin
+        .from("agentic_resources")
+        .select("*")
+        .eq("id", body.resourceId)
+        .maybeSingle();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { resource: data ?? null });
+    }
+
+    if (body.action === "getResourceVersionById") {
+      if (!isNonEmptyString(body.versionId)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin
+        .from("resource_versions")
+        .select("*")
+        .eq("id", body.versionId)
+        .maybeSingle();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { version: data ?? null });
     }
 
     if (body.action === "listDiscoveriesByResource") {
@@ -438,6 +468,7 @@ Deno.serve(async (request) => {
           verification_job_id: body.verificationJobId ?? null,
           artifact_kind: body.artifactKind,
           source_inspection_status: body.sourceInspectionStatus,
+          source_snapshot_sha256: body.sourceSnapshotSha256 ?? null,
           correspondence_status: body.correspondenceStatus,
           publisher_sha256: body.publisherSha256 ?? null,
           reproduced_sha256: body.reproducedSha256 ?? null,

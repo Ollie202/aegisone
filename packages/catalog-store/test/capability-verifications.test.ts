@@ -10,6 +10,7 @@ function sourceOnly(overrides: Partial<NewCapabilityVerification> = {}): NewCapa
     verificationJobId: null,
     artifactKind: "agent-skill",
     sourceInspectionStatus: "INSPECTED",
+    sourceSnapshotSha256: "e".repeat(64),
     correspondenceStatus: "NOT_EVALUATED",
     publisherSha256: null,
     reproducedSha256: null,

@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.6 / Issue #25 / branch `agent/m8-skill-verification-enrichment`**.
+Current implementation gate: **M8.7 / Issue #26 / branch `agent/m8-stable-api`**.
 
 ## Proven foundation — unchanged
 

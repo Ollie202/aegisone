@@ -195,6 +195,11 @@ export interface NewCapabilityVerification {
   readonly verificationJobId: string | null;
   readonly artifactKind: ArtifactVerificationKind;
   readonly sourceInspectionStatus: SourceInspectionStatus;
+  /** M8.7: the exact source-snapshot digest an M8.6 `INSPECTED` result computed
+   * (`SkillEnrichmentResult.sourceInspection.sourceSnapshotSha256`). `null` for `NOT_RUN` rows
+   * and for any row written before this column existed — the M8.7 API serializer must treat a
+   * missing digest as unavailable evidence, never infer or reconstruct it. */
+  readonly sourceSnapshotSha256: string | null;
   readonly correspondenceStatus: CorrespondenceStatus;
   readonly publisherSha256: string | null;
   readonly reproducedSha256: string | null;

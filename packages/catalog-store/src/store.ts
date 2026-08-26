@@ -35,8 +35,16 @@ export interface CatalogStore {
   ): Promise<ResourceDiscovery[]>;
 
   getResourceByCanonicalKey(canonicalKey: string): Promise<AgenticResource | null>;
+  /** M8.7 stable read API: look up a resource by its stable catalog id (`agentic_resources.id`),
+   * the identifier the public `/api/v1/resources/:resourceId` route path segment addresses. */
+  getResourceById(resourceId: string): Promise<AgenticResource | null>;
   listDiscoveriesByResource(resourceId: string): Promise<ResourceDiscovery[]>;
   listVersionsByResource(resourceId: string): Promise<ResourceVersion[]>;
+  /** M8.7 stable read API: look up one specific version row by its stable catalog id
+   * (`resource_versions.id`), the identifier `/api/v1/resources/:resourceId/versions/:versionId`
+   * addresses. Callers must still check `version.resourceId === resourceId` themselves — this
+   * lookup is not scoped by resource, matching `getSourceClaim`/`getIngestionSource`. */
+  getResourceVersionById(versionId: string): Promise<ResourceVersion | null>;
 
   getIngestionSource(id: string): Promise<IngestionSource | null>;
   upsertIngestionSource(id: string, providerType: string, patch?: IngestionSourcePatch): Promise<IngestionSource>;
