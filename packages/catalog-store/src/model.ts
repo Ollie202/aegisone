@@ -173,3 +173,44 @@ export interface CreateSourceClaimResult {
   readonly supersededClaimId: string | null;
   readonly conflict: SourceClaimConflict | null;
 }
+
+/**
+ * M8.6 capability-verification linkage/evidence-pointer persistence
+ * (docs/16-m8-database-plan.md "Table: capability_verifications"). A row here is a mutable
+ * *pointer/cache* into canonical ProofRail evidence already produced by the existing M7
+ * Agent Skill verification pipeline (`packages/skill-audit` + `packages/core`); it is never
+ * itself proof authority, and nothing in this module computes MATCH/MISMATCH — callers must
+ * supply an already-validated `DistributionCorrespondenceEvidence`-shaped result. Historical:
+ * every verification creates a new row; nothing here mutates a prior canonical verdict.
+ */
+export type ArtifactVerificationKind = "agent-skill";
+export type SourceInspectionStatus = "NOT_RUN" | "INSPECTED";
+export type CorrespondenceStatus = "NOT_EVALUATED" | "INSUFFICIENT_EVIDENCE" | "MATCH" | "MISMATCH" | "DIVERGED";
+export type SecurityAssessmentStatus = "NOT_RUN" | "COMPLETED";
+export type SecuritySeverity = "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export interface NewCapabilityVerification {
+  readonly resourceVersionId: string;
+  readonly sourceClaimId: string | null;
+  readonly verificationJobId: string | null;
+  readonly artifactKind: ArtifactVerificationKind;
+  readonly sourceInspectionStatus: SourceInspectionStatus;
+  readonly correspondenceStatus: CorrespondenceStatus;
+  readonly publisherSha256: string | null;
+  readonly reproducedSha256: string | null;
+  readonly securityStatus: SecurityAssessmentStatus;
+  readonly securityHighestSeverity: SecuritySeverity | null;
+  readonly securityFindingCount: number | null;
+  readonly canonicalEvidenceSha256: string | null;
+  readonly storageRoot: string | null;
+  readonly storageTransaction: string | null;
+  readonly registryContract: string | null;
+  readonly registryRecordId: string | null;
+  readonly registryTransaction: string | null;
+  readonly verifiedAt: string | null;
+}
+
+export interface CapabilityVerification extends NewCapabilityVerification {
+  readonly id: string;
+  readonly createdAt: string;
+}

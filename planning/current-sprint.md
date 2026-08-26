@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.5 / Issue #24 / branch `agent/m8-github-source-auth`**.
+Current implementation gate: **M8.6 / Issue #25 / branch `agent/m8-skill-verification-enrichment`**.
 
 ## Proven foundation — unchanged
 
@@ -140,19 +140,39 @@ Required:
 - [x] `GET /api/v1/source-claims/:claimId` recomputes/verifies the claim digest before responding
 - [x] regression: OAuth state signature/expiry/replay, full mocked OAuth round trip to `REPOSITORY_AUTHENTICATED`, read-only/triage authority never upgrades a claim, unauthenticated caller always `DECLARED`, private repo rejected, unresolvable repo never becomes a claim, same-repository claim supersedes without mutating prior evidence, different-repository claim produces an explicit `SOURCE_CLAIM_CONFLICT`
 - [x] local root `pnpm check` and `pnpm test` green
-- [ ] pull request CI green and M8.5 merged
+- [x] pull request CI green and M8.5 merged (PR #37)
 - [ ] GitHub App created/installed by the repo owner and `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` supplied to `proofrail-app` via Railway (not available to this agent)
 - [ ] one interactive browser authorization against a real public repository, proving `REPOSITORY_AUTHENTICATED` live
 - [ ] migration `202608260002_m8_5_source_claims.sql` applied to the production Supabase project
 
 `SIGNED_RELEASE` was not attempted in M8.5 and remains explicitly unavailable; no code path emits it.
 
-## Backend queue after M8.5
+M8.5 is merged to `main`. M8.5 is complete; do not redo it.
 
-1. **M8.6 / #25 — Agent Skill verification enrichment**  
-   Connect resources/claims to existing M7 pipeline; source inspection remains separate from distribution correspondence.
+## Current gate — M8.6 Agent Skill verification enrichment
 
-2. **M8.7 / #26 — stable read/evidence/policy API**  
+Issue #25.
+
+Goal: connect discovered/persisted Agent Skill resource versions and M8.5 source claims to the existing proven M7 Agent Skill verification pipeline (`packages/skill-audit` + `packages/core`), without forking/rewriting its deterministic packaging, audit, or correspondence-comparison logic, and while keeping source-only inspection structurally incapable of emitting `MATCH`/`MISMATCH`.
+
+Required:
+
+- [x] new package `@proofrail/skill-verification-link`: bounded exact-commit Git source acquisition (`source-acquisition.ts`, reusing the same clone/checkout/verify pattern `packages/runner-local` already uses in production, plus the existing `readSkillDirectory`/`validateSkillPackage`/`auditSkillPackage` from `packages/skill-audit`, never forked); an SSRF-hardened bounded distribution-artifact downloader (`distribution-fetch.ts`) scoped to ProofRail's own canonical `proofrail-agent-skill-package-v1` package format (decoded via the existing `decodeCanonicalSkillPackage`, never a second archive extractor); the top-level orchestrator `enrichment.ts`, whose source-only branch (`evaluateSourceOnly`) contains no reference anywhere in its body to `verifySkillPackages`/`compareArtifacts`/`MATCH`/`MISMATCH` (a dedicated regression test reads the compiled source and asserts this); a distribution-present branch that always calls the existing unmodified `verifySkillPackages`; `authorization.ts` (a nominally-typed `VerificationAuthorization`, constructible only via a token-digest check, plus an in-process concurrency limiter)
+- [x] `@proofrail/catalog-store` extended with `capability_verifications` persistence (`NewCapabilityVerification`/`CapabilityVerification`, `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `capability-verification-validation.ts`, the same MATCH/MISMATCH/DIVERGED digest-presence sanity rules mirrored in the `proofrail-catalog` Edge Function and enforced again as Postgres `CHECK` constraints
+- [x] SQL migration `supabase/migrations/202608260003_m8_6_capability_verifications.sql`: `capability_verifications`, same convention as `202608260001`/`202608260002` (RLS, deny-by-default, CHECK constraints including the MATCH/MISMATCH/DIVERGED/NOT_EVALUATED digest-presence sanity checks from docs/16)
+- [x] `proofrail-catalog` Edge Function extended with `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` actions
+- [x] regression: a DB-only row attempting `MATCH`/`MISMATCH`/`DIVERGED` without both digests (or with equal digests claimed as `MISMATCH`) is rejected before any write, at both the in-memory store and the Supabase-store/Edge-Function boundary
+- [x] regression: every verification creates a new historical row; nothing mutates a prior canonical verdict
+- [x] no new `apps/web`/`apps/worker` HTTP route was added in this issue — nothing public or otherwise can currently reach the expensive enrichment path except tests and the local fixture; `authorization.ts` exists so a future M8.7/M8.8 trigger surface reuses the same gate instead of skipping it
+- [x] local non-funded integration fixture (`packages/skill-verification-link/test/integration-fixture.test.ts`): a throwaway local Git repository plus a `127.0.0.1` HTTP server stand in for source/distribution, proving source-only `INSPECTED`/`NOT_EVALUATED` persistence and, once a genuine local distribution artifact is added, the same linkage upgrading to `MATCH` — no 0G Sandbox/Storage/registry call, no secret/signer material, no network egress
+- [x] local root `pnpm check` and `pnpm test` green (two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain, confirmed present on `main` before this change too, and are not part of M8.6)
+- [ ] pull request CI green and M8.6 merged
+
+Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-verifying every discovered Skill, UI/frontend, MCP Registry verification, any new mainnet transaction, any real/live/funded 0G run.
+
+## Backend queue after M8.6
+
+1. **M8.7 / #26 — stable read/evidence/policy API**  
    Freeze machine-readable backend JSON.
 
 3. **M8.8 / #27 — MCP agent interface**  

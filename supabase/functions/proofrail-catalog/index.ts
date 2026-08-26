@@ -64,6 +64,60 @@ const ASSURANCE_LEVELS = new Set(["NONE", "DECLARED", "REPOSITORY_AUTHENTICATED"
 const COMMIT_SHA_RE = /^[0-9a-fA-F]{40}$/;
 const DIGEST_SHA256_RE = /^[0-9a-fA-F]{64}$/;
 
+const ARTIFACT_KINDS = new Set(["agent-skill"]);
+const SOURCE_INSPECTION_STATUSES = new Set(["NOT_RUN", "INSPECTED"]);
+const CORRESPONDENCE_STATUSES = new Set(["NOT_EVALUATED", "INSUFFICIENT_EVIDENCE", "MATCH", "MISMATCH", "DIVERGED"]);
+const SECURITY_STATUSES = new Set(["NOT_RUN", "COMPLETED"]);
+const SECURITY_SEVERITIES = new Set(["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]);
+
+// Mirrors packages/catalog-store/src/capability-verification-validation.ts. Deno cannot import
+// that module directly; keep both in sync if this logic changes (both sides are covered by
+// tests, and the Postgres CHECK constraints in the M8.6 migration are the authoritative,
+// always-enforced copy of the same rules).
+function validateNewCapabilityVerification(body: Record<string, unknown>): string | null {
+  const publisherSha256 = body.publisherSha256 ?? null;
+  const reproducedSha256 = body.reproducedSha256 ?? null;
+  const bothDigests = typeof publisherSha256 === "string" && typeof reproducedSha256 === "string";
+
+  if (publisherSha256 !== null && (typeof publisherSha256 !== "string" || !DIGEST_SHA256_RE.test(publisherSha256))) {
+    return "invalid_publisher_sha256";
+  }
+  if (reproducedSha256 !== null && (typeof reproducedSha256 !== "string" || !DIGEST_SHA256_RE.test(reproducedSha256))) {
+    return "invalid_reproduced_sha256";
+  }
+
+  switch (body.correspondenceStatus) {
+    case "NOT_EVALUATED":
+      if (publisherSha256 !== null || reproducedSha256 !== null) return "not_evaluated_has_digests";
+      break;
+    case "MATCH":
+      if (!bothDigests || publisherSha256 !== reproducedSha256) return "match_requires_equal_digests";
+      break;
+    case "MISMATCH":
+      if (!bothDigests || publisherSha256 === reproducedSha256) return "mismatch_requires_different_digests";
+      break;
+    case "DIVERGED":
+      if (!bothDigests) return "diverged_requires_both_digests";
+      break;
+    case "INSUFFICIENT_EVIDENCE":
+      break;
+    default:
+      return "invalid_correspondence_status";
+  }
+
+  if (body.securityStatus === "NOT_RUN") {
+    if (body.securityHighestSeverity !== null && body.securityHighestSeverity !== undefined) return "not_run_security_has_findings";
+    if (body.securityFindingCount !== null && body.securityFindingCount !== undefined) return "not_run_security_has_findings";
+  } else if (body.securityStatus === "COMPLETED") {
+    if (typeof body.securityHighestSeverity !== "string" || !SECURITY_SEVERITIES.has(body.securityHighestSeverity)) return "completed_security_missing_findings";
+    if (typeof body.securityFindingCount !== "number" || !Number.isInteger(body.securityFindingCount) || body.securityFindingCount < 0) return "completed_security_missing_findings";
+  } else {
+    return "invalid_security_status";
+  }
+
+  return null;
+}
+
 // Mirrors packages/catalog-store/src/source-claim-transition.ts. Deno cannot import that module
 // directly; keep both in sync if this logic changes (both sides are covered by tests).
 function resolveSourceClaimTransition(
@@ -352,6 +406,77 @@ Deno.serve(async (request) => {
         .select("*")
         .eq("resource_version_id", body.resourceVersionId)
         .eq("claim_status", "active")
+        .order("created_at", { ascending: false });
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { rows: data ?? [] });
+    }
+
+    // M8.6: createCapabilityVerification always inserts a new immutable
+    // capability_verifications row linking a resource version (and optional source claim /
+    // verification job) to canonical ProofRail evidence already produced elsewhere. This
+    // function never computes MATCH/MISMATCH itself; it only persists an already-validated
+    // result and rejects one that fails the same sanity checks the Postgres CHECK constraints
+    // enforce (docs/16 "Database-level sanity checks").
+    if (body.action === "createCapabilityVerification") {
+      if (
+        !isNonEmptyString(body.resourceVersionId)
+        || typeof body.artifactKind !== "string" || !ARTIFACT_KINDS.has(body.artifactKind)
+        || typeof body.sourceInspectionStatus !== "string" || !SOURCE_INSPECTION_STATUSES.has(body.sourceInspectionStatus)
+        || typeof body.correspondenceStatus !== "string" || !CORRESPONDENCE_STATUSES.has(body.correspondenceStatus)
+        || typeof body.securityStatus !== "string" || !SECURITY_STATUSES.has(body.securityStatus)
+      ) {
+        return reply(400, { error: "invalid_input" });
+      }
+      const sanityError = validateNewCapabilityVerification(body);
+      if (sanityError) return reply(400, { error: "invalid_input", message: sanityError });
+
+      const { data, error } = await admin
+        .from("capability_verifications")
+        .insert({
+          resource_version_id: body.resourceVersionId,
+          source_claim_id: body.sourceClaimId ?? null,
+          verification_job_id: body.verificationJobId ?? null,
+          artifact_kind: body.artifactKind,
+          source_inspection_status: body.sourceInspectionStatus,
+          correspondence_status: body.correspondenceStatus,
+          publisher_sha256: body.publisherSha256 ?? null,
+          reproduced_sha256: body.reproducedSha256 ?? null,
+          security_status: body.securityStatus,
+          security_highest_severity: body.securityHighestSeverity ?? null,
+          security_finding_count: body.securityFindingCount ?? null,
+          canonical_evidence_sha256: body.canonicalEvidenceSha256 ?? null,
+          storage_root: body.storageRoot ?? null,
+          storage_transaction: body.storageTransaction ?? null,
+          registry_contract: body.registryContract ?? null,
+          registry_record_id: body.registryRecordId ?? null,
+          registry_transaction: body.registryTransaction ?? null,
+          verified_at: body.verifiedAt ?? null,
+        })
+        .select("*")
+        .single();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { capabilityVerification: data });
+    }
+
+    if (body.action === "getLatestCapabilityVerification") {
+      if (!isNonEmptyString(body.resourceVersionId)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin
+        .from("capability_verifications")
+        .select("*")
+        .eq("resource_version_id", body.resourceVersionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { capabilityVerification: data ?? null });
+    }
+
+    if (body.action === "listCapabilityVerificationsByResourceVersion") {
+      if (!isNonEmptyString(body.resourceVersionId)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin
+        .from("capability_verifications")
+        .select("*")
+        .eq("resource_version_id", body.resourceVersionId)
         .order("created_at", { ascending: false });
       if (error) return reply(400, { error: "database_error", message: error.message });
       return reply(200, { rows: data ?? [] });
