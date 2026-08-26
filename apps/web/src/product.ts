@@ -1,5 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { VerificationJson } from "../../../packages/core/src/model.ts";
+import {
+  ARD_MAX_REQUEST_BODY_BYTES,
+  ArdAdapterError,
+  createLocalCatalog,
+  createProofRailArdCatalogManifest,
+  parseArdSearchRequest,
+  searchLocalCatalog,
+  type LocalCatalogRecord,
+} from "../../../packages/discovery-ard/src/index.ts";
 import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from "../../../packages/job-store/src/index.ts";
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
@@ -19,6 +28,24 @@ const M7_STORAGE_ROOT = "0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a
 const M7_STORAGE_TX = "0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d";
 const M7_GALILEO_RECORD = "0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a";
 const M7_GALILEO_TX = "0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db";
+const DEFAULT_PUBLIC_BASE_URL = "https://proofrail-app-production.up.railway.app";
+
+class ProductRequestError extends Error {
+  readonly code: "invalid_request" | "request_too_large";
+  readonly statusCode: number;
+
+  constructor(code: "invalid_request" | "request_too_large", message: string, statusCode = 400) {
+    super(message);
+    this.name = "ProductRequestError";
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+}
+
+export interface ProductRequestHandlerOptions {
+  publicBaseUrl?: string;
+  localCatalog?: readonly LocalCatalogRecord[];
+}
 
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -34,16 +61,34 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 async function readJson(request: IncomingMessage, limit = 64 * 1024): Promise<unknown> {
+  const contentLength = request.headers["content-length"];
+  if (contentLength !== undefined) {
+    const declaredSize = Number(contentLength);
+    if (!Number.isSafeInteger(declaredSize) || declaredSize < 0) {
+      throw new ProductRequestError("invalid_request", "Invalid Content-Length header");
+    }
+    if (declaredSize > limit) {
+      throw new ProductRequestError("request_too_large", `Request body exceeds the ${limit}-byte limit`, 413);
+    }
+  }
+
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += buffer.length;
-    if (size > limit) throw new Error("Request body too large");
+    if (size > limit) throw new ProductRequestError("request_too_large", `Request body exceeds the ${limit}-byte limit`, 413);
     chunks.push(buffer);
   }
   if (chunks.length === 0) return {};
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function requireJsonContentType(request: IncomingMessage): void {
+  const contentType = request.headers["content-type"]?.split(";", 1)[0]?.trim().toLowerCase();
+  if (contentType !== "application/json") {
+    throw new ProductRequestError("invalid_request", "Content-Type must be application/json", 415);
+  }
 }
 
 function requiredString(body: Record<string, unknown>, key: string): string {
@@ -172,7 +217,12 @@ export function renderJobHtml(job: VerificationJob): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ProofRail job</title><style>:root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#111827;background:#f7f7f5}body{margin:0}.shell{max-width:860px;margin:0 auto;padding:48px 20px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:26px}.row{padding:9px 0;border-bottom:1px solid #f0f1f2}.row:last-child{border:0}code{font-size:12px;word-break:break-all}p{color:#4b5563}</style></head><body><main class="shell"><h1>Verification job</h1><div class="card"><div class="row">Pipeline status: <strong>${escapeHtml(job.status)}</strong></div><div class="row">Artifact kind: <strong>${escapeHtml(job.artifactKind)}</strong></div><div class="row">Project: <strong>${escapeHtml(job.projectId)}</strong></div><div class="row">Repository: <code>${escapeHtml(job.sourceRepository)}</code></div><div class="row">Commit: <code>${escapeHtml(job.sourceCommitSha)}</code></div>${failure}</div><p>No correspondence verdict is shown until canonical verification evidence is available and passes ProofRail integrity checks.</p></main></body></html>`;
 }
 
-export function createProductRequestHandler(store: JobStore) {
+export function createProductRequestHandler(store: JobStore, options: ProductRequestHandlerOptions = {}) {
+  const publicBaseUrl = options.publicBaseUrl ?? process.env.PROOFRAIL_PUBLIC_BASE_URL ?? DEFAULT_PUBLIC_BASE_URL;
+  const localCatalog = options.localCatalog ?? createLocalCatalog();
+  const catalogManifest = createProofRailArdCatalogManifest(publicBaseUrl);
+  const searchSource = `${publicBaseUrl.replace(/\/+$/, "")}/search`;
+
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
       const base = `http://${request.headers.host ?? "localhost"}`;
@@ -180,6 +230,16 @@ export function createProductRequestHandler(store: JobStore) {
 
       if (request.method === "GET" && url.pathname === "/health") {
         sendJson(response, 200, { ok: true, service: "proofrail", mode: "product" });
+        return;
+      }
+      if (request.method === "GET" && url.pathname === "/.well-known/ai-catalog.json") {
+        sendJson(response, 200, catalogManifest);
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/search") {
+        requireJsonContentType(request);
+        const searchRequest = parseArdSearchRequest(await readJson(request, ARD_MAX_REQUEST_BODY_BYTES));
+        sendJson(response, 200, searchLocalCatalog(searchRequest, localCatalog, searchSource));
         return;
       }
       if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
@@ -220,7 +280,19 @@ export function createProductRequestHandler(store: JobStore) {
 
       sendJson(response, 404, { error: "not_found" });
     } catch (error) {
-      sendJson(response, 400, { error: "invalid_request", message: error instanceof Error ? error.message : String(error) });
+      if (error instanceof ArdAdapterError || error instanceof ProductRequestError) {
+        sendJson(response, error.statusCode, {
+          error: error.code,
+          errorCode: error.code.toUpperCase(),
+          message: error.message,
+        });
+        return;
+      }
+      sendJson(response, 400, {
+        error: "invalid_request",
+        errorCode: "INVALID_REQUEST",
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 }

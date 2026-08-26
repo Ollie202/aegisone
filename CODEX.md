@@ -19,14 +19,14 @@ Treat this repository as an existing proven system. Do not rewrite M1–M7 or re
 
 - M1–M7: complete, merged, live-proven.
 - M8.1 capability/evidence/policy model: complete and merged in PR #20.
-- M8.2 ARD adapter: next implementation target; Issue #21; branch `agent/m8-ard-discovery`.
+- M8.2 ARD adapter: implemented and locally green on Issue #21 branch `agent/m8-ard-discovery`; PR CI/merge gate pending.
 - The backend MVP must be completed before the new Hub frontend is layered on top.
 
 ## Backend sequence
 
 Implement one issue at a time, in this order:
 
-1. M8.2 — pinned ARD adapter and local search.
+1. M8.2 — pinned ARD adapter and local search — implemented on issue branch; merge gate pending.
 2. M8.3 — federated discovery adapters.
 3. M8.4 — Supabase catalog persistence.
 4. M8.5 — source authentication / source claims.
