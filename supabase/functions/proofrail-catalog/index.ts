@@ -60,6 +60,26 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 const DISCOVERY_STATUSES = new Set(["INDEXED", "STALE", "UNAVAILABLE"]);
+const ASSURANCE_LEVELS = new Set(["NONE", "DECLARED", "REPOSITORY_AUTHENTICATED", "SIGNED_RELEASE"]);
+const COMMIT_SHA_RE = /^[0-9a-fA-F]{40}$/;
+const DIGEST_SHA256_RE = /^[0-9a-fA-F]{64}$/;
+
+// Mirrors packages/catalog-store/src/source-claim-transition.ts. Deno cannot import that module
+// directly; keep both in sync if this logic changes (both sides are covered by tests).
+function resolveSourceClaimTransition(
+  activeClaims: { id: string; source_repository_id: number | null; source_repository: string }[],
+  newRepositoryId: number | null,
+  newRepositoryFullName: string,
+): { kind: "new" } | { kind: "supersede"; supersedesClaimId: string } | { kind: "conflict"; conflictingClaimId: string } {
+  if (activeClaims.length === 0) return { kind: "new" };
+  const sameRepository = activeClaims.find((claim) =>
+    newRepositoryId !== null && claim.source_repository_id !== null
+      ? claim.source_repository_id === newRepositoryId
+      : claim.source_repository === newRepositoryFullName,
+  );
+  if (sameRepository) return { kind: "supersede", supersedesClaimId: sameRepository.id };
+  return { kind: "conflict", conflictingClaimId: activeClaims[0].id };
+}
 
 Deno.serve(async (request) => {
   try {
@@ -230,6 +250,111 @@ Deno.serve(async (request) => {
         .single();
       if (error) return reply(400, { error: "database_error", message: error.message });
       return reply(200, { ingestionSource: data });
+    }
+
+    // M8.5: createSourceClaim inserts a new immutable source_claims row and resolves the
+    // active-claim transition (new / supersede / conflict) for the same resource_version_id.
+    // Only claim_status is ever updated on a prior row; every other column stays untouched.
+    if (body.action === "createSourceClaim") {
+      if (
+        !isNonEmptyString(body.resourceVersionId) || !isNonEmptyString(body.provider)
+        || typeof body.assuranceLevel !== "string" || !ASSURANCE_LEVELS.has(body.assuranceLevel)
+        || !isNonEmptyString(body.sourceRepository) || !isNonEmptyString(body.sourceCommitSha)
+        || !COMMIT_SHA_RE.test(body.sourceCommitSha)
+        || !isNonEmptyString(body.claimDigestSha256) || !DIGEST_SHA256_RE.test(body.claimDigestSha256)
+        || !isObject(body.canonicalClaimJson)
+      ) {
+        return reply(400, { error: "invalid_input" });
+      }
+      const sourceRepositoryId = typeof body.sourceRepositoryId === "number" ? body.sourceRepositoryId : null;
+
+      const { data: activeClaims, error: activeError } = await admin
+        .from("source_claims")
+        .select("id, source_repository_id, source_repository")
+        .eq("resource_version_id", body.resourceVersionId)
+        .eq("claim_status", "active");
+      if (activeError) return reply(400, { error: "database_error", message: activeError.message });
+
+      const transition = resolveSourceClaimTransition(activeClaims ?? [], sourceRepositoryId, body.sourceRepository);
+      const claimStatus = transition.kind === "conflict" ? "conflicted" : "active";
+
+      const { data: insertedClaim, error: insertError } = await admin
+        .from("source_claims")
+        .insert({
+          resource_version_id: body.resourceVersionId,
+          provider: body.provider,
+          assurance_level: body.assuranceLevel,
+          claim_status: claimStatus,
+          source_repository: body.sourceRepository,
+          source_repository_id: sourceRepositoryId,
+          source_repository_node_id: body.sourceRepositoryNodeId ?? null,
+          source_owner_login: body.sourceOwnerLogin ?? null,
+          source_owner_id: typeof body.sourceOwnerId === "number" ? body.sourceOwnerId : null,
+          source_commit_sha: body.sourceCommitSha,
+          source_subdirectory: body.sourceSubdirectory ?? null,
+          distribution_url: body.distributionUrl ?? null,
+          distribution_sha256: body.distributionSha256 ?? null,
+          claim_digest_sha256: body.claimDigestSha256,
+          canonical_claim_json: body.canonicalClaimJson,
+          authenticated_at: body.authenticatedAt ?? null,
+          supersedes_claim_id: transition.kind === "supersede" ? transition.supersedesClaimId : null,
+        })
+        .select("*")
+        .single();
+      if (insertError) return reply(400, { error: "database_error", message: insertError.message });
+
+      let supersededClaimId: string | null = null;
+      let conflict: { type: string; conflictingClaimId: string } | null = null;
+      if (transition.kind === "supersede") {
+        const { error } = await admin.from("source_claims").update({ claim_status: "superseded" }).eq("id", transition.supersedesClaimId);
+        if (error) return reply(400, { error: "database_error", message: error.message });
+        supersededClaimId = transition.supersedesClaimId;
+      } else if (transition.kind === "conflict") {
+        const { error } = await admin.from("source_claims").update({ claim_status: "conflicted" }).eq("id", transition.conflictingClaimId);
+        if (error) return reply(400, { error: "database_error", message: error.message });
+        conflict = { type: "SOURCE_CLAIM_CONFLICT", conflictingClaimId: transition.conflictingClaimId };
+      }
+
+      let authorityObservations: unknown[] = [];
+      const observationsInput = Array.isArray(body.authorityObservations) ? body.authorityObservations : [];
+      if (observationsInput.length > 0) {
+        const rows = observationsInput.filter(isObject).map((observation) => ({
+          source_claim_id: insertedClaim.id,
+          provider: observation.provider ?? body.provider,
+          subject_type: observation.subjectType,
+          subject_id: observation.subjectId,
+          subject_login: observation.subjectLogin ?? null,
+          repository_id: observation.repositoryId ?? null,
+          observed_permission: observation.observedPermission ?? null,
+          observed_role_name: observation.observedRoleName ?? null,
+          observation_json: observation.observationJson ?? {},
+          observed_at: observation.observedAt,
+        }));
+        const { data, error } = await admin.from("source_claim_authority_observations").insert(rows).select("*");
+        if (error) return reply(400, { error: "database_error", message: error.message });
+        authorityObservations = data ?? [];
+      }
+
+      return reply(200, { sourceClaim: insertedClaim, authorityObservations, supersededClaimId, conflict });
+    }
+
+    if (body.action === "getSourceClaim") {
+      if (!isNonEmptyString(body.id)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin.from("source_claims").select("*").eq("id", body.id).maybeSingle();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { sourceClaim: data ?? null });
+    }
+
+    if (body.action === "listActiveSourceClaimsByResourceVersion") {
+      if (!isNonEmptyString(body.resourceVersionId)) return reply(400, { error: "invalid_input" });
+      const { data, error } = await admin
+        .from("source_claims")
+        .select("*")
+        .eq("resource_version_id", body.resourceVersionId)
+        .eq("claim_status", "active")
+        .order("created_at", { ascending: false });
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { rows: data ?? [] });
     }
 
     return reply(400, { error: "unknown_action" });

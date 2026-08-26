@@ -2,6 +2,7 @@ export * from "./model.ts";
 export * from "./canonical-key.ts";
 export * from "./upsert-plan.ts";
 export * from "./convert.ts";
+export * from "./source-claim-transition.ts";
 export * from "./store.ts";
 export * from "./memory.ts";
 export * from "./supabase.ts";

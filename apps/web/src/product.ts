@@ -25,6 +25,9 @@ import {
 } from "../../../packages/discovery-providers/src/index.ts";
 import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from "../../../packages/job-store/src/index.ts";
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
+import { InMemoryCatalogStore, type CatalogStore } from "../../../packages/catalog-store/src/index.ts";
+import { createGithubSourceAuthConfigFromEnv, type GithubSourceAuthConfig } from "../../../packages/source-auth-github/src/index.ts";
+import { createSourceAuthRouter } from "./source-auth.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
 import { renderVerificationHtml } from "./render.ts";
 
@@ -61,6 +64,17 @@ export interface ProductRequestHandlerOptions {
   localCatalog?: readonly LocalCatalogRecord[];
   /** Overridable for tests; defaults to the two M8.3 real discovery providers. */
   discoveryProviders?: ReadonlyMap<string, DiscoveryProvider>;
+  /** M8.5: source-claim persistence. Defaults to an in-memory store for local/test use;
+   * production must pass a `SupabaseCatalogStore` (see `createCatalogStoreFromEnv`). */
+  catalogStore?: CatalogStore;
+  /** M8.5: GitHub App OAuth config. `null`/omitted means the GitHub App has not been created
+   * yet — `/auth/github/*` and the repository-listing endpoint respond `503`, while DECLARED
+   * source claims (`POST /api/v1/source-claims` without an authenticated session) still work. */
+  githubSourceAuthConfig?: GithubSourceAuthConfig | null;
+  /** Set false only for local http development/tests; production must keep cookies Secure. */
+  secureSourceAuthCookies?: boolean;
+  /** Overridable for tests; forwarded to the source-auth router's GitHub REST calls. */
+  githubFetcher?: typeof fetch;
 }
 
 function defaultDiscoveryProviders(): ReadonlyMap<string, DiscoveryProvider> {
@@ -301,11 +315,23 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
   const catalogManifest = createProofRailArdCatalogManifest(publicBaseUrl);
   const searchSource = `${publicBaseUrl.replace(/\/+$/, "")}/search`;
   const discoveryProviders = options.discoveryProviders ?? defaultDiscoveryProviders();
+  const catalogStore = options.catalogStore ?? new InMemoryCatalogStore();
+  const githubSourceAuthConfig = options.githubSourceAuthConfig !== undefined
+    ? options.githubSourceAuthConfig
+    : createGithubSourceAuthConfigFromEnv();
+  const sourceAuthRouter = createSourceAuthRouter({
+    githubConfig: githubSourceAuthConfig,
+    catalogStore,
+    secureCookies: options.secureSourceAuthCookies,
+    fetcher: options.githubFetcher,
+  });
 
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
       const base = `http://${request.headers.host ?? "localhost"}`;
       const url = new URL(request.url ?? "/", base);
+
+      if (await sourceAuthRouter(request, response, url)) return;
 
       if (request.method === "GET" && url.pathname === "/health") {
         sendJson(response, 200, { ok: true, service: "proofrail", mode: "product" });
