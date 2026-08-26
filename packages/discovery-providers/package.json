@@ -1,0 +1,11 @@
+{
+  "name": "@proofrail/discovery-providers",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:live": "node --experimental-strip-types --test test/live/*.live.test.ts"
+  }
+}

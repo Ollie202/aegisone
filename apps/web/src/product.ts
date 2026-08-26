@@ -1,14 +1,28 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { VerificationJson } from "../../../packages/core/src/model.ts";
 import {
+  ARD_DEFAULT_PAGE_SIZE,
+  ARD_MAX_PAGE_SIZE,
+  ARD_MAX_QUERY_CODE_POINTS,
   ARD_MAX_REQUEST_BODY_BYTES,
+  ARD_MEDIA_TYPE_TO_RESOURCE_KIND,
   ArdAdapterError,
   createLocalCatalog,
   createProofRailArdCatalogManifest,
   parseArdSearchRequest,
   searchLocalCatalog,
+  type ArdResourceMediaType,
   type LocalCatalogRecord,
 } from "../../../packages/discovery-ard/src/index.ts";
+import {
+  GITHUB_AGENT_FINDER_PROVIDER_ID,
+  HUGGING_FACE_DISCOVER_PROVIDER_ID,
+  createGithubAgentFinderProvider,
+  createHuggingFaceDiscoverProvider,
+  federatedDiscoverySearch,
+  type DiscoveryProvider,
+  type DiscoveryQuery,
+} from "../../../packages/discovery-providers/src/index.ts";
 import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from "../../../packages/job-store/src/index.ts";
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
@@ -45,6 +59,70 @@ class ProductRequestError extends Error {
 export interface ProductRequestHandlerOptions {
   publicBaseUrl?: string;
   localCatalog?: readonly LocalCatalogRecord[];
+  /** Overridable for tests; defaults to the two M8.3 real discovery providers. */
+  discoveryProviders?: ReadonlyMap<string, DiscoveryProvider>;
+}
+
+function defaultDiscoveryProviders(): ReadonlyMap<string, DiscoveryProvider> {
+  return new Map([
+    [GITHUB_AGENT_FINDER_PROVIDER_ID, createGithubAgentFinderProvider()],
+    [HUGGING_FACE_DISCOVER_PROVIDER_ID, createHuggingFaceDiscoverProvider()],
+  ]);
+}
+
+/**
+ * Parses the federated (non-local) `POST /search` request shape. Unlike `parseArdSearchRequest`
+ * (M8.2, local catalog only, `federation` must be `"none"`), this accepts `federation` as a
+ * non-empty array of registered provider ids and federates the query across them in parallel.
+ * Federated results are provider-independent `CapabilityResource` objects, not the M8.2 local
+ * `ArdEntry` shape: federated entries come from providers that do not follow ProofRail's own
+ * `urn:air:` outbound catalog identifier convention, so they are not re-encoded as ArdEntry.
+ */
+function parseFederatedSearchRequest(body: unknown, providers: ReadonlyMap<string, DiscoveryProvider>): { query: DiscoveryQuery; providerIds: string[] } {
+  if (!isObject(body)) throw new ProductRequestError("invalid_request", "request body must be a JSON object");
+  if (!isObject(body.query) || typeof body.query.text !== "string" || body.query.text.trim() === "") {
+    throw new ProductRequestError("invalid_request", "query.text is required");
+  }
+  const text = body.query.text.trim();
+  if ([...text].length > ARD_MAX_QUERY_CODE_POINTS) {
+    throw new ProductRequestError("invalid_request", `query.text must be at most ${ARD_MAX_QUERY_CODE_POINTS} Unicode characters`);
+  }
+
+  let mediaTypes: ArdResourceMediaType[] | null = null;
+  const filter = body.query.filter;
+  if (filter !== undefined) {
+    if (!isObject(filter)) throw new ProductRequestError("invalid_request", "query.filter must be a JSON object");
+    if (filter.type !== undefined) {
+      const values = typeof filter.type === "string" ? [filter.type] : filter.type;
+      if (!Array.isArray(values) || values.length === 0 || values.some((item) => typeof item !== "string" || item.trim() === "")) {
+        throw new ProductRequestError("invalid_request", "query.filter.type must be a non-empty string or array of non-empty strings");
+      }
+      for (const mediaType of values) {
+        if (!Object.hasOwn(ARD_MEDIA_TYPE_TO_RESOURCE_KIND, mediaType)) {
+          throw new ProductRequestError("invalid_request", `query.filter.type does not support media type: ${mediaType}`);
+        }
+      }
+      mediaTypes = [...new Set(values)] as ArdResourceMediaType[];
+    }
+  }
+
+  const pageSize = body.pageSize ?? ARD_DEFAULT_PAGE_SIZE;
+  if (!Number.isInteger(pageSize) || (pageSize as number) < 1 || (pageSize as number) > ARD_MAX_PAGE_SIZE) {
+    throw new ProductRequestError("invalid_request", `pageSize must be an integer from 1 to ${ARD_MAX_PAGE_SIZE}`);
+  }
+
+  const federation = body.federation;
+  if (!Array.isArray(federation) || federation.length === 0 || federation.some((item) => typeof item !== "string" || item.trim() === "")) {
+    throw new ProductRequestError("invalid_request", 'federation must be "none" or a non-empty array of provider ids');
+  }
+  const providerIds = [...new Set(federation as string[])];
+  for (const id of providerIds) {
+    if (!providers.has(id)) {
+      throw new ProductRequestError("invalid_request", `unsupported federation provider id: ${id}. supported: ${[...providers.keys()].sort().join(", ")}`);
+    }
+  }
+
+  return { query: { text, mediaTypes, pageSize: pageSize as number }, providerIds };
 }
 
 function escapeHtml(value: string): string {
@@ -222,6 +300,7 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
   const localCatalog = options.localCatalog ?? createLocalCatalog();
   const catalogManifest = createProofRailArdCatalogManifest(publicBaseUrl);
   const searchSource = `${publicBaseUrl.replace(/\/+$/, "")}/search`;
+  const discoveryProviders = options.discoveryProviders ?? defaultDiscoveryProviders();
 
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
@@ -238,7 +317,16 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
       }
       if (request.method === "POST" && url.pathname === "/search") {
         requireJsonContentType(request);
-        const searchRequest = parseArdSearchRequest(await readJson(request, ARD_MAX_REQUEST_BODY_BYTES));
+        const rawBody = await readJson(request, ARD_MAX_REQUEST_BODY_BYTES);
+        const requestsFederation = isObject(rawBody) && rawBody.federation !== undefined && rawBody.federation !== "none";
+        if (requestsFederation) {
+          const { query, providerIds } = parseFederatedSearchRequest(rawBody, discoveryProviders);
+          const providers = providerIds.map((id) => discoveryProviders.get(id)!);
+          const federated = await federatedDiscoverySearch(providers, query);
+          sendJson(response, 200, federated);
+          return;
+        }
+        const searchRequest = parseArdSearchRequest(rawBody);
         sendJson(response, 200, searchLocalCatalog(searchRequest, localCatalog, searchSource));
         return;
       }

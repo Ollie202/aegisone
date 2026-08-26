@@ -1,7 +1,7 @@
 # Project State
 
-**Last updated:** 2026-08-24  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 implemented and locally green on its issue branch, merge gate pending
+**Last updated:** 2026-08-26  
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 implemented and locally green on its issue branch, merge gate pending
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -112,9 +112,9 @@ Completed:
 
 Final M8.1 CI passed before merge. Do not redo this milestone.
 
-## M8.2 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.2 — COMPLETE
 
-Issue #21 on `agent/m8-ard-discovery` now provides:
+Issue #21 / PR #34 merged to `main`.
 
 - `@proofrail/discovery-ard`, isolated from the provider-independent capability model;
 - the exact ARD v0.9 upstream pin and schema/blob provenance;
@@ -125,12 +125,29 @@ Issue #21 on `agent/m8-ard-discovery` now provides:
 - namespaced ProofRail evidence-state output only from validated M8.1 resources;
 - regression coverage proving ARD `trustManifest`, trust-looking metadata, `INDEXED` state, and relevance scores cannot upgrade ProofRail evidence or policy results.
 
-Local `pnpm check` and `pnpm test` are green. M8.2 is not recorded as merged until the pull request CI and merge gate complete. No federation, Supabase catalog, source authentication, MCP, frontend, or 0G write behavior was added.
+Final M8.2 CI passed before merge. Do not redo this milestone.
+
+## M8.3 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #22 on `agent/m8-federated-discovery` now provides:
+
+- `@proofrail/discovery-providers`, a new package that owns real read-only HTTP federation to two fixed allowlisted origins and normalizes their results into `@proofrail/capability-model`'s `CapabilityResource`;
+- a `DiscoveryProvider` interface (`id`, `search(query, signal)`) and one shared ARD-wire-shaped provider factory reused by both concrete adapters;
+- **GitHub Agent Finder** adapter, pinned to `ards-project/ard-connectors@53cc4f3a4596cf51482fabeb554d124ca248ed07`, endpoint `POST https://agentfinder.github.com/api/v1/search`;
+- **Hugging Face Discover** adapter, pinned to `huggingface/hf-discover@49c927439fcaa8f210cfd42186c0641acef579fa`, endpoint `POST https://huggingface-hf-discover.hf.space/search`; both live endpoints were reachable and stable during implementation, so both were built rather than deferring one;
+- a bounded HTTP layer: fixed origin allowlist, no redirect following, ~3s per-provider timeout / ~5s total federated deadline via `AbortSignal.any`, a streamed 1 MiB response cap, a 25-result-per-provider cap, and at most one retry for a transient failure;
+- `federatedDiscoverySearch`, which fans a query out to every configured provider in parallel, isolates one provider's failure from the others (partial results plus a per-provider status), and deterministically deduplicates merged results by normalized resource URL;
+- a deliberately lenient inbound entry normalizer (`normalizeProviderEntry`) that is separate from `@proofrail/discovery-ard`'s stricter outbound `urn:air:` catalog validator — the live GitHub Agent Finder response uses `urn:ai:...` identifiers, so reusing the outbound validator for inbound third-party data would have silently dropped every one of its results;
+- `apps/web`'s `POST /search` now accepts `federation` as `"none"` (unchanged M8.2 local-catalog behavior, byte-for-byte) or as a non-empty array of registered provider ids, in which case it returns federated `CapabilityResource`/provider-status results instead of the local `ArdEntry` shape;
+- regression coverage proving forged upstream `trustManifest`, forged `org.proofrail.*`-looking metadata, `verified` flags, and out-of-range/maximum scores can never create or upgrade `trust` on a normalized resource — `trust` is always emitted empty/unavailable for federated results;
+- live smoke tests (`packages/discovery-providers/test/live/*.live.test.ts`, run via `pnpm m8.3:live`, not part of `pnpm check`/`pnpm test`) that made real calls to both pinned endpoints and to the combined federated path; all three passed.
+
+Local `pnpm check` and `pnpm test` are green (two pre-existing, unrelated failures in `packages/cli` and `packages/runner-local` — a fixture git-checkout byte-reproduction test — were confirmed present on `main` before this change and are not part of M8.3). M8.3 is not recorded as merged until the pull request CI and merge gate complete. No Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, frontend, or 0G write behavior was added.
 
 ## M8 backend implementation sequence
 
-1. **M8.2 / Issue #21 — current:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
-2. **M8.3 / Issue #22:** GitHub Agent Finder + Hugging Face Discover federation.
+1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
+2. **M8.3 / Issue #22 — current:** GitHub Agent Finder + Hugging Face Discover federation.
 3. **M8.4 / Issue #23:** existing-Supabase capability catalog/version/ingestion persistence.
 4. **M8.5 / Issue #24:** GitHub App source authentication and canonical source claims.
 5. **M8.6 / Issue #25:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
@@ -186,4 +203,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.2 / Issue #21** pull request, require green CI, merge, reconcile the final merged state, and stop. Do not begin M8.3 in this context.
+Open/review the **M8.3 / Issue #22** pull request, require green CI, merge, reconcile the final merged state, and stop. Do not begin M8.4 in this context.

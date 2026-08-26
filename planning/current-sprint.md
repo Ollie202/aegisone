@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.2 / Issue #21 / branch `agent/m8-ard-discovery`**.
+Current implementation gate: **M8.3 / Issue #22 / branch `agent/m8-federated-discovery`**.
 
 ## Proven foundation — unchanged
 
@@ -63,18 +63,42 @@ Required:
 - [x] unsupported filters fail explicitly
 - [x] `INDEXED`/relevance/trustManifest metadata cannot upgrade ProofRail evidence
 - [x] local root `pnpm check` and `pnpm test` green
-- [ ] pull request CI green and M8.2 merged
+- [x] pull request CI green and M8.2 merged (PR #34)
 
 No federation, Supabase schema, GitHub OAuth, MCP, UI redesign or 0G write belongs in M8.2.
 
-Implementation is complete on `agent/m8-ard-discovery`. The active stop gate is PR review/CI/merge; do not start M8.3 from this branch or context.
+M8.2 is merged to `main`. M8.2 is complete; do not redo it.
 
-## Backend queue after M8.2
+## Current gate — M8.3 federated discovery
 
-1. **M8.3 / #22 — federated discovery**  
-   GitHub Agent Finder + Hugging Face Discover, provider isolation/limits/dedup.
+Issue #22.
 
-2. **M8.4 / #23 — Supabase capability catalog**  
+Goal: replace M8.2's local-only fixtures with real read-only federation to GitHub Agent Finder and Hugging Face Discover, normalized into the same M8.1 capability model, without letting upstream metadata create or upgrade ProofRail trust evidence.
+
+Required:
+
+- [x] `@proofrail/discovery-providers`
+- [x] `DiscoveryProvider` interface (`id`, `search(query, signal)`)
+- [x] GitHub Agent Finder adapter, pinned to `ards-project/ard-connectors@53cc4f3a4596cf51482fabeb554d124ca248ed07`, fixture-tested
+- [x] live smoke test proving the Agent Finder endpoint works (`test/live/github-agent-finder.live.test.ts`, not part of `pnpm check`/`pnpm test`)
+- [x] Hugging Face Discover adapter, pinned to `huggingface/hf-discover@49c927439fcaa8f210cfd42186c0641acef579fa`, fixture-tested (both live endpoints were reachable and stable, so both providers were implemented rather than deferring one)
+- [x] live smoke test for both providers, plus a combined federated live smoke test
+- [x] normalized provider results map only to `CapabilityResource` discovery state, never trust/evidence
+- [x] stable provider attribution retained (`discovery.source` / `discovery.sourceResourceId`)
+- [x] deterministic deduplication, tested
+- [x] partial outage (one provider mocked failing) returns useful partial results, tested
+- [x] timeout / malformed / oversized response tests
+- [x] regression test proving forged `trustManifest`/`org.proofrail.*`-looking metadata/score cannot escalate ProofRail evidence
+- [x] search relevance stays out of policy evaluation (unchanged `@proofrail/capability-model` policy engine; federated results only ever populate `discovery.relevanceScore`)
+- [x] `apps/web` `POST /search` wired: `federation` accepts local `"none"` (unchanged M8.2 behavior) or a non-empty array of registered provider ids, which federates in parallel under the shared deadline
+- [x] local root `pnpm check` and `pnpm test` green
+- [ ] pull request CI green and M8.3 merged
+
+Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, UI redesign, and any 0G write remain out of scope for M8.3.
+
+## Backend queue after M8.3
+
+1. **M8.4 / #23 — Supabase capability catalog**  
    Existing ProofRail project only; RLS; mutable catalog/version/ingestion state.
 
 3. **M8.5 / #24 — GitHub source authentication**  
