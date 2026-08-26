@@ -125,3 +125,85 @@ export const HUGGING_FACE_DISCOVER_FIXTURE_RESPONSE = {
     },
   ],
 };
+
+// GET https://registry.modelcontextprotocol.io/v0.1/servers?search=filesystem&limit=2&version=latest
+// Captured 2026-08-26 against the pinned contract modelcontextprotocol/registry@6036804f1c62633b5e7d2927f411a6f4127f148a.
+export const MCP_REGISTRY_FIXTURE_RESPONSE = {
+  servers: [
+    {
+      server: {
+        $schema: "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+        name: "com.pulsemcp/remote-filesystem",
+        description: "MCP server for remote filesystem operations on cloud storage (Google Cloud Storage).",
+        repository: { url: "https://github.com/pulsemcp/mcp-servers", source: "github", subfolder: "experimental/remote-filesystem" },
+        version: "0.1.5",
+        packages: [
+          {
+            registryType: "npm",
+            registryBaseUrl: "https://registry.npmjs.org",
+            identifier: "remote-filesystem-mcp-server",
+            version: "0.1.5",
+            runtimeHint: "npx",
+            transport: { type: "stdio" },
+          },
+        ],
+      },
+      _meta: {
+        "io.modelcontextprotocol.registry/official": {
+          status: "active",
+          statusChangedAt: "2026-06-26T14:07:53.723164Z",
+          publishedAt: "2026-06-26T14:07:53.723164Z",
+          updatedAt: "2026-06-26T14:07:53.723164Z",
+          isLatest: true,
+        },
+      },
+    },
+    {
+      server: {
+        $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        name: "io.github.Digital-Defiance/mcp-filesystem",
+        description: "Advanced filesystem operations with strict security boundaries for AI agents",
+        repository: { url: "https://github.com/Digital-Defiance/ai-capabilities-suite", source: "github" },
+        version: "0.1.9",
+        packages: [{ registryType: "npm", identifier: "@ai-capabilities-suite/mcp-filesystem", version: "0.1.9", transport: { type: "stdio" } }],
+      },
+      _meta: {
+        "io.modelcontextprotocol.registry/official": {
+          status: "active",
+          statusChangedAt: "2025-12-20T19:25:57.705316Z",
+          publishedAt: "2025-12-20T19:25:57.705316Z",
+          updatedAt: "2025-12-20T19:25:57.705316Z",
+          isLatest: true,
+        },
+      },
+    },
+  ],
+  metadata: { nextCursor: "io.github.Digital-Defiance/mcp-filesystem:0.1.9", count: 2 },
+};
+
+// GET https://registry.modelcontextprotocol.io/v0.1/servers?limit=3 (no search/version filter,
+// includes a server with a remote endpoint rather than only npm packages).
+export const MCP_REGISTRY_FIXTURE_PAGE_WITH_REMOTE = {
+  servers: [
+    {
+      server: {
+        $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        name: "ac.inference.sh/mcp",
+        title: "inference.sh",
+        description: "run any ai model. compose agents, stack knowledge, connect tools. one api, pay per run.",
+        version: "2.0.1",
+        remotes: [{ type: "streamable-http", url: "https://api.inference.sh/mcp" }],
+      },
+      _meta: {
+        "io.modelcontextprotocol.registry/official": {
+          status: "active",
+          statusChangedAt: "2026-07-27T10:44:51.359634Z",
+          publishedAt: "2026-07-27T10:44:51.359634Z",
+          updatedAt: "2026-07-27T10:44:51.359634Z",
+          isLatest: true,
+        },
+      },
+    },
+  ],
+  metadata: { count: 1 },
+};

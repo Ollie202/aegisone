@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.7 / Issue #26 / branch `agent/m8-stable-api`**.
+Current implementation gate: **M8.10 / Issue #29 / branch `agent/m8-mcp-registry`** (M8.7/#26, M8.8/#27, and M8.9/#28 are merged to `main`; see `PROJECT_STATE.md` for authoritative per-milestone status).
 
 ## Proven foundation — unchanged
 
@@ -172,20 +172,19 @@ Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-ver
 
 ## Backend queue after M8.6
 
-1. **M8.7 / #26 — stable read/evidence/policy API**  
-   Freeze machine-readable backend JSON.
+1. **M8.7 / #26 — stable read/evidence/policy API — merged (PR #39).**
 
-3. **M8.8 / #27 — MCP agent interface**  
+2. **M8.8 / #27 — MCP agent interface — merged (PR #40).**  
    Only `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`.
 
-4. **M8.9 / #28 — controlled substitution vertical slice**  
-   Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; real 0G evidence.
+3. **M8.9 / #28 — controlled substitution vertical slice — merged (PR #41).**  
+   Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; local/deterministic proof complete, real 0G evidence still pending per `docs/22-m8-9-live-run-runbook.md`.
 
-5. **M8.10 / #29 — MCP Registry indexing (stretch)**  
-   Read-only official Registry ingestion; remains INDEXED unless stronger evidence actually exists.
+4. **M8.10 / #29 — MCP Registry indexing (stretch) — implemented on `agent/m8-mcp-registry`, PR pending review/merge.**  
+   Read-only official Registry ingestion (`packages/discovery-providers`'s `mcp-registry.ts`/`mcp-registry-sync.ts`); remains INDEXED unless stronger evidence actually exists; live-verified against production, no pin deviation required. See `PROJECT_STATE.md`'s "M8.10" section for full detail.
 
-6. **M8.11 / #30 — hardening/deploy/backend freeze**  
-   Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze.
+5. **M8.11 / #30 — hardening/deploy/backend freeze**  
+   Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze. Begins after M8.10 merges.
 
 ## Frontend
 

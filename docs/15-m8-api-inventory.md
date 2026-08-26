@@ -224,6 +224,10 @@ An official Registry entry is strong ecosystem metadata, not ProofRail source/ar
 
 Do not call the Registry's GitHub/DNS publishing-auth mechanisms on behalf of resources merely to manufacture ProofRail assurance.
 
+### M8.10 implementation note
+
+Verified live against `https://registry.modelcontextprotocol.io` on 2026-08-26 while implementing Issue #29 (`packages/discovery-providers`'s `mcp-registry.ts`/`mcp-registry-normalize.ts`/`mcp-registry-sync.ts`). The observed response shape — `GET /v0.1/servers` returns `{ servers: [{ server: {...}, _meta: { "io.modelcontextprotocol.registry/official": {...} } }], metadata: { nextCursor?, count } }`; `server.name` is a reverse-DNS-style stable identifier (e.g. `io.github.acme/widgets`) requiring URL-encoding as a path segment for the `/versions` endpoints — matches this section exactly. No pin/contract deviation was required.
+
 ## 5. GitHub REST — exact source acquisition and repository identity
 
 ### API version

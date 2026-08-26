@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 local/deterministic substitution proof implemented and green on its issue branch, merge gate pending — the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 (official MCP Registry indexing) implemented and green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -344,6 +344,88 @@ network endpoints and no run ID/digest/Storage root/transaction/registry ID was 
 in this codebase or its docs. Do not treat the local proof above as satisfying Issue #28's full
 acceptance criteria; only the local/deterministic substitution invariant is proven.
 
+Issue #28 / PR #41 merged to `main`. The local/deterministic proof above is complete; the live
+repository-authenticated + real-0G-evidence version remains pending per `docs/22-m8-9-live-run-runbook.md`.
+
+## M8.10 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #29 on `agent/m8-mcp-registry` adds the official MCP Registry as a second real discovery
+provider family, following the exact M8.3 `DiscoveryProvider` boundary/safety envelope rather than
+inventing a parallel path:
+
+- `packages/discovery-providers/src/mcp-registry.ts` (`createMcpOfficialRegistryProvider`,
+  `fetchMcpRegistryServersPage`), `mcp-registry-normalize.ts` (`normalizeMcpRegistryEntry`), and
+  `mcp-registry-sync.ts` (`runMcpOfficialRegistryIngestion`) added to the existing
+  `@proofrail/discovery-providers` package (not a new package: the pinned contract is a third
+  provider, not a new trust boundary);
+- pinned to `modelcontextprotocol/registry@6036804f1c62633b5e7d2927f411a6f4127f148a`, base
+  `https://registry.modelcontextprotocol.io`, read family `/v0.1/`
+  (`GET /v0.1/servers`, `/v0.1/servers/{serverName}/versions`,
+  `/v0.1/servers/{serverName}/versions/{version}`) — verified live and reachable against
+  production during implementation; the observed response shape
+  (`{ servers: [{ server, _meta }], metadata: { nextCursor?, count } }`) matches
+  `docs/15-m8-api-inventory.md` section 4 exactly, so **no pin/contract deviation was required**;
+- `packages/discovery-providers/src/http.ts` gained `getBoundedJson` (GET counterpart to the
+  existing `postBoundedJson`: same fixed-origin allowlist, timeout, streamed response-size cap,
+  no-redirect, at-most-one-retry discipline), since the Registry speaks a paginated `GET` list API
+  rather than the M8.3 providers' `POST` ARD search wire shape;
+- `normalizeMcpRegistryEntry` maps one `{ server, _meta }` entry into a validated
+  `CapabilityResource` (`kind: "mcp-server"`, `discovery.status: "INDEXED"`) and always emits empty
+  trust evidence (`sourceAssurance.level: "NONE"`, `correspondence.status: "NOT_EVALUATED"`) and a
+  `null` `currentVersion.source`/`distribution` — the Registry entry's own `repository`/`packages`
+  fields are read only to pick a discovery `resourceUrl` pointer (preferring a live `remotes[]`
+  endpoint, then `repository.url`, then a stable Registry web URL) and are never promoted into a
+  source claim or correspondence evidence, exactly the M8.3 `normalize.ts` discipline;
+- `createMcpOfficialRegistryProvider` implements the shared `DiscoveryProvider` interface (maps
+  `query.text` to the Registry's `search` list parameter, `version=latest`) so it plugs directly
+  into the existing `federatedDiscoverySearch`/`POST /search` surface and the `proofrail_search`
+  MCP tool without any changes to either — `apps/web/src/product.ts`'s `defaultDiscoveryProviders`
+  now registers `mcp-official-registry` alongside the two M8.3 providers;
+- `runMcpOfficialRegistryIngestion` is the bounded incremental-sync path into the M8.4 catalog
+  (`@proofrail/catalog-store`, already seeded with an `mcp-official-registry` `ingestion_sources`
+  row by the M8.4 migration): it resumes from the persisted `cursor`, walks up to
+  `MCP_REGISTRY_MAX_PAGES_PER_SYNC` (20) pages per call (docs/17 Threat M8-015 response
+  amplification — a full backfill spans multiple scheduled runs via the persisted cursor rather
+  than one unbounded download), upserts every normalized resource via the unmodified
+  `catalogStore.upsertDiscoveredResource`, and persists `cursor`/`lastSuccessAt` or
+  `lastErrorCode`/`lastErrorAt` back onto `ingestion_sources` — a transport failure stops the walk
+  without fabricating resources and is recorded as availability state only (docs/17 Threat
+  M8-014), matching M8.4's `markProviderDiscoveriesStale` discipline;
+- like every other M8.2-M8.9 discovery/ingestion path, no `apps/web`/`apps/worker` route currently
+  triggers `runMcpOfficialRegistryIngestion` automatically — it is a tested, reusable function, not
+  a wired cron/HTTP job, consistent with the fact that no M8.3 provider's catalog persistence is
+  wired to an HTTP trigger yet either;
+- regression coverage: stable/deterministic resource and version ids (`normalizeMcpRegistryEntry`
+  produces the same `resourceId` across versions and a distinct `currentVersion.id` per version);
+  repository/package metadata cannot fabricate `sourceAssurance`/`correspondence` (a Registry entry
+  carrying a real `repository.url` plus forged `verified`/`trustScore`/`signatureVerified`-looking
+  `_meta` fields still normalizes to empty trust evidence and a `null` `currentVersion.source`);
+  malformed top-level response, non-JSON body, timeout, oversized streamed response, redirect, and
+  disallowed-origin cases at the HTTP layer; a `mediaTypes` filter that excludes `mcp-server` skips
+  the upstream call entirely; multi-page pagination via `nextCursor`, a bounded page-cap stopping
+  a walk that still has more pages (`truncatedByPageCap`), cursor resumption from a persisted
+  `ingestion_sources` row, and a transport failure recording `lastErrorCode`/`lastErrorAt` without
+  upserting any resource; an end-to-end regression that an MCP resource ingested purely through
+  `runMcpOfficialRegistryIngestion` remains `INDEXED` with zero `capability_verifications` rows
+  through the catalog store, the same invariant class enforced for every other M8 provider;
+- three live smoke tests (`packages/discovery-providers/test/live/mcp-registry.live.test.ts`, run
+  via `pnpm m8.3:live` alongside the existing M8.3 live tests since both share the package's
+  `test:live` script/glob, not part of `pnpm check`/`pnpm test`) made real calls to the production
+  Registry: a `provider.search({ text: "filesystem", ... })` call returned 5 real, normalized,
+  `INDEXED`/`NONE`/`NOT_EVALUATED` resources; a bare `fetchMcpRegistryServersPage` call returned 5
+  real entries plus a real `nextCursor`; and one bounded `runMcpOfficialRegistryIngestion` pass
+  persisted 10 real Registry resources into an in-memory catalog store and recorded a real
+  `lastSuccessAt`. All three passed against `https://registry.modelcontextprotocol.io` on
+  2026-08-26.
+
+Local `pnpm check` and `pnpm test` are green for `@proofrail/discovery-providers` (71/71 tests),
+`@proofrail/catalog-store`, `@proofrail/web`, and every other package (the same two pre-existing,
+unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed
+present on `main` before this change too, and are unrelated to M8.10). No Supabase migration
+change, no new HTTP route beyond the existing `POST /search`/MCP surface already accepting a
+`federation` provider id, no GitHub source authentication, no Skill verification orchestration, no
+UI, and no 0G write was added.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -354,7 +436,7 @@ acceptance criteria; only the local/deterministic substitution invariant is prov
 6. **M8.7 / Issue #26 — complete:** stable resource/evidence/policy API.
 7. **M8.8 / Issue #27 — complete:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
 8. **M8.9 / Issue #28 — current:** local/deterministic substitution proof implemented (repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY through REST and MCP; source assurance unchanged); the real-0G-evidence live run remains pending per `docs/22-m8-9-live-run-runbook.md`.
-9. **M8.10 / Issue #29:** official MCP Registry indexing stretch after M8.9.
+9. **M8.10 / Issue #29 — implemented on issue branch, merge gate pending:** official MCP Registry indexing stretch, following the M8.3 provider/safety envelope; live-verified against production, no pin deviation required.
 10. **M8.11 / Issue #30:** security/deployment/backend contract freeze.
 
 **M9 / Issue #31** is the human Hub frontend and begins only after M8.11 declares the backend frontend-ready.
@@ -403,4 +485,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.9 / Issue #28** pull request (local/deterministic substitution proof), require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI; (4) follow `docs/22-m8-9-live-run-runbook.md` end-to-end (requires (2) above plus explicit approval for real 0G Galileo testnet spend) to produce the live M8.9 evidence ledger entry — this environment cannot perform any of (1)-(4). Do not begin M8.10 in this context.
+Open/review the **M8.10 / Issue #29** pull request (official MCP Registry indexing), require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced for earlier gates: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI; (4) follow `docs/22-m8-9-live-run-runbook.md` end-to-end (requires (2) above plus explicit approval for real 0G Galileo testnet spend) to produce the live M8.9 evidence ledger entry — this environment cannot perform any of (1)-(4). After M8.10 merges, proceed to **M8.11 / Issue #30** (backend hardening/deploy/contract freeze); do not begin M9 until M8.11 explicitly declares the backend frontend-ready.
