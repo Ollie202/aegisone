@@ -7,5 +7,9 @@
     "check": "node --experimental-strip-types --test test/*.test.ts",
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "start": "node --experimental-strip-types src/server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.76"
   }
 }

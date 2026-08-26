@@ -74,14 +74,14 @@ function sendJson(response: ServerResponse, status: number, value: unknown): voi
   response.end(`${JSON.stringify(value)}\n`);
 }
 
-function requireJsonContentType(request: IncomingMessage): void {
+export function requireJsonContentType(request: IncomingMessage): void {
   const contentType = request.headers["content-type"]?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/json") {
     throw new ApiV1Error("unsupported_media_type", "Content-Type must be application/json", 415);
   }
 }
 
-async function readJsonBody(request: IncomingMessage, limit: number): Promise<unknown> {
+export async function readJsonBody(request: IncomingMessage, limit: number): Promise<unknown> {
   const contentLength = request.headers["content-length"];
   if (contentLength !== undefined) {
     const declared = Number(contentLength);
@@ -245,7 +245,7 @@ interface AssembledResource {
   readonly integrity: AssembledIntegrity;
 }
 
-async function loadAssembledResource(store: CatalogStore, resourceId: string): Promise<AssembledResource | null> {
+export async function loadAssembledResource(store: CatalogStore, resourceId: string): Promise<AssembledResource | null> {
   const resource = await store.getResourceById(resourceId);
   if (!resource) return null;
 
@@ -278,19 +278,33 @@ function requiredPathSegment(raw: string | undefined): string {
   }
 }
 
+export interface ResourceApiResponse {
+  readonly schemaVersion: "1";
+  readonly resourceId: string;
+  readonly currentVersionId: string | null;
+  readonly resource: CapabilityResource;
+  readonly integrity: AssembledIntegrity;
+}
+
+/** Pure serializer shared by `GET /api/v1/resources/:resourceId` and the `proofrail_inspect` MCP
+ * tool (M8.8) so both surfaces present byte-identical evidence for the same stored resource. */
+export function toResourceApiResponse(assembled: AssembledResource): ResourceApiResponse {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    resourceId: assembled.resource.id,
+    currentVersionId: assembled.version?.id ?? null,
+    resource: assembled.capability,
+    integrity: assembled.integrity,
+  };
+}
+
 async function handleGetResource(store: CatalogStore, response: ServerResponse, resourceId: string): Promise<void> {
   const assembled = await loadAssembledResource(store, resourceId);
   if (!assembled) {
     sendJson(response, 404, { error: "resource_not_found", errorCode: "RESOURCE_NOT_FOUND", message: `No resource with id ${resourceId}` });
     return;
   }
-  sendJson(response, 200, {
-    schemaVersion: SCHEMA_VERSION,
-    resourceId: assembled.resource.id,
-    currentVersionId: assembled.version?.id ?? null,
-    resource: assembled.capability,
-    integrity: assembled.integrity,
-  });
+  sendJson(response, 200, toResourceApiResponse(assembled));
 }
 
 async function handleGetVersion(store: CatalogStore, response: ServerResponse, resourceId: string, versionId: string): Promise<void> {
@@ -318,12 +332,60 @@ async function handleGetVersion(store: CatalogStore, response: ServerResponse, r
   });
 }
 
-async function handleGetEvidence(store: CatalogStore, response: ServerResponse, resourceId: string): Promise<void> {
+export interface SourceClaimEvidenceItem {
+  readonly id: string;
+  readonly assuranceLevel: SourceAssuranceLevel;
+  readonly claimStatus: SourceClaim["claimStatus"];
+  readonly sourceRepository: string;
+  readonly sourceCommitSha: string;
+  readonly sourceSubdirectory: string | null;
+  readonly distributionUrl: string | null;
+  readonly distributionSha256: string | null;
+  readonly authenticatedAt: string | null;
+  readonly createdAt: string;
+  readonly supersedesClaimId: string | null;
+  readonly integrityCheckPassed: boolean;
+}
+
+export interface CapabilityVerificationEvidenceItem {
+  readonly id: string;
+  readonly artifactKind: CapabilityVerification["artifactKind"];
+  readonly sourceInspectionStatus: CapabilityVerification["sourceInspectionStatus"];
+  readonly sourceSnapshotSha256: string | null;
+  readonly correspondenceStatus: CapabilityVerification["correspondenceStatus"];
+  readonly publisherSha256: string | null;
+  readonly reproducedSha256: string | null;
+  readonly securityStatus: CapabilityVerification["securityStatus"];
+  readonly securityHighestSeverity: SecuritySeverity | null;
+  readonly securityFindingCount: number | null;
+  readonly canonicalEvidenceSha256: string | null;
+  readonly storageRoot: string | null;
+  readonly storageTransaction: string | null;
+  readonly registryContract: string | null;
+  readonly registryRecordId: string | null;
+  readonly registryTransaction: string | null;
+  readonly verifiedAt: string | null;
+  readonly createdAt: string;
+  readonly integrityCheckPassed: boolean;
+}
+
+export interface EvidenceApiResponse {
+  readonly schemaVersion: "1";
+  readonly resourceId: string;
+  readonly currentVersionId: string | null;
+  readonly trust: CapabilityTrustEvidence;
+  readonly integrity: AssembledIntegrity;
+  readonly sourceClaims: SourceClaimEvidenceItem[];
+  readonly capabilityVerifications: CapabilityVerificationEvidenceItem[];
+}
+
+/** Pure assembler shared by `GET /api/v1/resources/:resourceId/evidence` and the
+ * `proofrail_inspect` MCP tool (M8.8): the exact same integrity-rechecked evidence, itemized
+ * history, and independent trust dimensions reach both surfaces byte-identically. Returns `null`
+ * when no resource exists with the given id. */
+export async function buildEvidenceResponse(store: CatalogStore, resourceId: string): Promise<EvidenceApiResponse | null> {
   const resource = await store.getResourceById(resourceId);
-  if (!resource) {
-    sendJson(response, 404, { error: "resource_not_found", errorCode: "RESOURCE_NOT_FOUND", message: `No resource with id ${resourceId}` });
-    return;
-  }
+  if (!resource) return null;
 
   const versions = await store.listVersionsByResource(resource.id);
   const version = versions[0] ?? null;
@@ -379,7 +441,7 @@ async function handleGetEvidence(store: CatalogStore, response: ServerResponse, 
     };
   });
 
-  sendJson(response, 200, {
+  return {
     schemaVersion: SCHEMA_VERSION,
     resourceId: resource.id,
     currentVersionId: version?.id ?? null,
@@ -387,7 +449,16 @@ async function handleGetEvidence(store: CatalogStore, response: ServerResponse, 
     integrity,
     sourceClaims,
     capabilityVerifications,
-  });
+  };
+}
+
+async function handleGetEvidence(store: CatalogStore, response: ServerResponse, resourceId: string): Promise<void> {
+  const payload = await buildEvidenceResponse(store, resourceId);
+  if (!payload) {
+    sendJson(response, 404, { error: "resource_not_found", errorCode: "RESOURCE_NOT_FOUND", message: `No resource with id ${resourceId}` });
+    return;
+  }
+  sendJson(response, 200, payload);
 }
 
 function parsePolicy(raw: unknown): TrustPolicy {
@@ -453,19 +524,29 @@ async function resolvePolicySubjectResource(store: CatalogStore, raw: Record<str
   return assembled.capability;
 }
 
+export interface TrustPolicyResult {
+  readonly schemaVersion: "1";
+  readonly decision: "ALLOW" | "REVIEW" | "DENY";
+  readonly reasons: readonly { readonly code: string; readonly decision: string; readonly message: string }[];
+}
+
+/** Pure evaluator shared by `POST /api/v1/policy/evaluate` and the `proofrail_evaluate` MCP tool
+ * (M8.8): both surfaces parse the same `raw.policy`/`raw.resource`/`raw.resourceId` shape through
+ * the same `parsePolicy`/`resolvePolicySubjectResource` validation and call the same unmodified
+ * M8.1 `evaluateTrustPolicy` — no LLM, discovery provider, GitHub OAuth, Supabase evidence
+ * invention, blockchain, or worker/build call on either path. */
+export async function runPolicyEvaluation(store: CatalogStore, raw: Record<string, unknown>): Promise<TrustPolicyResult> {
+  const policy = parsePolicy(raw.policy);
+  const resource = await resolvePolicySubjectResource(store, raw);
+  return evaluateTrustPolicy(resource, policy, Date.now()) as TrustPolicyResult;
+}
+
 async function handlePolicyEvaluate(store: CatalogStore, request: IncomingMessage, response: ServerResponse): Promise<void> {
   requireJsonContentType(request);
   const raw = await readJsonBody(request, MAX_POLICY_REQUEST_BODY_BYTES);
   if (!isObject(raw)) throw new ApiV1Error("invalid_request", "request body must be a JSON object");
 
-  const policy = parsePolicy(raw.policy);
-  const resource = await resolvePolicySubjectResource(store, raw);
-
-  // evaluateTrustPolicy is the existing M8.1 deterministic evaluator (packages/capability-model/
-  // src/policy.ts): a pure function over the already-assembled/supplied evidence and policy
-  // config. Nothing here calls an LLM, a discovery provider, GitHub OAuth, Supabase to invent
-  // missing evidence, a blockchain, or the worker/build system.
-  const result = evaluateTrustPolicy(resource, policy, Date.now());
+  const result = await runPolicyEvaluation(store, raw);
   sendJson(response, 200, result);
 }
 
