@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 implemented and locally green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 local/deterministic substitution proof implemented and green on its issue branch, merge gate pending — the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -294,6 +294,56 @@ this change since this issue's diff touches only `apps/web` and `docs/`). No new
 install/execute/sign route, new verification algorithm, new permanent Railway service, UI, or
 paid API dependency was added.
 
+## M8.9 — LOCAL/DETERMINISTIC PROOF IMPLEMENTED / LIVE RUN PENDING
+
+Issue #28 on `agent/m8-substitution-proof` produces the backend's decisive end-to-end
+demonstration, using 100% local/deterministic/non-funded means (no real GitHub OAuth, no real 0G
+Sandbox/Storage/registry call, no spend of any kind):
+
+- `apps/web/test/m8-9-substitution-demo.test.ts`: one real-server integration test that drives, in
+  order, (1) M8.2-M8.4-shaped catalog discovery of a resource/version pointing at an exact claimed
+  commit; (2) a full mocked-GitHub OAuth round trip (the exact same fixture-backend pattern
+  `apps/web/test/source-auth.test.ts` already established for M8.5, extended so the fake commit
+  resolution returns the real SHA of a throwaway local Git repository standing in for the public
+  GitHub repository) reaching `REPOSITORY_AUTHENTICATED`; (3) the unmodified M8.6
+  `runSkillVerificationEnrichment` against a genuine local distribution artifact -> `MATCH`,
+  persisted via `CatalogStore.createCapabilityVerification`; (4) `POST /api/v1/policy/evaluate`
+  (M8.7 REST) and the `proofrail_evaluate` MCP tool (M8.8) both returning `ALLOW` under a policy
+  requiring `REPOSITORY_AUTHENTICATED` + `MATCH`; (5) a second, deliberately tampered distribution
+  artifact (same claimed identity/version/source, a bounded unambiguous content change — an
+  injected exfiltration instruction, never confusable with ordinary version drift) against the
+  *same* exact source commit -> `MISMATCH`, persisted as a new historical row without mutating the
+  genuine row; (6) the same REST and MCP calls both returning `DENY`; (7) an explicit check that
+  `GET /api/v1/resources/:resourceId/evidence` and `GET /api/v1/source-claims/:claimId` report the
+  *same* claim id, the *same* `REPOSITORY_AUTHENTICATED` level, and `integrityCheckPassed: true`
+  both immediately after the genuine `MATCH` run and again after the substituted `MISMATCH` run —
+  the central invariant this milestone exists to demonstrate: correspondence outcome never
+  rewrites, downgrades, or otherwise touches source assurance;
+- no new correspondence/comparison/policy logic was written; every step calls the existing
+  unmodified M8.1 (`evaluateTrustPolicy`), M8.5 (`buildCanonicalSourceClaim`,
+  `computeSourceClaimDigest`), M8.6 (`runSkillVerificationEnrichment`,
+  `buildCapabilityVerificationInput`), M8.7 (`runPolicyEvaluation`, the evidence/resource
+  serializers), and M8.8 (the `proofrail_evaluate`/MCP transport) functions;
+- `docs/22-m8-9-live-run-runbook.md`: a step-by-step runbook (repository/commit setup, real GitHub
+  App OAuth, real 0G Sandbox reproduction via `packages/sandbox-0g`, real 0G Storage upload/proof
+  readback via `packages/storage-0g` following the exact `hackathon/m7-live-evidence.json`
+  pattern, the same REST/MCP ALLOW-then-DENY demo, and a `hackathon/m8-9-live-evidence.json`
+  ledger-entry template) that a human with real GitHub App credentials and 0G Galileo testnet
+  funds can follow to produce the live version of this same proof — not executed by this agent.
+
+Local `pnpm check` and `pnpm test` are green, including the new test (`@proofrail/web` now 70/70
+tests). **Not proven in this environment and explicitly left unavailable, per this repository's
+"leave a gap explicit rather than inferring/marketing around it" discipline**: (1) a real
+repository-authenticated GitHub source claim — the M8.5 GitHub App still has no live credentials
+in any environment (verified: `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET` do not exist here);
+(2) any real 0G Sandbox independent execution, 0G Storage upload/readback, or Galileo registry
+write for this milestone — AGENTS.md's cost discipline and this repository's working method both
+require a separate explicit approval for live funded 0G spend, which this task did not receive, so
+none of `packages/sandbox-0g`/`packages/storage-0g`/`packages/registry-0g` were run against real
+network endpoints and no run ID/digest/Storage root/transaction/registry ID was fabricated anywhere
+in this codebase or its docs. Do not treat the local proof above as satisfying Issue #28's full
+acceptance criteria; only the local/deterministic substitution invariant is proven.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
@@ -302,8 +352,8 @@ paid API dependency was added.
 4. **M8.5 / Issue #24 — complete:** GitHub App source authentication and canonical source claims.
 5. **M8.6 / Issue #25 — complete:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
 6. **M8.7 / Issue #26 — complete:** stable resource/evidence/policy API.
-7. **M8.8 / Issue #27 — current:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
-8. **M8.9 / Issue #28:** repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY; real 0G evidence.
+7. **M8.8 / Issue #27 — complete:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
+8. **M8.9 / Issue #28 — current:** local/deterministic substitution proof implemented (repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY through REST and MCP; source assurance unchanged); the real-0G-evidence live run remains pending per `docs/22-m8-9-live-run-runbook.md`.
 9. **M8.10 / Issue #29:** official MCP Registry indexing stretch after M8.9.
 10. **M8.11 / Issue #30:** security/deployment/backend contract freeze.
 
@@ -353,4 +403,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.8 / Issue #27** pull request, require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI — this environment can only prove the wire protocol/tool schemas/handler wiring via a real SDK client, not a specific external product's UI. Do not begin M8.9 in this context.
+Open/review the **M8.9 / Issue #28** pull request (local/deterministic substitution proof), require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI; (4) follow `docs/22-m8-9-live-run-runbook.md` end-to-end (requires (2) above plus explicit approval for real 0G Galileo testnet spend) to produce the live M8.9 evidence ledger entry — this environment cannot perform any of (1)-(4). Do not begin M8.10 in this context.
