@@ -2,7 +2,7 @@
 
 ## North star
 
-Make software release claims independently verifiable by humans and autonomous agents instead of requiring them to trust the publisher's source page, build machine, CI pipeline, distribution server, or ProofRail itself.
+Make software release claims independently verifiable by humans and autonomous agents instead of requiring them to trust the publisher's source page, build machine, CI pipeline, distribution server, or AegisOne itself.
 
 ## The exact problem
 
@@ -26,11 +26,11 @@ An open software-verification network where:
 4. builders produce portable cryptographic evidence;
 5. multiple genuinely independent builders can corroborate the same release;
 6. humans and agents apply explicit policies such as `2-of-3 matching builders` or `require at least one TEE builder`;
-7. verification remains possible without trusting a ProofRail website.
+7. verification remains possible without trusting an AegisOne website.
 
 ## Agent future
 
-ProofRail should be infrastructure **used by agents**, not another generic agent wrapper. A software-installing/deploying agent can query deterministic ProofRail evidence before executing an artifact. Builder/verifier agents may later use Agentic ID / ERC-8004-compatible identity and reputation signals.
+AegisOne should be infrastructure **used by agents**, not another generic agent wrapper. A software-installing/deploying agent can query deterministic AegisOne evidence before executing an artifact. Builder/verifier agents may later use Agentic ID / ERC-8004-compatible identity and reputation signals.
 
 ## What this project is not
 
@@ -44,4 +44,4 @@ ProofRail should be infrastructure **used by agents**, not another generic agent
 
 ## Product principle
 
-**Evidence over authority.** ProofRail is not the source of truth. It makes independently produced evidence easier to create, aggregate, inspect, and enforce.
+**Evidence over authority.** AegisOne is not the source of truth. It makes independently produced evidence easier to create, aggregate, inspect, and enforce.

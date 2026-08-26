@@ -10,5 +10,5 @@
 | R-006 | Scope explosion | High | High | Enforce PRD non-goals and sprint scope through `AGENTS.md` | Active control |
 | R-007 | Security marketing exceeds actual guarantees | Medium | Critical | Verification levels + threat model + non-claim ADR | Active control |
 | R-008 | Product has zero adoption signal | Medium | Medium | After M5, recruit a few real public repos rather than chasing mass users | Later |
-| R-009 | `ProofRail` brand conflicts with existing active project | High | Medium-High | Treat as working name; rename before launch/submission if necessary | Open |
+| R-009 | `AegisOne` brand conflicts with existing active project | High | Medium-High | Treat as working name; rename before launch/submission if necessary | Open |
 | R-010 | AI coding budget is consumed on broad rewrites | Medium | High | Small tasks, written acceptance criteria, agents read state/docs first | Active control |

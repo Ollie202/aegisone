@@ -5,7 +5,7 @@ import { StorageRoundTripError, type StorageTransport, type StorageUploadReceipt
 
 const rootHash = "0x" + "11".repeat(32);
 const transactionHash = "0x" + "22".repeat(32);
-const bytes = new TextEncoder().encode('{"schemaVersion":"1","type":"proofrail-test-evidence"}');
+const bytes = new TextEncoder().encode('{"schemaVersion":"1","type":"aegisone-test-evidence"}');
 
 class ContractTestTransport implements StorageTransport {
   downloaded = bytes;

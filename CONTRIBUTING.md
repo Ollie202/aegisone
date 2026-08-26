@@ -1,6 +1,6 @@
 # Contributing
 
-ProofRail is currently a solo-led project that uses AI coding agents as contributors.
+AegisOne is currently a solo-led project that uses AI coding agents as contributors.
 
 ## Workflow
 

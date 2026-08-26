@@ -31,13 +31,13 @@ GitHub identity, the independent reproduction, and the canonical evidence storag
 
 Per `docs/14-source-authentication.md`:
 
-1. Create/install a GitHub App named (or similar to) `ProofRail Source Verifier`, scoped to the
+1. Create/install a GitHub App named (or similar to) `AegisOne Source Verifier`, scoped to the
    repository you will use as the genuine source for this demo (a small public repository you
    control — it can be a new throwaway repo created specifically for this proof, e.g.
-   `<your-org>/proofrail-m8-9-demo-skill`, containing one `SKILL.md` under a subdirectory).
+   `<your-org>/aegisone-m8-9-demo-skill`, containing one `SKILL.md` under a subdirectory).
 2. Record the generated client ID/client secret.
 3. Set the following on `proofrail-app` (Railway environment variables, or a local `.env` for a
-   dry run against `pnpm --filter @proofrail/web start`):
+   dry run against `pnpm --filter @aegisone/web start`):
 
    ```bash
    GITHUB_APP_CLIENT_ID=<generated>
@@ -102,7 +102,7 @@ Per `docs/14-source-authentication.md`:
      -d '{
        "resourceId": "<a resource id you have discovered/created>",
        "resourceVersionId": "<the matching version id>",
-       "repositoryFullName": "<your-org>/proofrail-m8-9-demo-skill"
+       "repositoryFullName": "<your-org>/aegisone-m8-9-demo-skill"
      }'
    ```
 
@@ -116,7 +116,7 @@ never from a public route, per AGENTS.md ("no public generic worker execution/si
 
 1. Acquire the exact source commit and run the *unmodified* `runSkillVerificationEnrichment`
    (`packages/skill-verification-link/src/enrichment.ts`) against:
-   - `source`: `{ repositoryUrl: "https://github.com/<your-org>/proofrail-m8-9-demo-skill", commitSha: "<Step 1 commit>", subdirectory: "m8-9-demo-skill" }` — no `allowLocalFixtureRepository` flag this time, since the repository is real;
+   - `source`: `{ repositoryUrl: "https://github.com/<your-org>/aegisone-m8-9-demo-skill", commitSha: "<Step 1 commit>", subdirectory: "m8-9-demo-skill" }` — no `allowLocalFixtureRepository` flag this time, since the repository is real;
    - `distribution`: `{ url: "<Step 1 genuine distribution URL>", expectedSha256: "<Step 1 SHA-256>" }`.
 2. Where independent reproduction should run inside 0G Sandbox rather than the worker's own
    process, use `packages/sandbox-0g` (the same adapter `packages/m7-flow/scripts/run-live.ts`
@@ -155,7 +155,7 @@ curl -X POST https://<host>/api/v1/policy/evaluate \
 
 Confirm `"decision": "ALLOW"`.
 
-Repeat the same policy/resourceId payload through `proofrail_evaluate` from a real MCP client
+Repeat the same policy/resourceId payload through `aegisone_evaluate` from a real MCP client
 (Claude Desktop, Claude Code's own `/mcp` config, or the MCP TypeScript SDK's `Client` pointed at
 `POST https://<host>/mcp`) and confirm the same `ALLOW` decision.
 
@@ -195,7 +195,7 @@ Append a `hackathon/m8-9-live-evidence.json` entry mirroring the shape of
 
 ```json
 {
-  "sourceRepository": "<your-org>/proofrail-m8-9-demo-skill",
+  "sourceRepository": "<your-org>/aegisone-m8-9-demo-skill",
   "sourceCommitSha": "<Step 1 commit>",
   "sourceClaim": { "id": "<Step 2 claim id>", "assuranceLevel": "REPOSITORY_AUTHENTICATED" },
   "genuine": {

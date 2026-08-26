@@ -5,7 +5,7 @@ import { fetchMcpRegistryServersPage, type McpRegistryHttpOptions } from "./mcp-
 
 /**
  * Bounded incremental ingestion sync for the official MCP Registry into the M8.4 catalog
- * (`@proofrail/catalog-store`). Distinct from `createMcpOfficialRegistryProvider` (a single
+ * (`@aegisone/catalog-store`). Distinct from `createMcpOfficialRegistryProvider` (a single
  * bounded page per `POST /search` call): this walks Registry list pages using the persisted
  * `ingestion_sources.cursor` (docs/16-m8-database-plan.md), so a scheduled run resumes where the
  * previous run left off rather than re-downloading the whole registry every time — the

@@ -4,17 +4,17 @@ This file governs AI coding-agent behavior for this repository and is authoritat
 
 ## Mission
 
-Build ProofRail as **evidence infrastructure** for software and agent capabilities.
+Build AegisOne as **evidence infrastructure** for software and agent capabilities.
 
 The proven core independently reconstructs an explicitly claimed source revision, compares the result with the bytes a publisher distributes, and preserves independently checkable evidence.
 
 M8 extends that proven engine into **trust-aware capability discovery** for humans and agents:
 
 ```text
-intent -> discovery -> source assurance -> ProofRail evidence -> consumer policy -> ALLOW / REVIEW / DENY
+intent -> discovery -> source assurance -> AegisOne evidence -> consumer policy -> ALLOW / REVIEW / DENY
 ```
 
-ProofRail is not a generic AI auditor, not a central source of truth, and not a universal “safe” certification service.
+AegisOne is not a generic AI auditor, not a central source of truth, and not a universal “safe” certification service.
 
 ## Mandatory startup routine
 
@@ -33,7 +33,7 @@ Do not combine multiple milestone issues into one unbounded change unless explic
 
 ## Non-negotiable product rules
 
-- Never claim ProofRail automatically knows the official source.
+- Never claim AegisOne automatically knows the official source.
 - Source identity/assurance must be explicit: none, declared, repository-authenticated, signed, future domain/package/onchain bindings, etc. Missing identity evidence remains visible.
 - A repository existing or appearing in ARD/search metadata does **not** authenticate the publisher's source claim.
 - Always pin source/build/security claims to immutable commit SHAs; never use a mutable branch name as a security claim.
@@ -43,13 +43,13 @@ Do not combine multiple milestone issues into one unbounded change unless explic
 - Do not call correspondence verification “safe”, “secure code”, “malware-free”, “trusted developer”, or equivalent.
 - Agent Skill deterministic security findings remain separate from correspondence.
 - Search relevance/ranking is never a trust or safety score and must not enter deterministic policy evaluation.
-- `INDEXED` discovery state never means ProofRail-verified.
+- `INDEXED` discovery state never means AegisOne-verified.
 - A new commit is a new source revision, not a broken fingerprint.
 - Legitimate build divergence is `DIVERGED` / insufficient reproducibility evidence, not `MALICIOUS`.
 - Missing evidence is unavailable/insufficient; never infer it to make a flow look complete.
 - Do not mock a required 0G integration and present it as complete.
 - Do not claim TEE output binding unless the artifact/provenance digest is actually bound to independently verifiable attestation evidence.
-- Supabase is mutable application/catalog/job memory; it cannot create canonical ProofRail verdicts.
+- Supabase is mutable application/catalog/job memory; it cannot create canonical AegisOne verdicts.
 - Public discovery/read/policy routes must never implicitly trigger uncontrolled/funded 0G work.
 - No automatic install/execute/sign behavior is part of M8's initial agent interface.
 
@@ -80,8 +80,8 @@ See `docs/14-source-authentication.md`.
 - Build/package execution must support hard CPU/time/disk/download/output limits before broader repository support is considered.
 - Prefer one supported artifact family done well over broad best-effort arbitrary builds.
 - Keep current production topology at exactly `proofrail-app` + `proofrail-worker` unless explicit approval and an ADR justify another permanent service.
-- Extend the existing ProofRail Supabase project; do not create a parallel project/database for M8.
-- Browser/frontend clients consume ProofRail APIs rather than becoming direct proof authorities over raw Supabase rows.
+- Extend the existing AegisOne Supabase project; do not create a parallel project/database for M8.
+- Browser/frontend clients consume AegisOne APIs rather than becoming direct proof authorities over raw Supabase rows.
 
 ## Expected M8 areas
 
@@ -105,7 +105,7 @@ Planned M8 package boundaries, create only when their issue requires them:
 - `packages/discovery-providers` — GitHub Agent Finder / Hugging Face adapters.
 - `packages/catalog-store` — Supabase capability/catalog/source-claim persistence abstraction.
 - `packages/source-auth-github` — GitHub App/source-authority adapter.
-- `packages/mcp-proofrail` — thin MCP transport adapter.
+- `packages/mcp-aegisone` — thin MCP transport adapter.
 
 Do not mechanically create empty packages early; use the issue acceptance criteria and current code layout.
 

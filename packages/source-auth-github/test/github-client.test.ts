@@ -27,7 +27,7 @@ function fakeFetch(handler: (url: string, init: RequestInit) => Response): typeo
 const CONFIG: GithubSourceAuthConfig = {
   clientId: "test-client-id",
   clientSecret: "test-client-secret",
-  appSlug: "proofrail-source-verifier",
+  appSlug: "aegisone-source-verifier",
   callbackUrl: "https://proofrail-app-production.up.railway.app/auth/github/callback",
   stateSecret: "s".repeat(40),
 };

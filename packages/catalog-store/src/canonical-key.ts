@@ -9,7 +9,7 @@ import type { CapabilityResource } from "../../capability-model/src/model.ts";
  *   3. a normalized canonical URL.
  *
  * `canonical_key` is deduplication bookkeeping only. It is never treated as proof of
- * publisher identity, and nothing here reads or writes ProofRail trust evidence.
+ * publisher identity, and nothing here reads or writes AegisOne trust evidence.
  */
 
 const ARD_IDENTIFIER_RE = /^urn:air:[a-zA-Z0-9.-]+(:[a-zA-Z0-9._-]+)+$/;

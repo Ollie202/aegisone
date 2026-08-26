@@ -17,7 +17,7 @@ interface TestServer {
 async function startTestServer(): Promise<TestServer> {
   const catalogStore = new InMemoryCatalogStore();
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: null,
     secureSourceAuthCookies: false,

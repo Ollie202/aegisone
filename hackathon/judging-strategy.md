@@ -5,8 +5,8 @@
 Within seconds, a judge should understand:
 
 1. **the real failure:** public source can stay clean while distributed release bytes are substituted;
-2. **the proof:** ProofRail independently rebuilds the exact claimed commit and compares bytes;
-3. **the 0G fit:** execution, evidence preservation, and historical commitments become less dependent on ProofRail's own infrastructure;
+2. **the proof:** AegisOne independently rebuilds the exact claimed commit and compares bytes;
+3. **the 0G fit:** execution, evidence preservation, and historical commitments become less dependent on AegisOne's own infrastructure;
 4. **the honesty:** the product never calls a build safe or an unauthenticated repository official.
 
 ## 0G story
@@ -15,7 +15,7 @@ Within seconds, a judge should understand:
 Reduce trust in a normal centralized build server for the independent reproduction.
 
 ### 0G Storage
-Keep full provenance/evidence independently retrievable rather than only in a ProofRail database.
+Keep full provenance/evidence independently retrievable rather than only in an AegisOne database.
 
 ### 0G Chain
 Anchor compact historical commitments so records cannot be silently rewritten.

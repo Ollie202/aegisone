@@ -17,7 +17,7 @@ import { ProductRequestError } from "./errors.ts";
 
 /**
  * The single capability-search service used by both `POST /search` (M8.2/M8.3) and the
- * `proofrail_search` MCP tool (M8.8). Moved out of `product.ts` so it has no dependency on
+ * `aegisone_search` MCP tool (M8.8). Moved out of `product.ts` so it has no dependency on
  * `mcp.ts` (which needs to import it) and vice versa — this module owns no HTTP/transport
  * concerns and is the one place local-catalog vs. federated dispatch is decided. Neither caller
  * reimplements search or reinterprets its results; both pass the same request shape through the
@@ -94,8 +94,8 @@ export interface SearchServiceDependencies {
  * Dispatches a parsed `POST /search` JSON body to either the M8.2 local pinned-ARD catalog search
  * or M8.3 federated discovery, exactly matching the (byte-for-byte, per PROJECT_STATE.md) M8.2
  * local-catalog behavior when `federation` is `"none"`/absent. This is the one function both
- * `product.ts`'s `POST /search` route and the `proofrail_search` MCP tool call — the MCP tool
- * never reimplements search or reinterprets its normalized/discovery-only output as ProofRail
+ * `product.ts`'s `POST /search` route and the `aegisone_search` MCP tool call — the MCP tool
+ * never reimplements search or reinterprets its normalized/discovery-only output as AegisOne
  * trust evidence.
  */
 export async function performCapabilitySearch(rawBody: unknown, deps: SearchServiceDependencies): Promise<unknown> {

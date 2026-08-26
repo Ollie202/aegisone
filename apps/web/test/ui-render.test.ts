@@ -14,7 +14,7 @@ import { policyFromFormValues } from "../src/ui/policy-form.mjs";
  * shared by SSR (`apps/web/src/pages/*.ts`) and the browser (`apps/web/public/app.js`, imported at
  * `/static/ui/*.mjs`, see `apps/web/src/static-assets.ts`). Covers the explicit acceptance items:
  * external text is sanitized before HTML insertion, no SAFE/TRUSTED badge or numeric trust score
- * ever appears, discovery is visually distinct from ProofRail-evidenced state, and every rendered
+ * ever appears, discovery is visually distinct from AegisOne-evidenced state, and every rendered
  * dimension traces to a real backend-shaped field.
  */
 
@@ -78,7 +78,7 @@ test("normalizeSearchResults never reads an ARD trustManifest/verified-looking f
     type: "agent-skill",
     description: "hostile",
     score: 0.99,
-    source: "proofrail-catalog",
+    source: "aegisone-catalog",
     trustManifest: { verified: true, safetyScore: 100, matchStatus: "MATCH" },
     verified: true,
   };

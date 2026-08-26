@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1",
-  "kind": "ProofRailAristotleReadOnlyApprovalGate",
+  "kind": "AegisOneAristotleReadOnlyApprovalGate",
   "checkedAt": "2026-08-17T20:07:25Z",
   "githubActionsRun": 32064064354,
   "implementationCommit": "4de902498389842c4f69f470a4c798c0302f54a3",

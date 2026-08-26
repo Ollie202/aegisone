@@ -32,7 +32,7 @@ The publisher/declarant's statement connecting source and distributed artifact.
 - optional `releaseTag`
 - `claimAssuranceLevel`
 
-Invariant: ProofRail never silently upgrades a declared source into an authenticated publisher source.
+Invariant: AegisOne never silently upgrades a declared source into an authenticated publisher source.
 
 ### BuildRecipe
 - `version`
@@ -118,13 +118,13 @@ Stable machine-facing output containing:
 
 ## M8 capability discovery model
 
-M8 adds a provider-independent `@proofrail/capability-model` layer. It is deliberately separate from ARD or any particular discovery provider.
+M8 adds a provider-independent `@aegisone/capability-model` layer. It is deliberately separate from ARD or any particular discovery provider.
 
 ### CapabilityResource
 A logical resource discoverable by a human or agent.
 
 - `kind`: `agent-skill`, `mcp-server`, `a2a-agent`, or `api`
-- stable ProofRail resource ID
+- stable AegisOne resource ID
 - human name/description
 - discovery metadata
 - optional current version/source/distribution references
@@ -139,7 +139,7 @@ Mutable catalog information only:
 - optional relevance score
 - state such as `INDEXED`, `STALE`, or `UNAVAILABLE`
 
-Invariant: discovery/relevance is not ProofRail verification and is never consumed by the trust-policy evaluator.
+Invariant: discovery/relevance is not AegisOne verification and is never consumed by the trust-policy evaluator.
 
 ### CapabilityVersion
 The exact resource version being reasoned about.
@@ -148,7 +148,7 @@ The exact resource version being reasoned about.
 - optional source repository + immutable commit SHA + subdirectory
 - optional distinct distribution URL + distribution SHA-256
 
-A source snapshot and a distributed artifact are intentionally different concepts. ProofRail may inspect source without having enough evidence to claim distribution correspondence.
+A source snapshot and a distributed artifact are intentionally different concepts. AegisOne may inspect source without having enough evidence to claim distribution correspondence.
 
 ### CapabilityTrustEvidence
 Independent dimensions:

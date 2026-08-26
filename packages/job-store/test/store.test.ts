@@ -3,10 +3,10 @@ import { test } from "node:test";
 import { createJobStoreFromEnv, InMemoryJobStore, SupabaseJobStore } from "../src/index.ts";
 
 const baseJob = {
-  projectId: "hello-proofrail@1",
-  sourceRepository: "https://github.com/Ollie202/proofrail-0g.git",
+  projectId: "hello-aegisone@1",
+  sourceRepository: "https://github.com/Ollie202/aegisone.git",
   sourceCommitSha: "e9c82277cef2f7630977e2473664e14eed2f860d",
-  publisherArtifactName: "hello-proofrail.json",
+  publisherArtifactName: "hello-aegisone.json",
 };
 
 test("memory store creates an operational job without a mutable verdict", async () => {
@@ -38,7 +38,7 @@ test("environment factory only uses memory when explicitly requested", () => {
   assert.ok(store instanceof InMemoryJobStore);
   assert.throws(() => createJobStoreFromEnv({}), /SUPABASE_URL/);
   assert.ok(createJobStoreFromEnv({
-    SUPABASE_URL: "https://proofrail.supabase.co",
+    SUPABASE_URL: "https://aegisone.supabase.co",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
     PROOFRAIL_SUPABASE_APP_TOKEN: "app-secret",
   }) instanceof SupabaseJobStore);
@@ -74,7 +74,7 @@ test("Supabase adapter uses token-gated Edge Function without inventing a verdic
     return new Response(JSON.stringify({ rows: [row] }), { status: 200, headers: { "content-type": "application/json" } });
   };
   const store = new SupabaseJobStore({
-    url: "https://proofrail.supabase.co",
+    url: "https://aegisone.supabase.co",
     publishableKey: "sb_publishable_test",
     appToken: "server-app-secret",
     fetcher: fakeFetch as typeof fetch,
@@ -87,7 +87,7 @@ test("Supabase adapter uses token-gated Edge Function without inventing a verdic
   const headers = requests[0]!.init?.headers as Record<string, string>;
   assert.equal(headers.authorization, "Bearer sb_publishable_test");
   assert.equal(headers["x-proofrail-app-token"], "server-app-secret");
-  assert.match(requests[0]!.url, /functions\/v1\/proofrail-jobs$/);
+  assert.match(requests[0]!.url, /functions\/v1\/aegisone-jobs$/);
   const body = JSON.parse(String(requests[0]!.init?.body));
   assert.equal(body.action, "create");
   assert.equal(body.input.projectId, baseJob.projectId);

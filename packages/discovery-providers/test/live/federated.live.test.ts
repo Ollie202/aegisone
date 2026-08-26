@@ -3,7 +3,7 @@
  * the aggregation/dedup/partial-outage-safe path works end to end against live upstreams.
  * Not part of `pnpm check` / `pnpm test`. Run explicitly:
  *
- *   pnpm --filter @proofrail/discovery-providers test:live
+ *   pnpm --filter @aegisone/discovery-providers test:live
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

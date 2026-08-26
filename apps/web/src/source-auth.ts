@@ -323,7 +323,7 @@ export function createSourceAuthRouter(options: SourceAuthRouterOptions) {
     // Private-source independent verification is explicitly out of scope for the M8 MVP
     // (docs/14 "Private repositories"): reject rather than silently attempting it.
     if (repository.isPrivate) {
-      sendJson(response, 400, { error: "private_repository_unsupported", message: "ProofRail source claims support public GitHub repositories only in M8" });
+      sendJson(response, 400, { error: "private_repository_unsupported", message: "AegisOne source claims support public GitHub repositories only in M8" });
       return;
     }
 

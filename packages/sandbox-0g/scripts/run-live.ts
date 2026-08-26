@@ -4,9 +4,9 @@ import { SandboxApiClient, discoverBroker, discoverProvider, selectExecutionProv
 import { acknowledgeIfNeeded, depositForProvider, inspectSandboxChain, normalizePrivateKey } from "../src/chain.ts";
 import { getEvidence, summarizeEvidence } from "../src/tapp.ts";
 
-const SOURCE_REPO = "https://github.com/Ollie202/proofrail-0g.git";
+const SOURCE_REPO = "https://github.com/Ollie202/aegisone.git";
 const SOURCE_COMMIT = "e9c82277cef2f7630977e2473664e14eed2f860d";
-const SOURCE_PATH = "/tmp/proofrail-m4";
+const SOURCE_PATH = "/tmp/aegisone-m4";
 const EXPECTED_ARTIFACT_SHA256 = "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154";
 const EXPECTED_ARTIFACT_BYTES = 53;
 const ARTIFACT_PATH = `${SOURCE_PATH}/examples/hello-proofrail/dist/hello-proofrail.json`;
@@ -93,7 +93,7 @@ try {
   output.transactions = { acknowledgeTx, depositTx, depositedWei: depositDelta.toString() };
 
   const client = new SandboxApiClient(selected.listing.url, wallet);
-  const created = await client.create({ image: selected.snapshot.name, name: `proofrail-m4-${Date.now()}`, sealed: false });
+  const created = await client.create({ image: selected.snapshot.name, name: `aegisone-m4-${Date.now()}`, sealed: false });
   id = sandboxId(created);
   output.sandbox = { id, createResponse: created };
 

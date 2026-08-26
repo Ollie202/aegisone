@@ -24,7 +24,7 @@ import type { DiscoveryProvider, DiscoveryProviderResult, DiscoveryQuery } from 
  * the observed response shape (`{ servers: [{ server, _meta }], metadata: { nextCursor?, count } }`)
  * matches the pinned contract, so no pin deviation was required.
  *
- * An entry's presence in the Registry is ecosystem publication metadata, not ProofRail
+ * An entry's presence in the Registry is ecosystem publication metadata, not AegisOne
  * source/artifact proof — every normalized resource stays `INDEXED` with empty/unavailable trust
  * evidence (`mcp-registry-normalize.ts`), exactly like the M8.3 providers.
  */

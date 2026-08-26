@@ -24,7 +24,7 @@ Then read the **single GitHub issue** you are implementing and inspect the exist
 ## Current state
 
 - M1–M7 are complete, live-proven, and merged into `main`.
-- M8 is now an explicit product milestone: ProofRail Hub / verified capability discovery.
+- M8 is now an explicit product milestone: AegisOne Hub / verified capability discovery.
 - M8.1 capability/evidence/policy model is complete and merged in PR #20.
 - M8.2 ARD adapter is the current implementation target, Issue #21, branch `agent/m8-ard-discovery`.
 - Issues #22–#30 define the remaining backend sequence through the M8.11 backend freeze.
@@ -79,7 +79,7 @@ Node.js 22+ and pnpm 10.15.0 are expected by the workspace.
 
 Do not run live 0G/mainnet flows merely to prove ordinary code changes. Live funded work, paid services, large compute, or blockchain spending require the approval discipline defined in `AGENTS.md` and the issue.
 
-## Non-negotiable ProofRail semantics
+## Non-negotiable AegisOne semantics
 
 Preserve these distinctions everywhere—code, APIs, UI, tests, docs, and agent interfaces:
 
@@ -106,7 +106,7 @@ Reuse current topology:
 
 - `proofrail-app`: public discovery/read/source-auth/policy/MCP surface.
 - `proofrail-worker`: secret-bearing/internal verification and 0G operations.
-- existing ProofRail Supabase project: mutable catalog/job/source-claim index.
+- existing AegisOne Supabase project: mutable catalog/job/source-claim index.
 
 Do not add a third permanent Railway service, runtime OpenAI/Anthropic API dependency, embeddings service, paid vector database, or new mainnet write without explicit approval.
 

@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 /**
- * Threat M8-005 "verification spend abuse": ProofRail's expensive verification path (source
+ * Threat M8-005 "verification spend abuse": AegisOne's expensive verification path (source
  * acquisition + reproduction, and eventually 0G Sandbox/Storage/registry work layered on top by
  * a later worker milestone) must never be reachable anonymously. M8.6 adds no public HTTP route
  * at all — `apps/web` and `apps/worker` gain nothing new in this issue — so today there is no
@@ -14,7 +14,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
  * module (the brand symbol is not exported), so no caller can fabricate one by hand.
  */
 
-const BRAND = Symbol("proofrail-verification-authorization");
+const BRAND = Symbol("aegisone-verification-authorization");
 
 export interface VerificationAuthorization {
   readonly [BRAND]: true;
@@ -41,7 +41,7 @@ function constantTimeEqualHex(a: string, b: string): boolean {
 
 /**
  * Validates a caller-supplied admin/worker token against a pre-shared digest (the same
- * hash-a-high-entropy-token-and-compare pattern `proofrail_app_auth` and the `proofrail-catalog`
+ * hash-a-high-entropy-token-and-compare pattern `proofrail_app_auth` and the `aegisone-catalog`
  * Edge Function already use) and, only on success, mints a `VerificationAuthorization`. Never
  * logs the raw token; throws `VerificationNotAuthorizedError` (never silently downgrades) when
  * the token is missing or does not match.

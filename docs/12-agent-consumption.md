@@ -2,32 +2,32 @@
 
 ## Principle
 
-Agents should **use** ProofRail as software/capability-trust infrastructure. ProofRail itself does not need to become a generic AI agent.
+Agents should **use** AegisOne as software/capability-trust infrastructure. AegisOne itself does not need to become a generic AI agent.
 
 The M8 agent flow is:
 
 ```text
 agent intent
     ↓
-ProofRail discovery
+AegisOne discovery
     ↓
 candidate capabilities
     ↓
-ProofRail evidence inspection
+AegisOne evidence inspection
     ↓
 consumer policy
     ↓
 ALLOW / REVIEW / DENY
 ```
 
-ProofRail does not automatically install or execute the returned resource.
+AegisOne does not automatically install or execute the returned resource.
 
 ## Existing deterministic CLI/JSON
 
 The original machine interface remains useful:
 
 ```bash
-proofrail verify artifact.tar.gz --record <id> --json
+aegisone verify artifact.tar.gz --record <id> --json
 ```
 
 Agents/CI parse stable fields rather than terminal prose.
@@ -69,11 +69,11 @@ These responses keep discovery, source assurance, correspondence, security and c
 
 ## M8 MCP interface
 
-M8.8 exposes ProofRail through MCP as a thin wrapper over the same backend services.
+M8.8 exposes AegisOne through MCP as a thin wrapper over the same backend services.
 
 Initial tools:
 
-### `proofrail_search`
+### `aegisone_search`
 
 Purpose: find capabilities relevant to the user's/agent's intent.
 
@@ -87,11 +87,11 @@ Expected input concept:
 }
 ```
 
-Output includes resource identifiers, type, descriptions/provider attribution, relevance/discovery state and available ProofRail evidence summaries.
+Output includes resource identifiers, type, descriptions/provider attribution, relevance/discovery state and available AegisOne evidence summaries.
 
 Relevance remains discovery-only.
 
-### `proofrail_inspect`
+### `aegisone_inspect`
 
 Purpose: inspect the evidence dimensions for one resource/version.
 
@@ -104,9 +104,9 @@ Output should expose independently:
 - canonical evidence/0G pointers/freshness;
 - unavailable/missing evidence explicitly.
 
-### `proofrail_evaluate`
+### `aegisone_evaluate`
 
-Purpose: apply a caller-supplied deterministic trust policy to a resource's validated ProofRail evidence.
+Purpose: apply a caller-supplied deterministic trust policy to a resource's validated AegisOne evidence.
 
 Output:
 
@@ -146,18 +146,18 @@ The user/consuming agent makes the final installation/execution decision after e
 }
 ```
 
-A discovery result with no ProofRail evidence can still be returned by search, but this policy would deny/review it because required evidence is missing.
+A discovery result with no AegisOne evidence can still be returned by search, but this policy would deny/review it because required evidence is missing.
 
 ## Winner demo consumption path
 
 The M8.9 demo target is a real coding-agent client performing:
 
 ```text
-proofrail_search("pull request review")
+aegisone_search("pull request review")
         ↓
-proofrail_inspect(genuine-skill)
+aegisone_inspect(genuine-skill)
         ↓
-proofrail_evaluate(policy requiring MATCH)
+aegisone_evaluate(policy requiring MATCH)
         ↓
 ALLOW
 ```
@@ -167,18 +167,18 @@ Then a controlled substituted distribution with the same claimed source/identity
 ```text
 MISMATCH
    ↓
-proofrail_evaluate(...)
+aegisone_evaluate(...)
    ↓
 DENY
 ```
 
-This demonstrates that an agent can use ProofRail before trusting an externally discovered capability.
+This demonstrates that an agent can use AegisOne before trusting an externally discovered capability.
 
 ## Source authentication from an agent's perspective
 
 An agent should not infer authenticated source from a GitHub URL.
 
-ProofRail exposes source assurance levels:
+AegisOne exposes source assurance levels:
 
 - `NONE`
 - `DECLARED`
@@ -218,7 +218,7 @@ That diagnosis remains advisory and cannot change correspondence or deterministi
 
 ## Integration boundary
 
-MCP and REST are convenience transports over the same ProofRail evidence model. Neither transport is a trust primitive.
+MCP and REST are convenience transports over the same AegisOne evidence model. Neither transport is a trust primitive.
 
 See:
 

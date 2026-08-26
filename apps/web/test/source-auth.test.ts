@@ -11,7 +11,7 @@ const STATE_SECRET = "s".repeat(40);
 const GITHUB_CONFIG_BASE = {
   clientId: "test-client-id",
   clientSecret: "test-client-secret",
-  appSlug: "proofrail-source-verifier",
+  appSlug: "aegisone-source-verifier",
   callbackUrl: "http://127.0.0.1/auth/github/callback",
   stateSecret: STATE_SECRET,
 };
@@ -106,7 +106,7 @@ interface TestServer {
 async function startTestServer(options: { githubConfig?: GithubSourceAuthConfig | null; fetcher?: typeof fetch } = {}): Promise<TestServer> {
   const catalogStore = new InMemoryCatalogStore();
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: options.githubConfig !== undefined ? options.githubConfig : null,
     githubFetcher: options.fetcher,

@@ -2,7 +2,7 @@
 
 ## Current production state
 
-The existing ProofRail Supabase project is active and currently has two public tables:
+The existing AegisOne Supabase project is active and currently has two public tables:
 
 1. `verification_jobs`
 2. `proofrail_app_auth`
@@ -236,7 +236,7 @@ Keep provider raw observation small and redacted; only fields necessary to indep
 
 ## Table: `capability_verifications`
 
-Links a resource version/source claim to existing canonical ProofRail evidence.
+Links a resource version/source claim to existing canonical AegisOne evidence.
 
 Suggested columns:
 
@@ -337,7 +337,7 @@ For cached/local resources use PostgreSQL capabilities:
 - optional `pg_trgm` for fuzzy name similarity;
 - tags/capabilities in normalized columns or bounded arrays/json.
 
-Do not mix local Postgres relevance with ProofRail trust evidence.
+Do not mix local Postgres relevance with AegisOne trust evidence.
 
 M8.3 can primarily rely on upstream semantic discovery and use Supabase for cache/dedup/history.
 
@@ -352,7 +352,7 @@ Recommended MVP rule:
 - read APIs are served through `proofrail-app`, not by exposing broad anonymous Supabase table policies;
 - direct anonymous table access can remain denied unless a later frontend specifically benefits from safe read-only views.
 
-This keeps the public contract at ProofRail's versioned API rather than binding frontend clients to DB schema.
+This keeps the public contract at AegisOne's versioned API rather than binding frontend clients to DB schema.
 
 ## Server token model
 

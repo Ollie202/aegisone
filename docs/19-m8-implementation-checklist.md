@@ -30,7 +30,7 @@ Stop gate:
 - Hugging Face adapter real/live-smoke-tested or explicitly deferred with GitHub provider complete;
 - normalized/deduplicated/source-balanced results;
 - provider timeout/outage isolation;
-- no provider result labeled ProofRail-verified without ProofRail evidence;
+- no provider result labeled AegisOne-verified without AegisOne evidence;
 - tests green;
 - merge, stop.
 
@@ -94,9 +94,9 @@ Stop gate:
 
 Stop gate:
 
-- `proofrail_search` works;
-- `proofrail_inspect` works;
-- `proofrail_evaluate` works;
+- `aegisone_search` works;
+- `aegisone_inspect` works;
+- `aegisone_evaluate` works;
 - tools wrap same services as REST;
 - no install/execute/sign tool;
 - one real Codex/Claude compatible client can query it;

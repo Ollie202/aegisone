@@ -16,16 +16,16 @@ const recipe: BuildRecipe = {
 };
 const claim: ReleaseClaim = {
   claimVersion: "1",
-  projectId: "hello-proofrail@1",
+  projectId: "hello-aegisone@1",
   publisherIdentity: {
     type: "github",
-    subject: "Ollie202/proofrail-0g",
+    subject: "Ollie202/aegisone",
     assuranceLevel: "DECLARED",
-    evidenceReferences: ["https://github.com/Ollie202/proofrail-0g"],
+    evidenceReferences: ["https://github.com/Ollie202/aegisone"],
   },
   source: {
     provider: "git",
-    repository: "https://github.com/Ollie202/proofrail-0g.git",
+    repository: "https://github.com/Ollie202/aegisone.git",
     commitSha: "e9c82277cef2f7630977e2473664e14eed2f860d",
   },
   recipeDigest: recipeDigest(recipe),

@@ -3,11 +3,11 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { test } from "node:test";
 import { canonicalJson } from "../../core/src/canonical.ts";
-import { makeHelloProofRailFixture } from "../../../examples/hello-proofrail/fixture.ts";
+import { makeHelloAegisOneFixture } from "../../../examples/hello-aegisone/fixture.ts";
 import { verifyLocalRelease } from "../src/verify.ts";
 
 test("CLI service produces stable machine-readable verification JSON", async (context) => {
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   context.after(fixture.cleanup);
   const artifactPath = join(fixture.repositoryPath, "publisher-artifact.json");
   await writeFile(artifactPath, fixture.publisherBytes);

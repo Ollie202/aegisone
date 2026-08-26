@@ -34,12 +34,12 @@ response may present `REPOSITORY_AUTHENTICATED` / `SIGNED_RELEASE` source assura
 `MISMATCH` / `DIVERGED` correspondence verdict, this layer re-runs the same checks M8.5/M8.6
 already established at write time:
 
-- **source claims**: `computeSourceClaimDigest` (`@proofrail/source-auth-github`) recomputes the
+- **source claims**: `computeSourceClaimDigest` (`@aegisone/source-auth-github`) recomputes the
   claim digest from the stored canonical claim JSON. If it does not match the stored
   `claimDigestSha256`, the claim is treated as unavailable evidence (`NONE` assurance, empty
   `evidenceRefs`) — never as a downgraded-but-still-trusted level.
 - **capability verifications**: `validateNewCapabilityVerification`
-  (`@proofrail/catalog-store`) re-runs the MATCH/MISMATCH/DIVERGED digest-presence and
+  (`@aegisone/catalog-store`) re-runs the MATCH/MISMATCH/DIVERGED digest-presence and
   COMPLETED-security-findings structural sanity rules. If a stored row fails them, its
   `sourceInspection`/`correspondence`/`security`/`canonicalEvidence` are all treated as
   unavailable (`NOT_RUN` / `NOT_EVALUATED` / `NONE`) rather than presented as a partially-trusted
@@ -72,7 +72,7 @@ interface ResourceApiResponse {
   schemaVersion: "1";
   resourceId: string;
   currentVersionId: string | null;
-  resource: CapabilityResource; // @proofrail/capability-model, full independent trust dimensions
+  resource: CapabilityResource; // @aegisone/capability-model, full independent trust dimensions
   integrity: AssembledIntegrity;
 }
 ```
@@ -159,7 +159,7 @@ conflicted claim is not yet independently listed by this endpoint); this matches
 ### `POST /api/v1/policy/evaluate`
 
 Wraps the existing M8.1 deterministic evaluator (`evaluateTrustPolicy`,
-`@proofrail/capability-model`) unchanged. Pure function over supplied/fetched evidence and policy
+`@aegisone/capability-model`) unchanged. Pure function over supplied/fetched evidence and policy
 config — no LLM, discovery provider, GitHub OAuth, Supabase evidence invention, blockchain, or
 worker/build call.
 
@@ -167,7 +167,7 @@ Request body (JSON, ≤32 KiB, same limit class as `POST /search`):
 
 ```ts
 interface PolicyEvaluateRequest {
-  policy: TrustPolicy; // @proofrail/capability-model
+  policy: TrustPolicy; // @aegisone/capability-model
   // exactly one of the following two:
   resource?: CapabilityResource;  // caller-supplied resource, validated before evaluation
   resourceId?: string;            // looked up + assembled server-side (same integrity re-check
@@ -193,7 +193,7 @@ Errors:
 - `400 invalid_policy` — `policy` missing/malformed (bad `schemaVersion`, unknown
   `missingEvidenceDecision`/`minimumSourceAssurance`/`maximumAuditSeverity`, non-`"MATCH"`
   `requireCorrespondence`, non-positive `maximumEvidenceAgeHours`).
-- `400 invalid_resource` — inline `resource` fails `@proofrail/capability-model` structural
+- `400 invalid_resource` — inline `resource` fails `@aegisone/capability-model` structural
   validation; `details` carries the structured issue list.
 - `404 resource_not_found` — `resourceId` does not resolve to a stored resource.
 
@@ -224,5 +224,5 @@ Known codes: `resource_not_found`, `version_not_found`, `invalid_request`, `inva
 - Does not run new verification logic: `MATCH`/`MISMATCH`/`REPOSITORY_AUTHENTICATED` values shown
   here are always read from evidence M8.5/M8.6 already produced and persisted, re-checked for
   integrity at read time, never recomputed here.
-- Does not expose MCP tool transport (`proofrail_search`/`proofrail_inspect`/`proofrail_evaluate`
+- Does not expose MCP tool transport (`aegisone_search`/`aegisone_inspect`/`aegisone_evaluate`
   are M8.8, Issue #27) — this is the plain HTTP JSON contract those tools are expected to wrap.

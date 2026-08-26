@@ -41,7 +41,7 @@ import { createProductRequestHandler } from "../src/product.ts";
  */
 
 const STATE_SECRET = "s".repeat(40);
-const DEMO_REPO_FULL_NAME = "proofrail-demo/m8-9-fixture-skill";
+const DEMO_REPO_FULL_NAME = "aegisone-demo/m8-9-fixture-skill";
 const DEMO_REPO_ID = 8_009_001;
 
 const GENUINE_SKILL_MD = `---
@@ -85,10 +85,10 @@ async function runGit(command: string[], cwd: string): Promise<void> {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
-        GIT_AUTHOR_NAME: "ProofRail M8.9 Demo",
-        GIT_AUTHOR_EMAIL: "m8-9-demo@proofrail.test",
-        GIT_COMMITTER_NAME: "ProofRail M8.9 Demo",
-        GIT_COMMITTER_EMAIL: "m8-9-demo@proofrail.test",
+        GIT_AUTHOR_NAME: "AegisOne M8.9 Demo",
+        GIT_AUTHOR_EMAIL: "m8-9-demo@aegisone.test",
+        GIT_COMMITTER_NAME: "AegisOne M8.9 Demo",
+        GIT_COMMITTER_EMAIL: "m8-9-demo@aegisone.test",
       },
     });
     let output = "";
@@ -108,7 +108,7 @@ async function runGit(command: string[], cwd: string): Promise<void> {
  * claimed source commit" the way a real repository + real source claim would.
  */
 async function createDemoFixtureRepository(): Promise<{ repositoryPath: string; commitSha: string; subdirectory: string }> {
-  const root = await mkdtemp(join(tmpdir(), "proofrail-m8-9-demo-repo-"));
+  const root = await mkdtemp(join(tmpdir(), "aegisone-m8-9-demo-repo-"));
   await runGit(["init", "--quiet", "--initial-branch=main"], root);
   await runGit(["config", "core.autocrlf", "false"], root);
   await runGit(["config", "core.eol", "lf"], root);
@@ -152,9 +152,9 @@ function makeFakeGithub(commitSha: string) {
     const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
     if (url === "https://github.com/login/oauth/access_token") return json(200, { access_token: "ghu_m8_9_demo_token", scope: "" });
-    if (url === "https://api.github.com/user") return json(200, { id: 8009, login: "proofrail-demo-maintainer" });
+    if (url === "https://api.github.com/user") return json(200, { id: 8009, login: "aegisone-demo-maintainer" });
     if (url.startsWith("https://api.github.com/user/installations?")) {
-      return json(200, { installations: [{ id: 1, account: { login: "proofrail-demo", id: 8009 } }] });
+      return json(200, { installations: [{ id: 1, account: { login: "aegisone-demo", id: 8009 } }] });
     }
     if (url.match(/^https:\/\/api\.github\.com\/user\/installations\/1\/repositories/)) {
       return json(200, {
@@ -162,7 +162,7 @@ function makeFakeGithub(commitSha: string) {
           id: DEMO_REPO_ID,
           node_id: "R_m8_9_demo",
           full_name: DEMO_REPO_FULL_NAME,
-          owner: { login: "proofrail-demo", id: 8009 },
+          owner: { login: "aegisone-demo", id: 8009 },
           private: false,
           default_branch: "main",
           permissions: { admin: true, maintain: true, push: true, triage: true, pull: true },
@@ -175,7 +175,7 @@ function makeFakeGithub(commitSha: string) {
         id: DEMO_REPO_ID,
         node_id: "R_m8_9_demo",
         full_name: DEMO_REPO_FULL_NAME,
-        owner: { login: "proofrail-demo", id: 8009 },
+        owner: { login: "aegisone-demo", id: 8009 },
         private: false,
         default_branch: "main",
       });
@@ -202,7 +202,7 @@ interface TestServer {
 async function startTestServer(githubConfig: GithubSourceAuthConfig, fetcher: typeof fetch): Promise<TestServer> {
   const catalogStore = new InMemoryCatalogStore();
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: githubConfig,
     githubFetcher: fetcher,
@@ -236,7 +236,7 @@ function extractCookie(response: Response, name: string): string {
 }
 
 async function connectRealMcpClient(baseUrl: string): Promise<Client> {
-  const client = new Client({ name: "proofrail-m8-9-demo-client", version: "1.0.0" });
+  const client = new Client({ name: "aegisone-m8-9-demo-client", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl}/mcp`));
   await client.connect(transport);
   return client;
@@ -259,7 +259,7 @@ const DEMO_POLICY = {
 function discoveredSkillResource(commitSha: string): CapabilityResource {
   return {
     schemaVersion: "1",
-    id: "gh:proofrail-demo/m8-9-fixture-skill@substitution-demo",
+    id: "gh:aegisone-demo/m8-9-fixture-skill@substitution-demo",
     kind: "agent-skill",
     name: "M8.9 Substitution Demo Skill",
     description: "Local/deterministic M8.9 vertical-slice demo resource.",
@@ -293,7 +293,7 @@ test("M8.9 local proof: repository-authenticated claim + genuine MATCH -> policy
   const githubConfig: GithubSourceAuthConfig = {
     clientId: "m8-9-demo-client-id",
     clientSecret: "m8-9-demo-client-secret",
-    appSlug: "proofrail-source-verifier",
+    appSlug: "aegisone-source-verifier",
     callbackUrl: "http://127.0.0.1/auth/github/callback",
     stateSecret: STATE_SECRET,
     fetcher,
@@ -390,7 +390,7 @@ test("M8.9 local proof: repository-authenticated claim + genuine MATCH -> policy
     const mcpClientGenuine = await connectRealMcpClient(running.baseUrl);
     let mcpAllowPayload: Record<string, unknown>;
     try {
-      const mcpAllowResult = await mcpClientGenuine.callTool({ name: "proofrail_evaluate", arguments: { policy: DEMO_POLICY, resourceId: resource.id } });
+      const mcpAllowResult = await mcpClientGenuine.callTool({ name: "aegisone_evaluate", arguments: { policy: DEMO_POLICY, resourceId: resource.id } });
       assert.notEqual(mcpAllowResult.isError, true);
       mcpAllowPayload = firstTextPayload(mcpAllowResult as { content: Array<{ type: string; text?: string }> });
     } finally {
@@ -465,7 +465,7 @@ test("M8.9 local proof: repository-authenticated claim + genuine MATCH -> policy
     const mcpClientSubstituted = await connectRealMcpClient(running.baseUrl);
     let mcpDenyPayload: Record<string, unknown>;
     try {
-      const mcpDenyResult = await mcpClientSubstituted.callTool({ name: "proofrail_evaluate", arguments: { policy: DEMO_POLICY, resourceId: resource.id } });
+      const mcpDenyResult = await mcpClientSubstituted.callTool({ name: "aegisone_evaluate", arguments: { policy: DEMO_POLICY, resourceId: resource.id } });
       assert.notEqual(mcpDenyResult.isError, true);
       mcpDenyPayload = firstTextPayload(mcpDenyResult as { content: Array<{ type: string; text?: string }> });
     } finally {

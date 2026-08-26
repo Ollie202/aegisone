@@ -14,7 +14,7 @@ function valueAfter(name: string): string {
 
 async function main(): Promise<void> {
   const command = process.argv[2];
-  if (!process.argv.includes("--json")) throw new Error("ProofRail CLI currently requires --json");
+  if (!process.argv.includes("--json")) throw new Error("AegisOne CLI currently requires --json");
 
   if (command === "verify") {
     const claim = JSON.parse(await readFile(valueAfter("--claim"), "utf8")) as ReleaseClaim;
@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   }
 
   throw new Error(
-    "Usage: proofrail verify --claim claim.json --recipe recipe.json --artifact release.bin --source-repository path --json | proofrail inspect --evidence verification.json --json",
+    "Usage: aegisone verify --claim claim.json --recipe recipe.json --artifact release.bin --source-repository path --json | aegisone inspect --evidence verification.json --json",
   );
 }
 

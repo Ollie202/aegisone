@@ -10,8 +10,8 @@ import {
 import { canonicalJson } from "../../core/src/canonical.ts";
 import { createVerification } from "../../core/src/verify.ts";
 import { runLocalBuild } from "../../runner-local/src/run.ts";
-import { makeHelloProofRailFixture } from "../../../examples/hello-proofrail/fixture.ts";
-import { PROOFRAIL_REGISTRY_ABI } from "../src/abi.ts";
+import { makeHelloAegisOneFixture } from "../../../examples/hello-aegisone/fixture.ts";
+import { AEGISONE_REGISTRY_ABI } from "../src/abi.ts";
 import { computeRegistryRecordId } from "../src/client.ts";
 import { createRegistryCommitments } from "../src/commitments.ts";
 
@@ -68,12 +68,12 @@ async function main(): Promise<void> {
   const privateKey = normalizePrivateKey();
   const artifactPath = resolve(
     import.meta.dirname,
-    "../../../contracts/artifacts/src/ProofRailRegistry.sol/ProofRailRegistry.json",
+    "../../../contracts/artifacts/src/AegisOneRegistry.sol/AegisOneRegistry.json",
   );
   const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as HardhatArtifact;
   if (!artifact.bytecode || artifact.bytecode === "0x") throw new Error("Compiled registry bytecode is missing");
 
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   try {
     const build = await runLocalBuild({
       source: fixture.claim.source,
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
     if (!deploymentReceipt) throw new Error("Registry deployment was not mined");
     const contractAddress = await deployment.getAddress();
 
-    const registry = new Contract(contractAddress, PROOFRAIL_REGISTRY_ABI, signer);
+    const registry = new Contract(contractAddress, AEGISONE_REGISTRY_ABI, signer);
     const registrationTransaction = await registry.registerEvidence(
       commitments.manifestDigest,
       commitments.sourceClaimDigest,

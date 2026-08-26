@@ -2,7 +2,7 @@
 
 ## Primary objective
 
-Complete ProofRail M8 as a **trust-aware capability discovery backend** before building the new human Hub frontend.
+Complete AegisOne M8 as a **trust-aware capability discovery backend** before building the new human Hub frontend.
 
 Target flow:
 
@@ -10,7 +10,7 @@ Target flow:
 intent
   -> capability discovery
   -> source assurance
-  -> ProofRail evidence
+  -> AegisOne evidence
   -> consumer trust policy
   -> ALLOW / REVIEW / DENY
 ```
@@ -33,7 +33,7 @@ Current implementation gate: **M8.11 / Issue #30 / branch `agent/m8-11-backend-f
 
 Issue #19 / PR #20 merged.
 
-- [x] `@proofrail/capability-model` provider-independent package.
+- [x] `@aegisone/capability-model` provider-independent package.
 - [x] resource kinds: Agent Skill, MCP server, A2A agent, API.
 - [x] discovery metadata structurally separate from trust evidence.
 - [x] source inspection distinct from distribution correspondence.
@@ -49,11 +49,11 @@ Do not redo M8.1.
 
 Issue #21.
 
-Goal: make ProofRail itself expose a small pinned ARD-compatible local discovery surface before connecting real upstream providers.
+Goal: make AegisOne itself expose a small pinned ARD-compatible local discovery surface before connecting real upstream providers.
 
 Required:
 
-- [x] `@proofrail/discovery-ard`
+- [x] `@aegisone/discovery-ard`
 - [x] ARD v0.9 pinned to `ards-project/ard-spec@1d25abcf07e081f604dba3ae5398b16c79f20b7b`
 - [x] `GET /.well-known/ai-catalog.json`
 - [x] `POST /search`
@@ -61,7 +61,7 @@ Required:
 - [x] all four M8.1 resource kinds mapped/tested
 - [x] strict request/result limits
 - [x] unsupported filters fail explicitly
-- [x] `INDEXED`/relevance/trustManifest metadata cannot upgrade ProofRail evidence
+- [x] `INDEXED`/relevance/trustManifest metadata cannot upgrade AegisOne evidence
 - [x] local root `pnpm check` and `pnpm test` green
 - [x] pull request CI green and M8.2 merged (PR #34)
 
@@ -73,11 +73,11 @@ M8.2 is merged to `main`. M8.2 is complete; do not redo it.
 
 Issue #22.
 
-Goal: replace M8.2's local-only fixtures with real read-only federation to GitHub Agent Finder and Hugging Face Discover, normalized into the same M8.1 capability model, without letting upstream metadata create or upgrade ProofRail trust evidence.
+Goal: replace M8.2's local-only fixtures with real read-only federation to GitHub Agent Finder and Hugging Face Discover, normalized into the same M8.1 capability model, without letting upstream metadata create or upgrade AegisOne trust evidence.
 
 Required:
 
-- [x] `@proofrail/discovery-providers`
+- [x] `@aegisone/discovery-providers`
 - [x] `DiscoveryProvider` interface (`id`, `search(query, signal)`)
 - [x] GitHub Agent Finder adapter, pinned to `ards-project/ard-connectors@53cc4f3a4596cf51482fabeb554d124ca248ed07`, fixture-tested
 - [x] live smoke test proving the Agent Finder endpoint works (`test/live/github-agent-finder.live.test.ts`, not part of `pnpm check`/`pnpm test`)
@@ -88,8 +88,8 @@ Required:
 - [x] deterministic deduplication, tested
 - [x] partial outage (one provider mocked failing) returns useful partial results, tested
 - [x] timeout / malformed / oversized response tests
-- [x] regression test proving forged `trustManifest`/`org.proofrail.*`-looking metadata/score cannot escalate ProofRail evidence
-- [x] search relevance stays out of policy evaluation (unchanged `@proofrail/capability-model` policy engine; federated results only ever populate `discovery.relevanceScore`)
+- [x] regression test proving forged `trustManifest`/`org.aegisone.*`-looking metadata/score cannot escalate AegisOne evidence
+- [x] search relevance stays out of policy evaluation (unchanged `@aegisone/capability-model` policy engine; federated results only ever populate `discovery.relevanceScore`)
 - [x] `apps/web` `POST /search` wired: `federation` accepts local `"none"` (unchanged M8.2 behavior) or a non-empty array of registered provider ids, which federates in parallel under the shared deadline
 - [x] local root `pnpm check` and `pnpm test` green
 - [x] pull request CI green and M8.3 merged (PR #35)
@@ -102,14 +102,14 @@ M8.3 is merged to `main`. M8.3 is complete; do not redo it.
 
 Issue #23.
 
-Goal: persist normalized mutable discovery/catalog data (M8.1's `CapabilityResource` shape, as produced by M8.2/M8.3) in the existing ProofRail Supabase project, without moving proof authority into the database.
+Goal: persist normalized mutable discovery/catalog data (M8.1's `CapabilityResource` shape, as produced by M8.2/M8.3) in the existing AegisOne Supabase project, without moving proof authority into the database.
 
 Required:
 
 - [x] SQL migration `supabase/migrations/202608260001_m8_4_capability_catalog.sql` creating `agentic_resources`, `resource_discoveries`, `resource_versions`, `ingestion_sources`
 - [x] RLS enabled on all four new public tables, deny-by-default (no anon/authenticated policy), mirroring `proofrail_app_auth`
-- [x] token-gated Edge Function `supabase/functions/proofrail-catalog`, service-role credential held only inside the function, same `proofrail_app_auth` app-token gate `packages/job-store` uses
-- [x] `@proofrail/catalog-store` package: `computeCanonicalKeyFromResource` (deterministic dedup key), `buildResourceUpsertPlan` (pure DB-free field mapping), `catalogRecordToCapabilityResource` (always empty/unverified trust), `InMemoryCatalogStore`, `SupabaseCatalogStore`
+- [x] token-gated Edge Function `supabase/functions/aegisone-catalog`, service-role credential held only inside the function, same `proofrail_app_auth` app-token gate `packages/job-store` uses
+- [x] `@aegisone/catalog-store` package: `computeCanonicalKeyFromResource` (deterministic dedup key), `buildResourceUpsertPlan` (pure DB-free field mapping), `catalogRecordToCapabilityResource` (always empty/unverified trust), `InMemoryCatalogStore`, `SupabaseCatalogStore`
 - [x] resource + provider-observation upsert tests, stable dedup-key tests
 - [x] regression: a DB-only inserted `INDEXED` resource remains unverified end-to-end
 - [x] regression: provider outage/staleness (`markProviderDiscoveriesStale`) mutates `discovery_status` only, never resource/version identity or trust evidence
@@ -126,14 +126,14 @@ M8.4 is merged to `main`. M8.4 is complete; do not redo it.
 
 Issue #24.
 
-Goal: implement the first real source-authentication mechanism so ProofRail can distinguish a random/declarative repository mapping from a source claim authenticated by a GitHub identity with real authority over the repository. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
+Goal: implement the first real source-authentication mechanism so AegisOne can distinguish a random/declarative repository mapping from a source claim authenticated by a GitHub identity with real authority over the repository. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
 
 Required:
 
-- [x] `@proofrail/source-auth-github`: HMAC-signed/expiring/cookie-bound OAuth state, bounded GitHub REST client (token exchange, user, installations, installation repositories, collaborator permission, repository, exact-commit resolution), the M8 authority ladder (admin/write/maintain sufficient; read/triage/none/unknown insufficient), canonical source-claim construction + SHA-256 digest reusing `packages/core`'s canonical JSON, and a process-local non-persistent claim-session store (the GitHub access token is never written to Supabase or logged)
-- [x] `@proofrail/catalog-store` extended with `source_claims`/`source_claim_authority_observations` persistence and `source-claim-transition.ts` (new / supersede / explicit `SOURCE_CLAIM_CONFLICT`), implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`
+- [x] `@aegisone/source-auth-github`: HMAC-signed/expiring/cookie-bound OAuth state, bounded GitHub REST client (token exchange, user, installations, installation repositories, collaborator permission, repository, exact-commit resolution), the M8 authority ladder (admin/write/maintain sufficient; read/triage/none/unknown insufficient), canonical source-claim construction + SHA-256 digest reusing `packages/core`'s canonical JSON, and a process-local non-persistent claim-session store (the GitHub access token is never written to Supabase or logged)
+- [x] `@aegisone/catalog-store` extended with `source_claims`/`source_claim_authority_observations` persistence and `source-claim-transition.ts` (new / supersede / explicit `SOURCE_CLAIM_CONFLICT`), implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`
 - [x] SQL migration `supabase/migrations/202608260002_m8_5_source_claims.sql`, same convention as `202608260001` (RLS, deny-by-default, CHECK constraints, indexes)
-- [x] `proofrail-catalog` Edge Function extended with `createSourceClaim`/`getSourceClaim`/`listActiveSourceClaimsByResourceVersion` actions
+- [x] `aegisone-catalog` Edge Function extended with `createSourceClaim`/`getSourceClaim`/`listActiveSourceClaimsByResourceVersion` actions
 - [x] `apps/web`: `GET /auth/github/start`, `GET /auth/github/callback`, `GET /api/v1/source-auth/github/repositories`, `POST /api/v1/source-claims`, `GET /api/v1/source-claims/:claimId`, wired into `createProductRequestHandler`/`server.ts`
 - [x] `/auth/github/*` and the repository-listing endpoint return `503` when the GitHub App is not configured; `POST /api/v1/source-claims` still works unauthenticated and always produces `DECLARED`, never `REPOSITORY_AUTHENTICATED`
 - [x] private repositories rejected explicitly (`private_repository_unsupported`)
@@ -157,10 +157,10 @@ Goal: connect discovered/persisted Agent Skill resource versions and M8.5 source
 
 Required:
 
-- [x] new package `@proofrail/skill-verification-link`: bounded exact-commit Git source acquisition (`source-acquisition.ts`, reusing the same clone/checkout/verify pattern `packages/runner-local` already uses in production, plus the existing `readSkillDirectory`/`validateSkillPackage`/`auditSkillPackage` from `packages/skill-audit`, never forked); an SSRF-hardened bounded distribution-artifact downloader (`distribution-fetch.ts`) scoped to ProofRail's own canonical `proofrail-agent-skill-package-v1` package format (decoded via the existing `decodeCanonicalSkillPackage`, never a second archive extractor); the top-level orchestrator `enrichment.ts`, whose source-only branch (`evaluateSourceOnly`) contains no reference anywhere in its body to `verifySkillPackages`/`compareArtifacts`/`MATCH`/`MISMATCH` (a dedicated regression test reads the compiled source and asserts this); a distribution-present branch that always calls the existing unmodified `verifySkillPackages`; `authorization.ts` (a nominally-typed `VerificationAuthorization`, constructible only via a token-digest check, plus an in-process concurrency limiter)
-- [x] `@proofrail/catalog-store` extended with `capability_verifications` persistence (`NewCapabilityVerification`/`CapabilityVerification`, `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `capability-verification-validation.ts`, the same MATCH/MISMATCH/DIVERGED digest-presence sanity rules mirrored in the `proofrail-catalog` Edge Function and enforced again as Postgres `CHECK` constraints
+- [x] new package `@aegisone/skill-verification-link`: bounded exact-commit Git source acquisition (`source-acquisition.ts`, reusing the same clone/checkout/verify pattern `packages/runner-local` already uses in production, plus the existing `readSkillDirectory`/`validateSkillPackage`/`auditSkillPackage` from `packages/skill-audit`, never forked); an SSRF-hardened bounded distribution-artifact downloader (`distribution-fetch.ts`) scoped to AegisOne's own canonical `proofrail-agent-skill-package-v1` package format (decoded via the existing `decodeCanonicalSkillPackage`, never a second archive extractor); the top-level orchestrator `enrichment.ts`, whose source-only branch (`evaluateSourceOnly`) contains no reference anywhere in its body to `verifySkillPackages`/`compareArtifacts`/`MATCH`/`MISMATCH` (a dedicated regression test reads the compiled source and asserts this); a distribution-present branch that always calls the existing unmodified `verifySkillPackages`; `authorization.ts` (a nominally-typed `VerificationAuthorization`, constructible only via a token-digest check, plus an in-process concurrency limiter)
+- [x] `@aegisone/catalog-store` extended with `capability_verifications` persistence (`NewCapabilityVerification`/`CapabilityVerification`, `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `capability-verification-validation.ts`, the same MATCH/MISMATCH/DIVERGED digest-presence sanity rules mirrored in the `aegisone-catalog` Edge Function and enforced again as Postgres `CHECK` constraints
 - [x] SQL migration `supabase/migrations/202608260003_m8_6_capability_verifications.sql`: `capability_verifications`, same convention as `202608260001`/`202608260002` (RLS, deny-by-default, CHECK constraints including the MATCH/MISMATCH/DIVERGED/NOT_EVALUATED digest-presence sanity checks from docs/16)
-- [x] `proofrail-catalog` Edge Function extended with `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` actions
+- [x] `aegisone-catalog` Edge Function extended with `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` actions
 - [x] regression: a DB-only row attempting `MATCH`/`MISMATCH`/`DIVERGED` without both digests (or with equal digests claimed as `MISMATCH`) is rejected before any write, at both the in-memory store and the Supabase-store/Edge-Function boundary
 - [x] regression: every verification creates a new historical row; nothing mutates a prior canonical verdict
 - [x] no new `apps/web`/`apps/worker` HTTP route was added in this issue — nothing public or otherwise can currently reach the expensive enrichment path except tests and the local fixture; `authorization.ts` exists so a future M8.7/M8.8 trigger surface reuses the same gate instead of skipping it
@@ -175,7 +175,7 @@ Out of scope, not attempted: arbitrary npm/Python/Docker build systems, auto-ver
 1. **M8.7 / #26 — stable read/evidence/policy API — merged (PR #39).**
 
 2. **M8.8 / #27 — MCP agent interface — merged (PR #40).**  
-   Only `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`.
+   Only `aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`.
 
 3. **M8.9 / #28 — controlled substitution vertical slice — merged (PR #41).**  
    Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; local/deterministic proof complete, real 0G evidence still pending per `docs/22-m8-9-live-run-runbook.md`.
@@ -235,7 +235,7 @@ Coding agents should read:
 ## Cost / architecture boundary
 
 - Reuse exactly `proofrail-app` + `proofrail-worker`.
-- Extend the existing ProofRail Supabase project; do not create another one.
+- Extend the existing AegisOne Supabase project; do not create another one.
 - No runtime OpenAI/Anthropic API is required.
 - No embeddings/vector DB is required.
 - No third Railway service is required.

@@ -7,14 +7,14 @@ import { decodeCanonicalSkillPackage, readSkillDirectory, summarizeSkillPackage 
 import { performStorageRoundTrip, ZeroGSdkTransport } from "../../storage-0g/src/index.ts";
 import { attachM7StorageEvidence, createM7SkillSlice, type SkillBuildEnvironment, type SkillSourceClaim } from "../src/index.ts";
 
-const SOURCE_REPO = "https://github.com/Ollie202/proofrail-0g.git";
-const SOURCE_API = "https://api.github.com/repos/Ollie202/proofrail-0g";
+const SOURCE_REPO = "https://github.com/Ollie202/aegisone.git";
+const SOURCE_API = "https://api.github.com/repos/Ollie202/aegisone";
 const SOURCE_COMMIT = process.env.PROOFRAIL_M7_SOURCE_COMMIT?.trim() ?? "";
 const WRITE_GATE = process.env.PROOFRAIL_M7_GALILEO_WRITE?.trim();
 const REQUIRED_GATE = "I_UNDERSTAND_THIS_WRITES_GALILEO_TESTNET";
-const SOURCE_PATH = "/tmp/proofrail-m7";
-const SOURCE_ARCHIVE = "/tmp/proofrail-m7.tar.gz";
-const SOURCE_MARKER = "/tmp/proofrail-m7.commit";
+const SOURCE_PATH = "/tmp/aegisone-m7";
+const SOURCE_ARCHIVE = "/tmp/aegisone-m7.tar.gz";
+const SOURCE_MARKER = "/tmp/aegisone-m7.commit";
 const SKILL_SUBDIRECTORY = "examples/agent-skills/clean-review";
 const PACKAGE_PATH = "/tmp/clean-review.skillpkg";
 const LOCAL_SKILL_DIRECTORY = SKILL_SUBDIRECTORY;
@@ -88,13 +88,13 @@ function buildArchiveFetchCommand(): string {
   const fs = require("node:fs");
   const commit = ${JSON.stringify(SOURCE_COMMIT)};
   const metaResponse = await fetch(${JSON.stringify(`${SOURCE_API}/commits/${SOURCE_COMMIT}`)}, {
-    headers: { "Accept": "application/vnd.github+json", "User-Agent": "ProofRail-M7" },
+    headers: { "Accept": "application/vnd.github+json", "User-Agent": "AegisOne-M7" },
   });
   if (!metaResponse.ok) throw new Error("GitHub commit lookup failed: " + metaResponse.status);
   const metadata = await metaResponse.json();
   if (!metadata || metadata.sha !== commit) throw new Error("GitHub commit lookup did not resolve the exact requested SHA");
   const archiveResponse = await fetch(${JSON.stringify(`${SOURCE_API}/tarball/${SOURCE_COMMIT}`)}, {
-    headers: { "Accept": "application/vnd.github+json", "User-Agent": "ProofRail-M7" },
+    headers: { "Accept": "application/vnd.github+json", "User-Agent": "AegisOne-M7" },
     redirect: "follow",
   });
   if (!archiveResponse.ok) throw new Error("GitHub archive download failed: " + archiveResponse.status);
@@ -120,9 +120,9 @@ const sourceClaim: SkillSourceClaim = {
   subdirectory: SKILL_SUBDIRECTORY,
   publisherIdentity: {
     type: "github",
-    subject: "Ollie202/proofrail-0g",
+    subject: "Ollie202/aegisone",
     assuranceLevel: "DECLARED",
-    evidenceReferences: ["https://github.com/Ollie202/proofrail-0g"],
+    evidenceReferences: ["https://github.com/Ollie202/aegisone"],
   },
   packageFormat: "proofrail-agent-skill-package-v1",
 };
@@ -170,7 +170,7 @@ try {
   output.sandboxFunding = { acknowledgeTx, depositTx, depositedWei: depositDelta.toString() };
 
   sandboxClient = new SandboxApiClient(selected.listing.url, sandboxWallet);
-  const created = await sandboxClient.create({ image: selected.snapshot.name, name: `proofrail-m7-${Date.now()}`, sealed: false });
+  const created = await sandboxClient.create({ image: selected.snapshot.name, name: `aegisone-m7-${Date.now()}`, sealed: false });
   createdSandboxId = sandboxId(created);
   output.sandbox = {
     id: createdSandboxId,

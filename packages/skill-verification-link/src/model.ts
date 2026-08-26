@@ -2,8 +2,8 @@ import type { SkillAuditReport, SkillFormatValidation, SkillPackageEntry, SkillV
 
 /**
  * M8.6 orchestration/linkage types. Nothing here is a new verification engine: every value
- * produced by this package is either read straight off `@proofrail/skill-audit` /
- * `@proofrail/core` output, or a hardcoded constant chosen because a required input (a distinct
+ * produced by this package is either read straight off `@aegisone/skill-audit` /
+ * `@aegisone/core` output, or a hardcoded constant chosen because a required input (a distinct
  * distribution artifact) was never supplied. See `enrichment.ts` for why `MATCH`/`MISMATCH` is
  * structurally unreachable from a source-only call.
  */

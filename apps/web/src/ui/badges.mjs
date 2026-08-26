@@ -26,7 +26,7 @@ function badge(tone, glyph, text, title) {
 export function discoveryBadge(status) {
   switch (status) {
     case "INDEXED":
-      return badge("info", "◎", "INDEXED — discovery only", "A discovery provider found this resource. This is not ProofRail verification.");
+      return badge("info", "◎", "INDEXED — discovery only", "A discovery provider found this resource. This is not AegisOne verification.");
     case "STALE":
       return badge("caution", "⟳", "STALE discovery", "The provider that indexed this resource has not confirmed it recently.");
     case "UNAVAILABLE":

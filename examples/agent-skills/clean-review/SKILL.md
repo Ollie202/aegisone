@@ -4,7 +4,7 @@ description: Review a text file for clear headings and concise paragraphs. Use w
 license: MIT
 compatibility: Requires Python 3 for the optional local checker.
 metadata:
-  author: proofrail-fixture
+  author: aegisone-fixture
   version: "1"
 allowed-tools: Read
 ---

@@ -1,4 +1,4 @@
-# AKINDO Submission Copy — ProofRail
+# AKINDO Submission Copy — AegisOne
 
 Use this as a **paste-ready packet**, not as a claim that these are AKINDO's exact current field labels. The authenticated AKINDO form is dynamic; re-open it immediately before submission and map the relevant sections below into the fields shown there.
 
@@ -6,36 +6,36 @@ Use this as a **paste-ready packet**, not as a claim that these are AKINDO's exa
 
 ## Project name
 
-ProofRail
+AegisOne
 
 ## One-line pitch
 
-ProofRail independently reproduces software and Agent Skills from an exact publisher-declared source commit, compares the distributed bytes, and preserves verifiable evidence on 0G.
+AegisOne independently reproduces software and Agent Skills from an exact publisher-declared source commit, compares the distributed bytes, and preserves verifiable evidence on 0G.
 
 ## Short description
 
-A public GitHub repository does not prove that the artifact users receive was actually built from that source. ProofRail independently reproduces the exact declared commit in 0G Sandbox, reports deterministic `MATCH` / `MISMATCH` correspondence, stores canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. Agent Skills additionally receive a separate deterministic security audit so `MATCH` never means “safe.”
+A public GitHub repository does not prove that the artifact users receive was actually built from that source. AegisOne independently reproduces the exact declared commit in 0G Sandbox, reports deterministic `MATCH` / `MISMATCH` correspondence, stores canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. Agent Skills additionally receive a separate deterministic security audit so `MATCH` never means “safe.”
 
 ## Problem
 
 Software supply chains can fail even while the public source repository still looks clean. A compromised release server, CI path, maintainer account, marketplace, or distribution layer can serve bytes that do not correspond to the source users think they are trusting.
 
-Existing provenance metadata is useful, but ProofRail targets a narrower question: **do the bytes being distributed actually correspond to an independently reproduced artifact from the exact source claim?**
+Existing provenance metadata is useful, but AegisOne targets a narrower question: **do the bytes being distributed actually correspond to an independently reproduced artifact from the exact source claim?**
 
 ## Solution
 
-ProofRail takes an explicit publisher source claim, pins an immutable commit, independently reproduces the artifact, compares SHA-256 digests, and emits canonical evidence. A genuine artifact returns `MATCH`; a substituted artifact returns `MISMATCH` while the independently reproduced bytes remain unchanged.
+AegisOne takes an explicit publisher source claim, pins an immutable commit, independently reproduces the artifact, compares SHA-256 digests, and emits canonical evidence. A genuine artifact returns `MATCH`; a substituted artifact returns `MISMATCH` while the independently reproduced bytes remain unchanged.
 
-For Agent Skills, ProofRail keeps two answers independent:
+For Agent Skills, AegisOne keeps two answers independent:
 
 1. **Correspondence** — do the distributed skill-package bytes match the independently packaged exact source commit?
 2. **Security audit** — what risky instructions, scripts, resources, exfiltration paths, destructive operations, encoded execution, persistence, or undeclared executable resources exist?
 
-A matching skill can therefore still have critical findings. ProofRail never turns `MATCH` into a safety claim.
+A matching skill can therefore still have critical findings. AegisOne never turns `MATCH` into a safety claim.
 
 ## Current progress
 
-ProofRail is no longer a local prototype. The current public build has progressed through:
+AegisOne is no longer a local prototype. The current public build has progressed through:
 
 - deterministic local independent reproduction and `MATCH` / `MISMATCH` kernel;
 - real proof-verified 0G Storage round trips with exact-byte retrieval;
@@ -49,11 +49,11 @@ ProofRail is no longer a local prototype. The current public build has progresse
 
 ## Why 0G is load-bearing
 
-ProofRail uses 0G for three different trust-reduction roles:
+AegisOne uses 0G for three different trust-reduction roles:
 
 ### 0G Sandbox
 
-Runs the independent reproduction path so the result is not merely produced by ProofRail's ordinary application server.
+Runs the independent reproduction path so the result is not merely produced by AegisOne's ordinary application server.
 
 ### 0G Storage
 
@@ -61,7 +61,7 @@ Stores canonical verification evidence and proves the retrieved bytes are exactl
 
 ### 0G Chain
 
-Anchors compact historical commitments so ProofRail cannot silently rewrite past verification records. The software vertical slice is already registered on Aristotle mainnet.
+Anchors compact historical commitments so AegisOne cannot silently rewrite past verification records. The software vertical slice is already registered on Aristotle mainnet.
 
 ## Real observed results
 
@@ -106,12 +106,12 @@ The clean fixture's deterministic audit produced `0` findings; separate maliciou
 ## Links to paste into the submission
 
 - Live app: https://proofrail-app-production.up.railway.app
-- Public repository: https://github.com/Ollie202/proofrail-0g
+- Public repository: https://github.com/Ollie202/aegisone
 - Current Bridge Buildathon page: https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd
-- Evidence ledger: https://github.com/Ollie202/proofrail-0g/blob/main/hackathon/evidence.md
-- M5 Aristotle mainnet evidence: https://github.com/Ollie202/proofrail-0g/blob/main/hackathon/m5-aristotle-mainnet.json
-- M7 Agent Skill evidence: https://github.com/Ollie202/proofrail-0g/blob/main/hackathon/m7-live-evidence.json
-- Demo script: https://github.com/Ollie202/proofrail-0g/blob/main/hackathon/demo-plan.md
+- Evidence ledger: https://github.com/Ollie202/aegisone/blob/main/hackathon/evidence.md
+- M5 Aristotle mainnet evidence: https://github.com/Ollie202/aegisone/blob/main/hackathon/m5-aristotle-mainnet.json
+- M7 Agent Skill evidence: https://github.com/Ollie202/aegisone/blob/main/hackathon/m7-live-evidence.json
+- Demo script: https://github.com/Ollie202/aegisone/blob/main/hackathon/demo-plan.md
 - M5 Aristotle registry: `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`
 - M5 mainnet registration tx: `0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac`
 - M7 Galileo registration tx: `0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db`
@@ -119,11 +119,11 @@ The clean fixture's deterministic audit produced `0` findings; separate maliciou
 
 ## Suggested progress/update paragraph
 
-This wave I moved ProofRail from a local verification idea into a live, judge-inspectable 0G product. The system now independently reproduces exact source commits through 0G Sandbox, detects genuine versus substituted release bytes, stores proof-verified canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. I also extended the same trust model to Agent Skills: deterministic package correspondence stays separate from deterministic security findings, so a matching skill is never automatically labelled safe. The software slice is anchored on Aristotle mainnet, the Agent Skill slice has exact Galileo registry readback, the proof-first web app is live, and the full public repository is covered by CI plus a full-history secret scan.
+This wave I moved AegisOne from a local verification idea into a live, judge-inspectable 0G product. The system now independently reproduces exact source commits through 0G Sandbox, detects genuine versus substituted release bytes, stores proof-verified canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. I also extended the same trust model to Agent Skills: deterministic package correspondence stays separate from deterministic security findings, so a matching skill is never automatically labelled safe. The software slice is anchored on Aristotle mainnet, the Agent Skill slice has exact Galileo registry readback, the proof-first web app is live, and the full public repository is covered by CI plus a full-history secret scan.
 
 ## Suggested technical differentiation paragraph
 
-ProofRail is not a generic “blockchain provenance” dashboard. The core differentiator is **independent reproduction + exact byte correspondence + portable evidence**. Mutable application state cannot invent a `MATCH` or `MISMATCH`; those results come from the verification evidence. For Agent Skills, security findings are also kept separate from provenance so the product can represent states such as `MATCH + CRITICAL FINDINGS` without collapsing everything into a vague trust score.
+AegisOne is not a generic “blockchain provenance” dashboard. The core differentiator is **independent reproduction + exact byte correspondence + portable evidence**. Mutable application state cannot invent a `MATCH` or `MISMATCH`; those results come from the verification evidence. For Agent Skills, security findings are also kept separate from provenance so the product can represent states such as `MATCH + CRITICAL FINDINGS` without collapsing everything into a vague trust score.
 
 ## Suggested 0G integration paragraph
 
@@ -144,31 +144,31 @@ Use `hackathon/demo-plan.md` exactly unless the live UI materially changes. The 
 
 ### Video title
 
-ProofRail — Verifiable Software & Agent Skill Reproduction on 0G
+AegisOne — Verifiable Software & Agent Skill Reproduction on 0G
 
 ### Short video description
 
-ProofRail independently reproduces software and Agent Skills from an exact source commit, compares the distributed bytes, stores canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. This demo shows a real software `MATCH`, a controlled tamper `MISMATCH`, Agent Skill provenance versus security-audit separation, and real 0G evidence.
+AegisOne independently reproduces software and Agent Skills from an exact source commit, compares the distributed bytes, stores canonical evidence on 0G Storage, and anchors compact commitments on 0G Chain. This demo shows a real software `MATCH`, a controlled tamper `MISMATCH`, Agent Skill provenance versus security-audit separation, and real 0G evidence.
 
 Live app: https://proofrail-app-production.up.railway.app
 
-Source: https://github.com/Ollie202/proofrail-0g
+Source: https://github.com/Ollie202/aegisone
 
 ### X post caption
 
 A public GitHub repo does not prove the file users download actually came from that source.
 
-Built **ProofRail** for the 0G Bridge Buildathon: exact-commit independent reproduction, real `MATCH` / `MISMATCH`, proof-verified 0G Storage evidence, 0G Chain commitments, and Agent Skill auditing where provenance stays separate from safety.
+Built **AegisOne** for the 0G Bridge Buildathon: exact-commit independent reproduction, real `MATCH` / `MISMATCH`, proof-verified 0G Storage evidence, 0G Chain commitments, and Agent Skill auditing where provenance stays separate from safety.
 
 Live: https://proofrail-app-production.up.railway.app
-Repo: https://github.com/Ollie202/proofrail-0g
+Repo: https://github.com/Ollie202/aegisone
 
 #0G #Buildathon #Web3Security #AI
 
 ## Claims not to make
 
-- Do not say ProofRail guarantees matched source is safe or benevolent.
-- Do not say ProofRail automatically discovers the official repository.
+- Do not say AegisOne guarantees matched source is safe or benevolent.
+- Do not say AegisOne automatically discovers the official repository.
 - Do not say M7 Agent Skill evidence is registered on Aristotle mainnet; it is `PREPARED_NOT_SUBMITTED` there.
 - Do not call the current output a TEE-attested artifact. The observed live TDX evidence proves the provider/runtime evidence level, but the artifact digest is not cryptographically bound into the legacy quote and artifact-in-TEE computation is not proven.
 - Do not describe Supabase or Railway as proof authorities. They are product/runtime infrastructure around canonical verification evidence.
@@ -182,4 +182,4 @@ Before pressing submit:
 - record the final 90-second demo at readable zoom;
 - replace the demo-video placeholder above with the final public/shareable URL;
 - paste the repo, live app, demo, and evidence links;
-- save/submit and confirm ProofRail appears as submitted on AKINDO.
+- save/submit and confirm AegisOne appears as submitted on AKINDO.

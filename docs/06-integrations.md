@@ -7,7 +7,7 @@ External APIs evolve. M8 pins observed contracts behind adapters and records tho
 ## Integration principles
 
 - Provider-specific schemas live behind adapters.
-- Discovery metadata cannot become ProofRail evidence merely because an upstream provider calls it trusted/verified.
+- Discovery metadata cannot become AegisOne evidence merely because an upstream provider calls it trusted/verified.
 - Exact source identity uses immutable commits.
 - Public search/read calls must not trigger funded 0G work.
 - No runtime LLM API is required for M8.
@@ -29,11 +29,11 @@ GET  /.well-known/ai-catalog.json
 POST /search
 ```
 
-The issue-branch implementation lives in `@proofrail/discovery-ard` and uses a deterministic in-memory catalog only. Its supported profile is deliberately narrow: `query.filter.type`, omitted/`none` federation, 32 KiB request bodies, 2,000-code-point queries, and at most 25 results. The generic API mapping is `application/openapi+json`. Upstream federation remains M8.3.
+The issue-branch implementation lives in `@aegisone/discovery-ard` and uses a deterministic in-memory catalog only. Its supported profile is deliberately narrow: `query.filter.type`, omitted/`none` federation, 32 KiB request bodies, 2,000-code-point queries, and at most 25 results. The generic API mapping is `application/openapi+json`. Upstream federation remains M8.3.
 
-ARD belongs in `@proofrail/discovery-ard`, not in the provider-independent capability/evidence model.
+ARD belongs in `@aegisone/discovery-ard`, not in the provider-independent capability/evidence model.
 
-Important boundary: ARD search score is relevance only. ARD `trustManifest`/metadata may be retained as upstream discovery metadata but cannot create ProofRail `REPOSITORY_AUTHENTICATED`, `MATCH`, audit findings, or canonical evidence.
+Important boundary: ARD search score is relevance only. ARD `trustManifest`/metadata may be retained as upstream discovery metadata but cannot create AegisOne `REPOSITORY_AUTHENTICATED`, `MATCH`, audit findings, or canonical evidence.
 
 ## GitHub Agent Finder
 
@@ -51,7 +51,7 @@ POST https://agentfinder.github.com/api/v1/search
 
 The documented public search does not require a paid API key.
 
-ProofRail applies strict timeout/response/result caps, validates the response, preserves source attribution, and never upgrades returned resource metadata into ProofRail trust evidence.
+AegisOne applies strict timeout/response/result caps, validates the response, preserves source attribution, and never upgrades returned resource metadata into AegisOne trust evidence.
 
 ## Hugging Face Discover
 
@@ -67,9 +67,9 @@ REST endpoint:
 POST https://huggingface-hf-discover.hf.space/search
 ```
 
-Hosted MCP endpoint exists upstream, but ProofRail M8.3 uses REST; ProofRail exposes its own MCP surface later in M8.8.
+Hosted MCP endpoint exists upstream, but AegisOne M8.3 uses REST; AegisOne exposes its own MCP surface later in M8.8.
 
-ProofRail does not require or forward user Hugging Face tokens in the MVP.
+AegisOne does not require or forward user Hugging Face tokens in the MVP.
 
 ## Official MCP Registry
 
@@ -95,7 +95,7 @@ GET /v0.1/servers/{serverName}/versions/{version}
 
 Use pagination/incremental fields such as cursor, `updated_since`, search and `version=latest` where appropriate.
 
-A Registry entry is ecosystem metadata. Initial MCP resources remain `INDEXED` unless independent ProofRail evidence actually exists.
+A Registry entry is ecosystem metadata. Initial MCP resources remain `INDEXED` unless independent AegisOne evidence actually exists.
 
 ## GitHub — source provider and source authentication
 
@@ -103,7 +103,7 @@ GitHub has two distinct M8 roles.
 
 ### Exact source acquisition
 
-Existing ProofRail behavior remains:
+Existing AegisOne behavior remains:
 
 - resolve repository metadata/stable identity;
 - resolve source revision to full immutable commit SHA;
@@ -180,7 +180,7 @@ Only explicit authorized verification/evidence work may use the registry writer.
 
 ## 0G Storage
 
-**Purpose:** durable canonical evidence outside mutable ProofRail application state.
+**Purpose:** durable canonical evidence outside mutable AegisOne application state.
 
 Existing pinned implementation:
 
@@ -190,7 +190,7 @@ Existing pinned implementation:
 - dev RPC `https://evmrpc-testnet.0g.ai`
 - Turbo indexer `https://indexer-storage-testnet-turbo.0g.ai`
 
-ProofRail has already live-proven upload, proof-enabled retrieval and exact byte equality.
+AegisOne has already live-proven upload, proof-enabled retrieval and exact byte equality.
 
 M8 reuses this path for selected verification jobs; it does not upload every discovery result.
 
@@ -203,8 +203,8 @@ M4/M7 proved exact-commit independent execution through the current provider pat
 Current TDX evidence limitation remains unchanged:
 
 - provider/runtime TDX evidence exists;
-- live legacy Tapp quote does not bind ProofRail's artifact digest;
-- therefore ProofRail may claim independent 0G reproduction and provider TDX evidence, but not `TEE-attested artifact build`/artifact-output binding.
+- live legacy Tapp quote does not bind AegisOne's artifact digest;
+- therefore AegisOne may claim independent 0G reproduction and provider TDX evidence, but not `TEE-attested artifact build`/artifact-output binding.
 
 M8 reuses the existing Sandbox adapter only for explicitly authorized verification jobs.
 
@@ -212,7 +212,7 @@ M8 reuses the existing Sandbox adapter only for explicitly authorized verificati
 
 **M8 role:** mutable catalog/job/source-claim index.
 
-Use the existing ProofRail Supabase project. Current public tables before M8 catalog migrations are:
+Use the existing AegisOne Supabase project. Current public tables before M8 catalog migrations are:
 
 - `verification_jobs`
 - `proofrail_app_auth`
@@ -221,7 +221,7 @@ Both currently have RLS enabled.
 
 M8 adds resource/discovery/version/ingestion/source-claim/evidence-pointer tables according to `docs/16-m8-database-plan.md`.
 
-Supabase never becomes proof authority. Cached strong evidence must remain integrity-checked against canonical ProofRail evidence/pointers.
+Supabase never becomes proof authority. Cached strong evidence must remain integrity-checked against canonical AegisOne evidence/pointers.
 
 ## Railway
 
@@ -235,7 +235,7 @@ Public:
 - stable resource/evidence reads;
 - GitHub source-auth flow;
 - deterministic policy endpoint;
-- later ProofRail MCP endpoint.
+- later AegisOne MCP endpoint.
 
 Must not contain the 0G private key.
 
@@ -257,12 +257,12 @@ No third permanent Railway service is planned.
 
 M8.8 now makes MCP an active product interface rather than a generic future idea.
 
-Initial ProofRail tools only:
+Initial AegisOne tools only:
 
 ```text
-proofrail_search
-proofrail_inspect
-proofrail_evaluate
+aegisone_search
+aegisone_inspect
+aegisone_evaluate
 ```
 
 They wrap the same discovery/read/policy services as REST. MCP remains an integration convenience, not a trust primitive.

@@ -9,21 +9,21 @@ const bytes = (value: string) => new TextEncoder().encode(value);
 const recipe: BuildRecipe = {
   version: "1",
   runtime: "node-22",
-  workingDirectory: "examples/hello-proofrail",
+  workingDirectory: "examples/hello-aegisone",
   commands: [{ executable: "node", args: ["build.mjs"] }],
-  artifactPath: "dist/hello-proofrail.json",
+  artifactPath: "dist/hello-aegisone.json",
   networkPolicy: "none",
   resourceLimits: { timeoutMs: 60_000, maxOutputBytes: 1_024 },
   environment: {},
 };
 const claim: ReleaseClaim = {
   claimVersion: "1",
-  projectId: "hello-proofrail@1.0.0",
-  publisherIdentity: { type: "github", subject: "Ollie202/proofrail-0g", assuranceLevel: "DECLARED", evidenceReferences: [] },
-  source: { provider: "git", repository: "https://github.com/Ollie202/proofrail-0g.git", commitSha: "e9c82277cef2f7630977e2473664e14eed2f860d" },
+  projectId: "hello-aegisone@1.0.0",
+  publisherIdentity: { type: "github", subject: "Ollie202/aegisone", assuranceLevel: "DECLARED", evidenceReferences: [] },
+  source: { provider: "git", repository: "https://github.com/Ollie202/aegisone.git", commitSha: "e9c82277cef2f7630977e2473664e14eed2f860d" },
   recipeDigest: recipeDigest(recipe),
-  artifactName: "hello-proofrail.json",
-  artifactLocation: "examples/hello-proofrail/fixtures/publisher/hello-proofrail.json",
+  artifactName: "hello-aegisone.json",
+  artifactLocation: "examples/hello-aegisone/fixtures/publisher/hello-aegisone.json",
   releaseTag: "v1.0.0",
   claimAssuranceLevel: "DECLARED",
 };

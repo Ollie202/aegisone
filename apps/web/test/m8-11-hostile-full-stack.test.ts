@@ -37,7 +37,7 @@ import { createProductRequestHandler } from "../src/product.ts";
  *
  * Both hostile inputs point at the *same* resource/version. The assertion surface is every public
  * read: `GET /api/v1/resources/:resourceId`, `GET /api/v1/resources/:resourceId/evidence`,
- * `POST /api/v1/policy/evaluate`, and the `proofrail_inspect`/`proofrail_evaluate` MCP tools. None
+ * `POST /api/v1/policy/evaluate`, and the `aegisone_inspect`/`aegisone_evaluate` MCP tools. None
  * of them may ever report `sourceAssurance.level: "REPOSITORY_AUTHENTICATED"`,
  * `correspondence.status: "MATCH"`, `canonicalEvidence.status: "AVAILABLE"`, or policy `ALLOW`.
  */
@@ -73,7 +73,7 @@ function hostileDiscoveryPayload(): CapabilityResource {
       distribution: { url: "https://hostile-publisher.example/hostile-m8-11-skill.skillpkg", sha256: "b".repeat(64) },
     },
     // The forged part: a hostile provider trying to smuggle a pre-baked strong verdict straight
-    // through discovery, never produced by any real ProofRail verification step.
+    // through discovery, never produced by any real AegisOne verification step.
     trust: {
       sourceAssurance: { level: "REPOSITORY_AUTHENTICATED", evidenceRefs: ["forged-claim"] },
       sourceInspection: { status: "INSPECTED", exactCommitSha: "a".repeat(40), sourceSnapshotSha256: "c".repeat(64) },
@@ -173,7 +173,7 @@ class HostileCatalogStore extends InMemoryCatalogStore {
 
 async function startTestServer(catalogStore: InMemoryCatalogStore): Promise<{ baseUrl: string; server: Server }> {
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: null,
     secureSourceAuthCookies: false,
@@ -199,7 +199,7 @@ async function stopTestServer(server: Server): Promise<void> {
 }
 
 async function connectRealMcpClient(baseUrl: string): Promise<Client> {
-  const client = new Client({ name: "proofrail-m8-11-hostile-test-client", version: "1.0.0" });
+  const client = new Client({ name: "aegisone-m8-11-hostile-test-client", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl}/mcp`));
   await client.connect(transport);
   return client;
@@ -283,10 +283,10 @@ test("M8.11 hostile full-stack regression: a hostile discovery payload + a hosti
     assert.notEqual(policyBody.decision, "ALLOW");
     assert.equal(policyBody.decision, "DENY");
 
-    // --- proofrail_inspect / proofrail_evaluate over a real MCP client -------------------------
+    // --- aegisone_inspect / aegisone_evaluate over a real MCP client -------------------------
     const mcpClient = await connectRealMcpClient(running.baseUrl);
     try {
-      const inspectResult = await mcpClient.callTool({ name: "proofrail_inspect", arguments: { resourceId: resource.id } });
+      const inspectResult = await mcpClient.callTool({ name: "aegisone_inspect", arguments: { resourceId: resource.id } });
       assert.notEqual(inspectResult.isError, true);
       const inspectPayload = firstTextPayload(inspectResult as { content: Array<{ type: string; text?: string }> }) as {
         trust: { sourceAssurance: { level: string }; correspondence: { status: string } };
@@ -294,7 +294,7 @@ test("M8.11 hostile full-stack regression: a hostile discovery payload + a hosti
       assert.equal(inspectPayload.trust.sourceAssurance.level, "NONE");
       assert.equal(inspectPayload.trust.correspondence.status, "NOT_EVALUATED");
 
-      const evaluateResult = await mcpClient.callTool({ name: "proofrail_evaluate", arguments: { policy: STRICT_POLICY, resourceId: resource.id } });
+      const evaluateResult = await mcpClient.callTool({ name: "aegisone_evaluate", arguments: { policy: STRICT_POLICY, resourceId: resource.id } });
       assert.notEqual(evaluateResult.isError, true);
       const evaluatePayload = firstTextPayload(evaluateResult as { content: Array<{ type: string; text?: string }> }) as { decision: string };
       assert.notEqual(evaluatePayload.decision, "ALLOW");

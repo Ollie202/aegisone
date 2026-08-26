@@ -5,7 +5,7 @@
  * package's own `check`/`test` scripts only glob `test/*.test.ts`, not `test/live/**`). Run it
  * explicitly:
  *
- *   pnpm --filter @proofrail/discovery-providers test:live
+ *   pnpm --filter @aegisone/discovery-providers test:live
  *
  * Per AGENTS.md, live network calls are separate smoke/integration evidence; CI/unit tests use
  * the deterministic fixtures in ../fixtures.ts instead.

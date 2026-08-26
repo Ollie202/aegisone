@@ -94,8 +94,8 @@ export function isSafeReturnTo(value: string): boolean {
   try {
     // Resolve against a fixed dummy origin; reject if the parsed origin/host differs (i.e. the
     // value smuggled a scheme/host, e.g. "/\t/evil.com" or "/..%2f..").
-    const resolved = new URL(value, "https://proofrail.local");
-    return resolved.origin === "https://proofrail.local";
+    const resolved = new URL(value, "https://aegisone.local");
+    return resolved.origin === "https://aegisone.local";
   } catch {
     return false;
   }

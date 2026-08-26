@@ -4,7 +4,7 @@
   "artifactKind": "agent-skill",
   "status": "GALILEO_VERIFIED",
   "source": {
-    "repository": "https://github.com/Ollie202/proofrail-0g.git",
+    "repository": "https://github.com/Ollie202/aegisone.git",
     "commitSha": "2f193aad92d2f807c2e25f67eb28c5090fa945cf",
     "subdirectory": "examples/agent-skills/clean-review",
     "acquisitionMethod": "GITHUB_API_EXACT_SHA_TARBALL",

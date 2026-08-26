@@ -71,7 +71,7 @@ export async function runLocalBuild(input: {
 }): Promise<LocalBuildResult> {
   validateBuildRecipe(input.recipe);
   if (!/^[0-9a-f]{40}$/.test(input.source.commitSha)) throw new Error("A full immutable Git commit SHA is required");
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "proofrail-local-"));
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "aegisone-local-"));
   const checkout = join(temporaryRoot, "source");
   try {
     await git(["clone", "--quiet", "--no-checkout", "--", resolve(input.repositoryPath), checkout]);

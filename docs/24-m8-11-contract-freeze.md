@@ -17,8 +17,8 @@ point M9 needs and where it comes from.
 | `GET /api/v1/resources/:resourceId/evidence` | `docs/20-m8-api-contract.md` |
 | `POST /api/v1/policy/evaluate` | `docs/20-m8-api-contract.md` |
 | `GET /auth/github/start`, `GET /auth/github/callback`, `GET /api/v1/source-auth/github/repositories`, `POST /api/v1/source-claims`, `GET /api/v1/source-claims/:claimId` | `docs/14-source-authentication.md` §"Implemented HTTP response shapes (M8.11 contract freeze)" |
-| `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` (MCP) | `docs/21-m8-mcp-interface.md` |
-| `@proofrail/capability-model` types (`CapabilityResource`, `CapabilityTrustEvidence`, `TrustPolicy`, `TrustPolicyResult`) | `packages/capability-model/src/model.ts` (source of truth); narrative in `docs/13-m8-backend-blueprint.md` |
+| `aegisone_search`, `aegisone_inspect`, `aegisone_evaluate` (MCP) | `docs/21-m8-mcp-interface.md` |
+| `@aegisone/capability-model` types (`CapabilityResource`, `CapabilityTrustEvidence`, `TrustPolicy`, `TrustPolicyResult`) | `packages/capability-model/src/model.ts` (source of truth); narrative in `docs/13-m8-backend-blueprint.md` |
 
 ## Consolidated error-code reference
 
@@ -44,7 +44,7 @@ interface ApiV1ErrorResponse {
 | `version_not_found` | 404 | version id does not belong to the given resource |
 | `invalid_request` | 400 | malformed JSON, missing/duplicate `resource`/`resourceId`, bad path segment encoding |
 | `invalid_policy` | 400 | malformed `TrustPolicy` (schema version, enum values, non-positive age) |
-| `invalid_resource` | 400 | inline `resource` fails `@proofrail/capability-model` structural validation (`details` carries issues) |
+| `invalid_resource` | 400 | inline `resource` fails `@aegisone/capability-model` structural validation (`details` carries issues) |
 | `unsupported_media_type` | 415 | non-`application/json` content type |
 | `request_too_large` | 413 | body exceeds the route's byte limit |
 
@@ -131,8 +131,8 @@ pre-frontend security gate" was re-verified against the current `main` before th
 | Request/page/upstream response limits | Existing per-route tests across `discovery-ard`, `discovery-providers`, `api-v1.test.ts`, `mcp.ts` | Reused, confirmed still green |
 | Provider timeout/failure isolation | Existing `packages/discovery-providers` outage-isolation tests (M8.3/M8.10) | Reused, confirmed still green |
 | GitHub read-only authority cannot become repository authenticated | Existing `source-auth.test.ts` "read-only authority never upgrades a claim" | Reused, confirmed still green |
-| DB/discovery metadata cannot manufacture trust evidence, through the full REST+MCP stack | **New**: `apps/web/test/m8-11-hostile-full-stack.test.ts` — a hostile discovery-provider-shaped payload (forged `REPOSITORY_AUTHENTICATED`/`MATCH`/`AVAILABLE` trust submitted through the real `upsertDiscoveredResource` entry point) plus a hostile catalog-store row (a `CatalogStore` subclass returning a tampered source claim and a structurally-invalid capability-verification row, bypassing write-time validation to simulate a mutated Supabase row) are asserted, through a real HTTP server and a real MCP SDK client, to never reach `ALLOW`/`MATCH`/`REPOSITORY_AUTHENTICATED` on `GET /api/v1/resources/:id`, `GET /api/v1/resources/:id/evidence`, `POST /api/v1/policy/evaluate`, `proofrail_inspect`, or `proofrail_evaluate`. Prior coverage of this invariant (`api-v1.test.ts`'s DB-tampering tests) called `assembleTrustEvidence` directly at the unit level; this is the first test to drive it through the live HTTP+MCP transport end to end. | **Added this issue** |
-| MCP exposes no install/execute/sign primitive | Existing `mcp.test.ts` "lists exactly the three allowed ProofRail tools" | Reused, confirmed still green |
+| DB/discovery metadata cannot manufacture trust evidence, through the full REST+MCP stack | **New**: `apps/web/test/m8-11-hostile-full-stack.test.ts` — a hostile discovery-provider-shaped payload (forged `REPOSITORY_AUTHENTICATED`/`MATCH`/`AVAILABLE` trust submitted through the real `upsertDiscoveredResource` entry point) plus a hostile catalog-store row (a `CatalogStore` subclass returning a tampered source claim and a structurally-invalid capability-verification row, bypassing write-time validation to simulate a mutated Supabase row) are asserted, through a real HTTP server and a real MCP SDK client, to never reach `ALLOW`/`MATCH`/`REPOSITORY_AUTHENTICATED` on `GET /api/v1/resources/:id`, `GET /api/v1/resources/:id/evidence`, `POST /api/v1/policy/evaluate`, `aegisone_inspect`, or `aegisone_evaluate`. Prior coverage of this invariant (`api-v1.test.ts`'s DB-tampering tests) called `assembleTrustEvidence` directly at the unit level; this is the first test to drive it through the live HTTP+MCP transport end to end. | **Added this issue** |
+| MCP exposes no install/execute/sign primitive | Existing `mcp.test.ts` "lists exactly the three allowed AegisOne tools" | Reused, confirmed still green |
 | Canonical evidence integrity still gates cached strong verdicts | Existing `api-v1.test.ts` DB-tampering unit tests, now also covered end-to-end by the new hostile full-stack test above | Reused + extended this issue |
 
 No existing label, test, or invariant was weakened to produce this table.

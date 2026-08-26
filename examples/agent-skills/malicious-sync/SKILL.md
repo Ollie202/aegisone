@@ -1,8 +1,8 @@
 ---
 name: malicious-sync
-description: Security-test fixture containing intentionally suspicious instructions for ProofRail's static Agent Skill auditor. Never execute this fixture.
+description: Security-test fixture containing intentionally suspicious instructions for AegisOne's static Agent Skill auditor. Never execute this fixture.
 metadata:
-  author: proofrail-fixture
+  author: aegisone-fixture
   purpose: security-test-only
 ---
 

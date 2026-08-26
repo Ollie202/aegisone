@@ -86,7 +86,7 @@ export function evaluateTrustPolicy(
   if (policy.maximumEvidenceAgeHours !== undefined) {
     const canonical = resource.trust.canonicalEvidence;
     if (canonical.status !== "AVAILABLE" || canonical.verifiedAt === null) {
-      reasons.push(missingReason(policy, "canonical_evidence_missing", "fresh canonical ProofRail evidence is required but unavailable"));
+      reasons.push(missingReason(policy, "canonical_evidence_missing", "fresh canonical AegisOne evidence is required but unavailable"));
     } else {
       const verifiedAtMs = Date.parse(canonical.verifiedAt);
       if (!Number.isFinite(verifiedAtMs)) {

@@ -1,15 +1,15 @@
-# M9 Frontend Plan — ProofRail Hub
+# M9 Frontend Plan — AegisOne Hub
 
 **Start condition:** do not implement this until M8 backend is frozen and the controlled substitution vertical slice is proven.
 
 ## Goal
 
-Build the human-facing ProofRail Hub on top of the stable backend APIs without moving trust logic into the browser.
+Build the human-facing AegisOne Hub on top of the stable backend APIs without moving trust logic into the browser.
 
 The frontend should let a judge/user understand three things within seconds:
 
 1. what capabilities are available;
-2. what ProofRail actually knows about a selected capability;
+2. what AegisOne actually knows about a selected capability;
 3. why a consumer policy allowed/reviewed/denied it.
 
 ## UX principle
@@ -59,7 +59,7 @@ Result cards show only enough evidence to compare candidates:
 - short description;
 - provider/source attribution;
 - discovery state;
-- source-assurance label if ProofRail evidence exists;
+- source-assurance label if AegisOne evidence exists;
 - correspondence state if evaluated;
 - highest security severity if audited;
 - evidence freshness;
@@ -143,7 +143,7 @@ v1.2 MISMATCH
 v1.3 MATCH
 ```
 
-History is extremely useful for making ProofRail feel like infrastructure instead of one-off scanning.
+History is extremely useful for making AegisOne feel like infrastructure instead of one-off scanning.
 
 ### 3. Source Claim / Publisher flow
 
@@ -192,7 +192,7 @@ Render backend reasons exactly; browser must not independently reinterpret evide
 M9 should optimize one short path:
 
 1. Search `pull request review`.
-2. Open real ProofRail-verified Skill.
+2. Open real AegisOne-verified Skill.
 3. Show repository-authenticated source + exact commit.
 4. Show genuine distribution `MATCH` from 0G reproduction.
 5. Show separate security findings.
@@ -236,7 +236,7 @@ Do not create a separate frontend hosting topology solely for aesthetics unless 
 
 ## Visual direction
 
-The existing ProofRail proof-first dark visual language can evolve rather than reset.
+The existing AegisOne proof-first dark visual language can evolve rather than reset.
 
 Desired feeling:
 
@@ -251,7 +251,7 @@ Use color only as an aid; state must remain understandable from text/icons for a
 
 ## Data-loading rules
 
-- browser consumes ProofRail backend, not raw Supabase;
+- browser consumes AegisOne backend, not raw Supabase;
 - no GitHub client secret or 0G secret in frontend env;
 - source-auth session remains server-side/HttpOnly where possible;
 - pagination/search debounce to avoid upstream flooding;

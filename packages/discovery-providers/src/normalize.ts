@@ -5,11 +5,11 @@ import { ARD_MEDIA_TYPE_TO_RESOURCE_KIND, type ArdResourceMediaType } from "../.
 /**
  * Lenient inbound normalization for third-party discovery providers.
  *
- * This is intentionally separate from `@proofrail/discovery-ard`'s `assertValidArdEntry`,
- * which enforces ProofRail's own outbound `urn:air:` catalog identifier convention. Real
+ * This is intentionally separate from `@aegisone/discovery-ard`'s `assertValidArdEntry`,
+ * which enforces AegisOne's own outbound `urn:air:` catalog identifier convention. Real
  * external providers (observed live: GitHub Agent Finder uses `urn:ai:...`) do not follow
  * that convention, so this validator only requires the minimum ARD-search-result-shaped
- * fields ProofRail actually needs, and drops anything else silently rather than throwing.
+ * fields AegisOne actually needs, and drops anything else silently rather than throwing.
  *
  * Upstream `trustManifest`, `metadata`, `score`, and `source` fields are read only for the
  * bounded discovery-relevance purposes below (relevance score, provider attribution) and are
@@ -58,7 +58,7 @@ function normalizedScore(raw: unknown): number | undefined {
 
 /**
  * Normalizes one raw upstream search-result entry into a validated `CapabilityResource`, or
- * returns `null` if the entry does not carry the minimum fields ProofRail requires. A dropped
+ * returns `null` if the entry does not carry the minimum fields AegisOne requires. A dropped
  * entry never throws and never fails the provider's whole search call.
  */
 export function normalizeProviderEntry(raw: unknown, context: NormalizeProviderEntryContext): CapabilityResource | null {

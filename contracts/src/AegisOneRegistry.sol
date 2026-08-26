@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-/// @title ProofRailRegistry
+/// @title AegisOneRegistry
 /// @notice Immutable registry of compact software reproduction evidence commitments.
 /// @dev Registration proves only that these commitments were anchored by `submitter`.
 ///      It does not prove source ownership, software safety, or that two artifact digests match.
-contract ProofRailRegistry {
+contract AegisOneRegistry {
     enum CommitmentField {
         ManifestDigest,
         SourceClaimDigest,

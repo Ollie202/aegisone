@@ -1,28 +1,28 @@
-# ProofRail *(submission name / working brand)*
+# AegisOne *(submission name / working brand)*
 
 > Independently reproduce software or Agent Skills from publisher-declared source and give humans or AI agents evidence of whether the distributed artifact actually corresponds to that source.
 
 **Status:** M1–M7 live-proven; submission-readiness pass in progress  
 **Current target:** 0G Bridge Buildathon — Wave 3  
 **Live app:** https://proofrail-app-production.up.railway.app  
-**Public source:** https://github.com/Ollie202/proofrail-0g
+**Public source:** https://github.com/Ollie202/aegisone
 
-`ProofRail` remains the submission name for this build. A separate brand-risk note is retained in `research/brand-risk.md`; the name is not being represented as a cleared production trademark.
+`AegisOne` remains the submission name for this build. A separate brand-risk note is retained in `research/brand-risk.md`; the name is not being represented as a cleared production trademark.
 
 ## The problem
 
 A public source repository does **not** by itself prove that the binary, archive, package, container, or Agent Skill users receive actually corresponds to that source. A compromised release server, CI system, maintainer account, marketplace, or distribution pipeline can serve different bytes while the public source still looks clean.
 
-ProofRail independently reproduces the artifact from an exact source claim and records evidence that can be checked without trusting mutable application state.
+AegisOne independently reproduces the artifact from an exact source claim and records evidence that can be checked without trusting mutable application state.
 
-## What ProofRail proves
+## What AegisOne proves
 
-ProofRail separates claims instead of collapsing them into one vague trust score.
+AegisOne separates claims instead of collapsing them into one vague trust score.
 
 ### Software correspondence
 
 1. The publisher declares the repository, exact commit, build recipe, and artifact.
-2. ProofRail independently rebuilds that exact source.
+2. AegisOne independently rebuilds that exact source.
 3. Exact artifact digests are compared as `MATCH` / `MISMATCH`.
 
 ### Agent Skill correspondence + security
@@ -58,7 +58,7 @@ explicit source claim
 
 The M5 genuine software artifact reproduced byte-for-byte at SHA-256 `9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`; a one-byte substituted publisher artifact produced `MISMATCH` while the reproduced bytes remained unchanged.
 
-The M5 canonical verification is anchored on 0G Aristotle mainnet in `ProofRailRegistry` at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. See `hackathon/m5-aristotle-mainnet.json` for the durable receipts.
+The M5 canonical verification is anchored on 0G Aristotle mainnet in `ProofRailRegistry` (now `AegisOneRegistry` in source; the already-deployed mainnet contract's on-chain identity is historical and unchanged) at `0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4`. See `hackathon/m5-aristotle-mainnet.json` for the durable receipts.
 
 ## Proven Agent Skill path — M7
 
@@ -66,7 +66,7 @@ The live M7 proof used `examples/agent-skills/clean-review` at exact source comm
 
 `2f193aad92d2f807c2e25f67eb28c5090fa945cf`
 
-Inside 0G Sandbox, ProofRail verified that exact SHA through GitHub's commit API, downloaded the tarball for that exact SHA, extracted it, deterministically packaged the skill directory, and compared the package with the publisher package.
+Inside 0G Sandbox, AegisOne verified that exact SHA through GitHub's commit API, downloaded the tarball for that exact SHA, extracted it, deterministically packaged the skill directory, and compared the package with the publisher package.
 
 Observed result:
 
@@ -77,9 +77,9 @@ Independent 0G package SHA-256        fb33d144...2b78e878
                                       MATCH
 ```
 
-A controlled publisher substitution produced SHA-256 `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb`, so ProofRail reported `MISMATCH` while the independently reproduced package stayed unchanged.
+A controlled publisher substitution produced SHA-256 `da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb`, so AegisOne reported `MISMATCH` while the independently reproduced package stayed unchanged.
 
-The clean fixture's deterministic static audit produced `0` findings. Separate malicious fixtures and tests prove that ProofRail can display `MATCH + CRITICAL_FINDINGS` without calling the skill safe. LLM advisory analysis is explicitly `NOT_RUN` in deterministic evidence.
+The clean fixture's deterministic static audit produced `0` findings. Separate malicious fixtures and tests prove that AegisOne can display `MATCH + CRITICAL_FINDINGS` without calling the skill safe. LLM advisory analysis is explicitly `NOT_RUN` in deterministic evidence.
 
 ### M7 live evidence
 
@@ -99,7 +99,7 @@ M7 also prepares the equivalent Aristotle commitments, but their state is delibe
 
 ## Product topology
 
-ProofRail separates ordinary product state from verification truth:
+AegisOne separates ordinary product state from verification truth:
 
 ```text
 Supabase         = mutable job/app memory
@@ -112,7 +112,7 @@ proofrail-worker = controlled secret-bearing worker, standby by default
 
 Production Railway is intentionally consolidated to only `proofrail-app` and `proofrail-worker`. The old milestone-specific M2/M3/M4/M5 service boxes have been removed after their evidence was preserved.
 
-The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. Cached verification results are rendered only after ProofRail's integrity-checked presentation layer accepts the evidence.
+The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. Cached verification results are rendered only after AegisOne's integrity-checked presentation layer accepts the evidence.
 
 The permanent `proofrail-worker` preserves the 0G signer as a Railway project-level shared secret. Its startup invariant confirms that the signer is configured while public signing is disabled; there is no public signing endpoint.
 
@@ -122,9 +122,9 @@ The live provider returned real TDX evidence. For M7 the TDX evidence SHA-256 is
 
 However, the live legacy Tapp quote still uses provider-signer-padded report data. The caller artifact digest is **not** cryptographically bound into that quote, and the public toolbox flow does not prove the final artifact was computed inside the TEE.
 
-ProofRail therefore reports provider TDX evidence honestly rather than claiming an output-digest-bound TEE build.
+AegisOne therefore reports provider TDX evidence honestly rather than claiming an output-digest-bound TEE build.
 
-## What ProofRail is not
+## What AegisOne is not
 
 - a guarantee that matched source is benevolent;
 - an LLM deciding MATCH/MISMATCH;

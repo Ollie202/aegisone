@@ -50,7 +50,7 @@ Test security-critical invariants, not vanity test counts.
 
 ## Demo fixture
 
-Keep one intentionally tiny `hello-proofrail` project whose artifact output is deterministic. This is an engineering test fixture first and a demo aid second.
+Keep one intentionally tiny `hello-aegisone` project whose artifact output is deterministic. This is an engineering test fixture first and a demo aid second.
 
 ## M1 implementation evidence
 

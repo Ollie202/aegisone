@@ -1,6 +1,6 @@
 # Competitors & Alternatives
 
-ProofRail must be built with the assumption that software provenance is a mature category.
+AegisOne must be built with the assumption that software provenance is a mature category.
 
 ## GitHub Artifact Attestations
 
@@ -10,7 +10,7 @@ References:
 - https://docs.github.com/en/actions/concepts/security/artifact-attestations
 - https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
 
-**Implication:** publisher-side provenance is not sufficient differentiation. ProofRail should consume/interoperate with attestations where useful and focus on independent corroboration.
+**Implication:** publisher-side provenance is not sufficient differentiation. AegisOne should consume/interoperate with attestations where useful and focus on independent corroboration.
 
 ## Sigstore / Cosign / in-toto
 
@@ -56,7 +56,7 @@ Existing/recent systems explore comparing build results across providers or dece
 
 ## Strategic position
 
-ProofRail should aim to be:
+AegisOne should aim to be:
 
 > **the easy verification/policy layer that aggregates independent reproduction evidence for humans, CI, and agents**
 

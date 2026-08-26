@@ -36,7 +36,7 @@ async function authorized(request: Request): Promise<boolean> {
     .select("token_sha256")
     .eq("singleton", true)
     .single();
-  if (error || !data?.token_sha256) throw new Error(`ProofRail auth configuration unavailable: ${error?.message ?? "missing row"}`);
+  if (error || !data?.token_sha256) throw new Error(`AegisOne auth configuration unavailable: ${error?.message ?? "missing row"}`);
   return constantTimeEqual(await sha256Hex(token), data.token_sha256);
 }
 

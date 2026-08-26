@@ -11,7 +11,7 @@ import type { DistributionArtifactRequest, DistributionAcquisitionOutcome } from
  * one, e.g. `packages/source-auth-github/src/github-client.ts`, is pinned to a single fixed
  * origin), but it deliberately reuses the *existing* canonical package decoder
  * (`decodeCanonicalSkillPackage`) rather than adding a second archive extractor: the supported
- * distribution artifact family for M8.6 is exactly ProofRail's own
+ * distribution artifact family for M8.6 is exactly AegisOne's own
  * `proofrail-agent-skill-package-v1` canonical package format, the same format
  * `packages/m7-flow` already requires (`SkillSourceClaim.packageFormat`). Extraction/path/
  * duplicate/file-count protection is therefore entirely inherited from

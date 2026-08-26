@@ -5,7 +5,7 @@
 
 ## Decision
 
-ProofRail will never infer or label an arbitrary repository as the official source without explicit identity evidence.
+AegisOne will never infer or label an arbitrary repository as the official source without explicit identity evidence.
 
 Every release begins from a `ReleaseClaim` connecting publisher/declarant, repository, immutable commit, build recipe, and artifact. Source assurance is represented separately from artifact-reproduction assurance.
 

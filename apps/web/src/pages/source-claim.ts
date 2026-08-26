@@ -16,7 +16,7 @@ export function renderSourceClaimPageHtml(state: SourceClaimPageState): string {
     <ol class="stepList">
       <li>
         <strong>Connect GitHub</strong>
-        <p>Sign in with GitHub so ProofRail can check your effective write/admin authority over the repository you claim.</p>
+        <p>Sign in with GitHub so AegisOne can check your effective write/admin authority over the repository you claim.</p>
         <button type="button" class="button button--primary" id="connect-github"${state.githubConfigured ? "" : " disabled"}>Connect GitHub</button>
         <span id="github-session-status" class="cardNote"></span>
       </li>
@@ -52,7 +52,7 @@ export function renderSourceClaimPageHtml(state: SourceClaimPageState): string {
   `;
 
   return renderLayoutHtml({
-    title: "Source claim — ProofRail Hub",
+    title: "Source claim — AegisOne Hub",
     activeNav: "source-claim",
     bodyHtml: body,
     scriptTag: `<script type="module" src="/static/app.js" data-page="source-claim"></script>`,

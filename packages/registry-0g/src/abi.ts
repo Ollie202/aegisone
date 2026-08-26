@@ -1,4 +1,4 @@
-export const PROOFRAIL_REGISTRY_ABI = [
+export const AEGISONE_REGISTRY_ABI = [
   "function registerEvidence(bytes32 manifestDigest, bytes32 sourceClaimDigest, bytes32 publisherArtifactDigest, bytes32 reproducedArtifactDigest, bytes32 provenanceRoot) returns (bytes32 recordId)",
   "function computeRecordId(bytes32 manifestDigest, bytes32 sourceClaimDigest, bytes32 publisherArtifactDigest, bytes32 reproducedArtifactDigest, bytes32 provenanceRoot) pure returns (bytes32 recordId)",
   "function exists(bytes32 recordId) view returns (bool)",

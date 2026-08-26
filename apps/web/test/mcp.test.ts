@@ -13,7 +13,7 @@ import { createProductRequestHandler } from "../src/product.ts";
  * M8.8 (Issue #27): end-to-end proof that a *real* MCP TypeScript SDK client (not a hand-rolled
  * test double) can connect over the actual chosen transport (Streamable HTTP, mounted at
  * `POST /mcp` on the same `proofrail-app` HTTP server `createProductRequestHandler` builds) and
- * call all three ProofRail tools. What this proves: the wire protocol, tool schemas, and handler
+ * call all three AegisOne tools. What this proves: the wire protocol, tool schemas, and handler
  * wiring all work end-to-end against a real in-process HTTP server using the official SDK's own
  * client. What this does NOT prove: that a specific external product (Claude Desktop, Claude
  * Code's own MCP config, etc.) renders/consumes these tools correctly in its UI — that step
@@ -29,7 +29,7 @@ interface TestServer {
 async function startTestServer(): Promise<TestServer> {
   const catalogStore = new InMemoryCatalogStore();
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: null,
     secureSourceAuthCookies: false,
@@ -55,7 +55,7 @@ async function stopTestServer(server: Server): Promise<void> {
 }
 
 async function connectRealMcpClient(baseUrl: string): Promise<Client> {
-  const client = new Client({ name: "proofrail-mcp-test-client", version: "1.0.0" });
+  const client = new Client({ name: "aegisone-mcp-test-client", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl}/mcp`));
   await client.connect(transport);
   return client;
@@ -167,15 +167,15 @@ function firstTextPayload(result: { content: Array<{ type: string; text?: string
 // Tool surface / Threat M8-018 denylist
 // ---------------------------------------------------------------------------
 
-test("a real MCP SDK client can connect over Streamable HTTP and lists exactly the three allowed ProofRail tools", async () => {
+test("a real MCP SDK client can connect over Streamable HTTP and lists exactly the three allowed AegisOne tools", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const { tools } = await client.listTools();
     const names = tools.map((tool) => tool.name).sort();
-    assert.deepEqual(names, ["proofrail_evaluate", "proofrail_inspect", "proofrail_search"]);
+    assert.deepEqual(names, ["aegisone_evaluate", "aegisone_inspect", "aegisone_search"]);
 
-    const forbidden = ["proofrail_install", "proofrail_execute", "proofrail_sign", "proofrail_run_arbitrary_build", "proofrail_upload_secret"];
+    const forbidden = ["aegisone_install", "aegisone_execute", "aegisone_sign", "aegisone_run_arbitrary_build", "aegisone_upload_secret"];
     for (const bannedName of forbidden) {
       assert.ok(!names.includes(bannedName), `${bannedName} must never be exposed (docs/17 Threat M8-018)`);
     }
@@ -191,14 +191,14 @@ test("a real MCP SDK client can connect over Streamable HTTP and lists exactly t
 });
 
 // ---------------------------------------------------------------------------
-// proofrail_search
+// aegisone_search
 // ---------------------------------------------------------------------------
 
-test("proofrail_search wraps the same local ARD catalog search POST /search uses", async () => {
+test("aegisone_search wraps the same local ARD catalog search POST /search uses", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
-    const result = await client.callTool({ name: "proofrail_search", arguments: { text: "review my pull request", type: ["application/ai-skill"] } });
+    const result = await client.callTool({ name: "aegisone_search", arguments: { text: "review my pull request", type: ["application/ai-skill"] } });
     assert.notEqual(result.isError, true);
     const payload = firstTextPayload(result as { content: Array<{ type: string; text?: string }> });
     const results = payload.results as Array<Record<string, unknown>>;
@@ -211,11 +211,11 @@ test("proofrail_search wraps the same local ARD catalog search POST /search uses
   }
 });
 
-test("proofrail_search rejects empty query text without ever reaching the search service (malformed input)", async () => {
+test("aegisone_search rejects empty query text without ever reaching the search service (malformed input)", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
-    const result = await client.callTool({ name: "proofrail_search", arguments: { text: "" } });
+    const result = await client.callTool({ name: "aegisone_search", arguments: { text: "" } });
     assert.equal(result.isError, true);
   } finally {
     await client.close();
@@ -223,11 +223,11 @@ test("proofrail_search rejects empty query text without ever reaching the search
   }
 });
 
-test("proofrail_search surfaces an unsupported federation provider id as a structured tool error, not a crash", async () => {
+test("aegisone_search surfaces an unsupported federation provider id as a structured tool error, not a crash", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
-    const result = await client.callTool({ name: "proofrail_search", arguments: { text: "anything", federation: ["not-a-real-provider"] } });
+    const result = await client.callTool({ name: "aegisone_search", arguments: { text: "anything", federation: ["not-a-real-provider"] } });
     assert.equal(result.isError, true);
     const payload = firstTextPayload(result as { content: Array<{ type: string; text?: string }> });
     assert.equal(payload.error, "invalid_request");
@@ -238,14 +238,14 @@ test("proofrail_search surfaces an unsupported federation provider id as a struc
 });
 
 // ---------------------------------------------------------------------------
-// proofrail_inspect
+// aegisone_inspect
 // ---------------------------------------------------------------------------
 
-test("proofrail_inspect returns resource_not_found for an unknown resourceId", async () => {
+test("aegisone_inspect returns resource_not_found for an unknown resourceId", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
-    const result = await client.callTool({ name: "proofrail_inspect", arguments: { resourceId: "does-not-exist" } });
+    const result = await client.callTool({ name: "aegisone_inspect", arguments: { resourceId: "does-not-exist" } });
     assert.equal(result.isError, true);
     const payload = firstTextPayload(result as { content: Array<{ type: string; text?: string }> });
     assert.equal(payload.error, "resource_not_found");
@@ -255,11 +255,11 @@ test("proofrail_inspect returns resource_not_found for an unknown resourceId", a
   }
 });
 
-test("proofrail_inspect rejects a missing resourceId (malformed input)", async () => {
+test("aegisone_inspect rejects a missing resourceId (malformed input)", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
-    const result = await client.callTool({ name: "proofrail_inspect", arguments: {} });
+    const result = await client.callTool({ name: "aegisone_inspect", arguments: {} });
     assert.equal(result.isError, true);
   } finally {
     await client.close();
@@ -267,12 +267,12 @@ test("proofrail_inspect rejects a missing resourceId (malformed input)", async (
   }
 });
 
-test("proofrail_inspect never upgrades a purely INDEXED resource: every trust dimension stays NONE/NOT_RUN/NOT_EVALUATED", async () => {
+test("aegisone_inspect never upgrades a purely INDEXED resource: every trust dimension stays NONE/NOT_RUN/NOT_EVALUATED", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const resource = await seedIndexedOnlyResource(running.catalogStore);
-    const result = await client.callTool({ name: "proofrail_inspect", arguments: { resourceId: resource.id } });
+    const result = await client.callTool({ name: "aegisone_inspect", arguments: { resourceId: resource.id } });
     assert.notEqual(result.isError, true);
     const payload = firstTextPayload(result as { content: Array<{ type: string; text?: string }> });
     const trust = payload.trust as Record<string, Record<string, unknown>>;
@@ -293,12 +293,12 @@ test("proofrail_inspect never upgrades a purely INDEXED resource: every trust di
   }
 });
 
-test("proofrail_inspect reports independent MATCH/REPOSITORY_AUTHENTICATED dimensions for a fully verified resource", async () => {
+test("aegisone_inspect reports independent MATCH/REPOSITORY_AUTHENTICATED dimensions for a fully verified resource", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const resource = await seedAuthenticatedMatchResource(running.catalogStore);
-    const result = await client.callTool({ name: "proofrail_inspect", arguments: { resourceId: resource.id } });
+    const result = await client.callTool({ name: "aegisone_inspect", arguments: { resourceId: resource.id } });
     assert.notEqual(result.isError, true);
     const payload = firstTextPayload(result as { content: Array<{ type: string; text?: string }> });
     const trust = payload.trust as Record<string, Record<string, unknown>>;
@@ -316,15 +316,15 @@ test("proofrail_inspect reports independent MATCH/REPOSITORY_AUTHENTICATED dimen
 });
 
 // ---------------------------------------------------------------------------
-// proofrail_evaluate
+// aegisone_evaluate
 // ---------------------------------------------------------------------------
 
-test("proofrail_evaluate DENYs an inline resource missing required evidence under a DENY missing-evidence policy", async () => {
+test("aegisone_evaluate DENYs an inline resource missing required evidence under a DENY missing-evidence policy", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const result = await client.callTool({
-      name: "proofrail_evaluate",
+      name: "aegisone_evaluate",
       arguments: {
         policy: { schemaVersion: "1", missingEvidenceDecision: "DENY", minimumSourceAssurance: "REPOSITORY_AUTHENTICATED", requireCorrespondence: "MATCH" },
         resource: skillResource(),
@@ -340,13 +340,13 @@ test("proofrail_evaluate DENYs an inline resource missing required evidence unde
   }
 });
 
-test("proofrail_evaluate ALLOWs a fully verified resourceId under a satisfied policy, reusing the same integrity-checked assembly as GET /api/v1/resources/:resourceId", async () => {
+test("aegisone_evaluate ALLOWs a fully verified resourceId under a satisfied policy, reusing the same integrity-checked assembly as GET /api/v1/resources/:resourceId", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const resource = await seedAuthenticatedMatchResource(running.catalogStore);
     const result = await client.callTool({
-      name: "proofrail_evaluate",
+      name: "aegisone_evaluate",
       arguments: {
         policy: { schemaVersion: "1", missingEvidenceDecision: "REVIEW", minimumSourceAssurance: "REPOSITORY_AUTHENTICATED", requireCorrespondence: "MATCH", maximumAuditSeverity: "MEDIUM" },
         resourceId: resource.id,
@@ -361,12 +361,12 @@ test("proofrail_evaluate ALLOWs a fully verified resourceId under a satisfied po
   }
 });
 
-test("proofrail_evaluate rejects supplying both resource and resourceId (malformed input)", async () => {
+test("aegisone_evaluate rejects supplying both resource and resourceId (malformed input)", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const result = await client.callTool({
-      name: "proofrail_evaluate",
+      name: "aegisone_evaluate",
       arguments: {
         policy: { schemaVersion: "1", missingEvidenceDecision: "REVIEW" },
         resource: skillResource(),
@@ -382,12 +382,12 @@ test("proofrail_evaluate rejects supplying both resource and resourceId (malform
   }
 });
 
-test("proofrail_evaluate rejects a malformed policy object (malformed input)", async () => {
+test("aegisone_evaluate rejects a malformed policy object (malformed input)", async () => {
   const running = await startTestServer();
   const client = await connectRealMcpClient(running.baseUrl);
   try {
     const result = await client.callTool({
-      name: "proofrail_evaluate",
+      name: "aegisone_evaluate",
       arguments: { policy: { schemaVersion: "1", missingEvidenceDecision: "not-a-real-value" }, resource: skillResource() },
     });
     assert.equal(result.isError, true);

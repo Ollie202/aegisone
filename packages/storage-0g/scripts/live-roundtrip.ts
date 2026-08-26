@@ -1,7 +1,7 @@
 import { canonicalBytes, canonicalJson } from "../../core/src/canonical.ts";
 import { createVerification } from "../../core/src/verify.ts";
 import { runLocalBuild } from "../../runner-local/src/run.ts";
-import { makeHelloProofRailFixture } from "../../../examples/hello-proofrail/fixture.ts";
+import { makeHelloAegisOneFixture } from "../../../examples/hello-aegisone/fixture.ts";
 import { performStorageRoundTrip } from "../src/roundtrip.ts";
 import { StorageRoundTripError, type StorageRoundTripEvidence } from "../src/types.ts";
 
@@ -18,7 +18,7 @@ async function main(): Promise<void> {
 
   // Delay SDK loading until configuration is present so offline tests do not pretend to exercise the network.
   const { ZeroGSdkTransport } = await import("../src/sdk.ts");
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   try {
     const build = await runLocalBuild({
       source: fixture.claim.source,
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
     const originalLog = console.log;
     const originalError = console.error;
     // The SDK is noisy. Suppress its console output so a future SDK release cannot
-    // accidentally serialize signer state into Railway logs. Structured ProofRail
+    // accidentally serialize signer state into Railway logs. Structured AegisOne
     // success/failure output is emitted after the SDK call completes.
     console.log = () => {};
     console.error = () => {};

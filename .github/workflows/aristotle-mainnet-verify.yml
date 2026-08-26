@@ -7,7 +7,7 @@ on:
     paths:
       - .github/workflows/aristotle-mainnet-verify.yml
       - packages/m5-flow/scripts/verify-aristotle.ts
-      - contracts/src/ProofRailRegistry.sol
+      - contracts/src/AegisOneRegistry.sol
 
 concurrency:
   group: aristotle-mainnet-verify-${{ github.ref }}
@@ -27,6 +27,6 @@ jobs:
       - run: corepack enable
       - run: corepack prepare pnpm@10.15.0 --activate
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm --filter @proofrail/contracts compile
+      - run: pnpm --filter @aegisone/contracts compile
       - name: Verify Aristotle deployment, registration, readback and fee cap
         run: node --experimental-strip-types packages/m5-flow/scripts/verify-aristotle.ts

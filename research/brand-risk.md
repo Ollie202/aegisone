@@ -2,11 +2,11 @@
 
 ## Status
 
-**ProofRail is a working name only.**
+**AegisOne is a working name only.** (This document was written while the project's working name was "ProofRail"; it is preserved here as historical research about that earlier name's naming collision. See `PROJECT_STATE.md` for the 2026-08-26 rename to AegisOne.)
 
 ## Finding
 
-As of 2026-08-16, an active public GitHub organization/repository already uses `ProofRail/proofrail`. That project describes itself as a vendor-neutral evidence and reliance framework for agentic AI control and published a concept paper in July 2026.
+As of 2026-08-16, an active public GitHub organization/repository already uses `ProofRail/proofrail` — a third-party org and repo, unrelated to this project. That project describes itself as a vendor-neutral evidence and reliance framework for agentic AI control and published a concept paper in July 2026.
 
 This is not the same product, but both projects occupy trust/evidence/verification language. That creates avoidable search, identity, and future branding confusion.
 

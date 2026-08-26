@@ -1,5 +1,5 @@
 {
-  "name": "@proofrail/catalog-store",
+  "name": "@aegisone/catalog-store",
   "private": true,
   "version": "0.1.0",
   "type": "module",

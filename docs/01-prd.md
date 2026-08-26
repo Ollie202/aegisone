@@ -2,7 +2,7 @@
 
 ## Product
 
-ProofRail *(working name)* — independent software-release reproduction and evidence verification.
+AegisOne *(working name)* — independent software-release reproduction and evidence verification.
 
 ## Primary Wave 3 users
 
@@ -17,7 +17,7 @@ Wants a deterministic machine-readable policy result before installing, executin
 
 ## Source entry model
 
-ProofRail never guesses the official source.
+AegisOne never guesses the official source.
 
 Wave 3 accepts explicit source context through either:
 

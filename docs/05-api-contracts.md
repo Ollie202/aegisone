@@ -8,7 +8,7 @@ Stable machine output must expose independent dimensions rather than one ambiguo
 
 ## Existing CLI
 
-### `proofrail verify <artifact>`
+### `aegisone verify <artifact>`
 
 Hash a local artifact, resolve supplied evidence, and evaluate correspondence/policy without rebuilding.
 
@@ -18,11 +18,11 @@ Expected options include:
 - `--record <id|tx>`
 - `--json`
 
-### `proofrail reproduce <claim|manifest>`
+### `aegisone reproduce <claim|manifest>`
 
 Independently rebuild an exact source claim using the configured runner and compare produced artifact bytes with the publisher artifact.
 
-### `proofrail inspect <record>`
+### `aegisone inspect <record>`
 
 Display source-claim identity, raw evidence, digests, attestation capabilities, and registry/storage references.
 
@@ -73,13 +73,13 @@ interface VerificationRegistry {
 }
 ```
 
-M8 adds the provider-independent `@proofrail/capability-model` for capability discovery/evidence/policy. ARD, GitHub and MCP provider details remain in adapters.
+M8 adds the provider-independent `@aegisone/capability-model` for capability discovery/evidence/policy. ARD, GitHub and MCP provider details remain in adapters.
 
 ## M8 discovery surface
 
 ### `GET /.well-known/ai-catalog.json`
 
-M8.2 advertises ProofRail's ARD-compatible catalog/registry surface.
+M8.2 advertises AegisOne's ARD-compatible catalog/registry surface.
 
 The ARD contract is pinned behind an adapter; see `docs/15-m8-api-inventory.md`.
 
@@ -109,7 +109,7 @@ MVP input policy:
 - supported filters explicitly enumerated;
 - unsupported filters return a stable 400 error instead of being silently ignored.
 
-## M8 stable ProofRail read API
+## M8 stable AegisOne read API
 
 M8.7 freezes the backend JSON contract for MCP and the later M9 frontend:
 
@@ -208,9 +208,9 @@ A Supabase-backed queue/polling model is also acceptable if it reuses the existi
 M8.8 exposes only three initial tools:
 
 ```text
-proofrail_search
-proofrail_inspect
-proofrail_evaluate
+aegisone_search
+aegisone_inspect
+aegisone_evaluate
 ```
 
 These wrap the same discovery/read/policy services described above.
@@ -250,7 +250,7 @@ verification_failed
 internal_error
 ```
 
-Do not turn upstream availability errors into ProofRail trust evidence.
+Do not turn upstream availability errors into AegisOne trust evidence.
 
 ## Frontend contract
 
