@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 implemented and locally green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 implemented and locally green on its issue branch, merge gate pending; production Supabase migration application/advisor review and the GitHub App creation both pending repo-owner action
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -234,15 +234,75 @@ this change by stashing and re-running — and are unrelated to M8.7). The new m
 been applied to the production Supabase project, consistent with M8.4-M8.6 (repo-owner action,
 tracked below). No MCP transport, UI, auto-install, or new verification algorithm was added.
 
+## M8.8 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #27 on `agent/m8-mcp-interface` exposes `proofrail_search`, `proofrail_inspect`, and
+`proofrail_evaluate` through MCP (docs/17-m8-security-boundaries.md Threat M8-018 "MCP becomes a
+privileged backdoor"), as a thin transport adapter over the exact application services already
+proven in M8.2/M8.3/M8.7 — full detail in `docs/21-m8-mcp-interface.md`:
+
+- `apps/web/src/mcp.ts`: builds a fresh `McpServer` (`@modelcontextprotocol/sdk` 1.30.0, newly
+  added dependency, no prior MCP SDK existed in this repo) per request and mounts it at
+  `POST /mcp` via `StreamableHTTPServerTransport` in stateless mode
+  (`sessionIdGenerator: undefined`) — chosen over stdio because the server already runs as a
+  shared, always-on HTTP service (`proofrail-app`), and over session-stateful mode because these
+  three tools are pure request/response reads with no need for server-initiated notifications;
+- exactly three tools, matching Threat M8-018's allowlist; none of the denylisted tools
+  (`proofrail_install`, `proofrail_execute`, `proofrail_sign`, `proofrail_run_arbitrary_build`,
+  `proofrail_upload_secret`) exist anywhere in this codebase, and a regression test asserts the
+  connected tool list is exactly the three allowed names;
+- `proofrail_search` calls `apps/web/src/search-service.ts`'s `performCapabilitySearch` — the
+  M8.2/M8.3 local-catalog/federated dispatch logic, moved out of `product.ts`'s inline `POST
+  /search` handler into its own module (with `apps/web/src/errors.ts` holding the shared
+  `ProductRequestError` class) specifically so neither `product.ts` nor `mcp.ts` needs to import
+  the other — `POST /search` and `proofrail_search` now share one function byte-for-byte rather
+  than two copies of the same dispatch logic;
+- `proofrail_inspect` calls a new exported `buildEvidenceResponse` in `apps/web/src/api-v1.ts`,
+  extracted (behavior-preserving) from the M8.7 `GET /api/v1/resources/:resourceId/evidence`
+  handler, so both surfaces present the same M8.5/M8.6 integrity-rechecked evidence, itemized
+  history, and independent trust dimensions byte-identically — never a collapsed verified/safe
+  boolean, and a regression test proves a purely `INDEXED` (discovery-only) resource still reports
+  every dimension as `NONE`/`NOT_RUN`/`NOT_EVALUATED` through this transport, the same invariant
+  M8.1-M8.7 already enforced at every other layer;
+- `proofrail_evaluate` calls a new exported `runPolicyEvaluation` in `apps/web/src/api-v1.ts`,
+  extracted from the M8.7 `POST /api/v1/policy/evaluate` handler, which itself calls the unmodified
+  M8.1 `evaluateTrustPolicy` — deterministic, no LLM, and a search-relevance score can never enter
+  this evaluation since `proofrail_search`'s output is never threaded into `proofrail_evaluate` as
+  evidence;
+- this implementation deliberately does not create the `packages/mcp-proofrail` package
+  `AGENTS.md`'s planned-package-boundaries list names — creating it would require it to import back
+  from `apps/web` (a circular dependency, since `apps/web` must also mount the MCP HTTP route) or
+  reimplement the M8.7 assembly logic a second time; the reasoning and the correct follow-up if a
+  future milestone needs this logic outside `apps/web` are recorded in `docs/21-m8-mcp-interface.md`;
+- `apps/web/test/mcp.test.ts` (14 new tests): a **real** `@modelcontextprotocol/sdk` TypeScript
+  `Client` (not a hand-rolled test double) connects over an actual `StreamableHTTPClientTransport`
+  to a real `node:http` server running `createProductRequestHandler`, lists tools, and calls all
+  three tools end-to-end — success paths, an INDEXED-only missing-evidence regression, a fully
+  `REPOSITORY_AUTHENTICATED`/`MATCH` resource, and malformed-input cases (empty search text,
+  missing `resourceId`, both/neither of `resource`/`resourceId`, an unsupported federation provider
+  id, a malformed policy, a non-JSON `POST /mcp` body, `GET /mcp`) — proving the wire protocol,
+  tool schemas, and handler wiring work end-to-end against a real in-process server using the
+  official SDK's own client. **Not proven in this environment**: that a specific external product
+  (Claude Desktop, Claude Code's own `/mcp` config, etc.) renders/consumes these tools correctly in
+  its UI — that requires a human to point a real external client at a running deployment, per
+  `docs/21-m8-mcp-interface.md`'s explicit "what is proven vs. what still needs a human" section.
+
+Local `pnpm check` and `pnpm test` are green for `@proofrail/web` (69/69 tests, including the 14
+new MCP tests) and every other package (the same two pre-existing, unrelated `packages/cli`/
+`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before
+this change since this issue's diff touches only `apps/web` and `docs/`). No new privileged
+install/execute/sign route, new verification algorithm, new permanent Railway service, UI, or
+paid API dependency was added.
+
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
 2. **M8.3 / Issue #22 — complete:** GitHub Agent Finder + Hugging Face Discover federation.
 3. **M8.4 / Issue #23 — complete:** existing-Supabase capability catalog/version/ingestion persistence.
 4. **M8.5 / Issue #24 — complete:** GitHub App source authentication and canonical source claims.
-5. **M8.6 / Issue #25 — current:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
-6. **M8.7 / Issue #26:** stable resource/evidence/policy API.
-7. **M8.8 / Issue #27:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
+5. **M8.6 / Issue #25 — complete:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
+6. **M8.7 / Issue #26 — complete:** stable resource/evidence/policy API.
+7. **M8.8 / Issue #27 — current:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
 8. **M8.9 / Issue #28:** repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY; real 0G evidence.
 9. **M8.10 / Issue #29:** official MCP Registry indexing stretch after M8.9.
 10. **M8.11 / Issue #30:** security/deployment/backend contract freeze.
@@ -293,4 +353,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.7 / Issue #26** pull request, require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository. Do not begin M8.8 in this context.
+Open/review the **M8.8 / Issue #27** pull request, require green CI, merge. Repo-owner actions remain outstanding and are not blocking further backend issues, but are required before live evidence can be produced: (1) apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql`, `supabase/migrations/202608260002_m8_5_source_claims.sql`, `supabase/migrations/202608260003_m8_6_capability_verifications.sql`, and `supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql` to the production Supabase project and review the security/performance advisors; (2) create/install the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supply `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway, then complete one interactive browser authorization against a real public repository; (3) a human should point a real external MCP client (Claude Desktop, Claude Code's own `/mcp` config, etc.) at a running `proofrail-app` deployment per `docs/21-m8-mcp-interface.md` to confirm the three tools render/behave correctly in that product's own UI — this environment can only prove the wire protocol/tool schemas/handler wiring via a real SDK client, not a specific external product's UI. Do not begin M8.9 in this context.
