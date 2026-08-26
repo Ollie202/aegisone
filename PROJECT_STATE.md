@@ -1,7 +1,7 @@
 # Project State
 
 **Last updated:** 2026-08-26  
-**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 implemented and locally green on its issue branch, merge gate pending
+**Phase:** M8 active — backend-first verified capability discovery; M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 implemented and locally green on its issue branch, merge gate pending; production migration application/advisor review pending repo-owner Supabase credentials
 **Product name:** ProofRail
 
 ## Current product thesis
@@ -51,6 +51,8 @@ The existing ProofRail Supabase project remains the only database project to ext
 - `proofrail_app_auth`
 
 Both currently have RLS enabled.
+
+M8.4 (`agent/m8-supabase-catalog`) adds four more tables via a committed, reviewed, but **not yet applied** migration (`supabase/migrations/202608260001_m8_4_capability_catalog.sql`): `agentic_resources`, `resource_discoveries`, `resource_versions`, `ingestion_sources`. Applying it and reviewing the Supabase security/performance advisors afterward requires the repo owner's real Supabase project credentials, which this agent does not have.
 
 Railway production contains exactly:
 
@@ -127,9 +129,9 @@ Issue #21 / PR #34 merged to `main`.
 
 Final M8.2 CI passed before merge. Do not redo this milestone.
 
-## M8.3 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+## M8.3 — COMPLETE
 
-Issue #22 on `agent/m8-federated-discovery` now provides:
+Issue #22 / PR #35 merged to `main`. Provides:
 
 - `@proofrail/discovery-providers`, a new package that owns real read-only HTTP federation to two fixed allowlisted origins and normalizes their results into `@proofrail/capability-model`'s `CapabilityResource`;
 - a `DiscoveryProvider` interface (`id`, `search(query, signal)`) and one shared ARD-wire-shaped provider factory reused by both concrete adapters;
@@ -142,13 +144,25 @@ Issue #22 on `agent/m8-federated-discovery` now provides:
 - regression coverage proving forged upstream `trustManifest`, forged `org.proofrail.*`-looking metadata, `verified` flags, and out-of-range/maximum scores can never create or upgrade `trust` on a normalized resource — `trust` is always emitted empty/unavailable for federated results;
 - live smoke tests (`packages/discovery-providers/test/live/*.live.test.ts`, run via `pnpm m8.3:live`, not part of `pnpm check`/`pnpm test`) that made real calls to both pinned endpoints and to the combined federated path; all three passed.
 
-Local `pnpm check` and `pnpm test` are green (two pre-existing, unrelated failures in `packages/cli` and `packages/runner-local` — a fixture git-checkout byte-reproduction test — were confirmed present on `main` before this change and are not part of M8.3). M8.3 is not recorded as merged until the pull request CI and merge gate complete. No Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, frontend, or 0G write behavior was added.
+Final M8.3 CI passed before merge. No Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, frontend, or 0G write behavior was added. Do not redo M8.3.
+
+## M8.4 — IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING
+
+Issue #23 on `agent/m8-supabase-catalog` extends the existing ProofRail Supabase project (no new project/database) with:
+
+- four new public tables (`supabase/migrations/202608260001_m8_4_capability_catalog.sql`): `agentic_resources` (version-independent capability identity, deduplicated by a deterministic `canonical_key`), `resource_discoveries` (provider-specific mutable discovery observations, unique on `(provider_id, provider_resource_id)`), `resource_versions` (exact source/distribution *claims* only — never implying correspondence — unique on an application-computed `(resource_id, version_key)`, a documented deviation from the plan doc's suggested columns because nullable-column uniqueness is unsafe for upsert), and `ingestion_sources` (incremental-refresh cursor/state per provider, seeded with `github-agent-finder`, `hugging-face-discover`, `mcp-official-registry`);
+- all four tables have RLS enabled with an explicit `deny to anon, authenticated` policy and no anonymous/authenticated read or write path, mirroring `proofrail_app_auth`'s M6 pattern;
+- a token-gated Supabase Edge Function (`supabase/functions/proofrail-catalog`) that holds the service-role credential internally and checks the same `proofrail_app_auth` app-token digest `packages/job-store`'s Edge Function already uses — Railway still never holds the service-role secret;
+- `@proofrail/catalog-store`: a provider-independent (Supabase-specific code stays out of `@proofrail/capability-model`) persistence package with `computeCanonicalKeyFromResource` (deterministic dedup key: `urn:air:` identifier, else `<providerSlug>::<providerResourceId>`, else a normalized resource URL — dedup bookkeeping only, never proof), `buildResourceUpsertPlan` (pure DB-free mapping from a validated `CapabilityResource` to the persisted row shape), `catalogRecordToCapabilityResource` (the one function that reconstructs a `CapabilityResource` from catalog rows — it always emits empty/`NOT_RUN`/`NONE` trust evidence because it has no evidence table to read from yet), `InMemoryCatalogStore`, and `SupabaseCatalogStore`;
+- regression coverage proving: a DB-only inserted `INDEXED` resource remains unverified end-to-end; `markProviderDiscoveriesStale` (incremental-refresh outage handling) only ever mutates `discovery_status` and never deletes or mutates resource/version identity or trust evidence; forged `provider_metadata`/injected `trustManifest`-shaped fields cannot reach a stored row or the reconstructed `CapabilityResource`; stable dedup-key behavior across repeated observations and across ARD-shaped vs. federated-shaped resources.
+
+Local `pnpm check` and `pnpm test` are green for `@proofrail/catalog-store` and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures noted in M8.3 remain and are not part of M8.4). **The migration has not been applied to the production Supabase project** — this agent has no `SUPABASE_ACCESS_TOKEN`/project ref/db password in this environment. Applying `supabase/migrations/202608260001_m8_4_capability_catalog.sql` and reviewing the Supabase security/performance advisors afterward is the repo owner's action (`supabase link` + `supabase db push`, or the dashboard SQL editor), and remains outstanding. source_claims / source_claim_authority_observations / capability_verifications are intentionally deferred to M8.5/M8.6 per `docs/16-m8-database-plan.md`; no foreign-key skeleton for them was added.
 
 ## M8 backend implementation sequence
 
 1. **M8.2 / Issue #21 — complete:** pinned ARD v0.9 adapter + local catalog/search HTTP surface.
-2. **M8.3 / Issue #22 — current:** GitHub Agent Finder + Hugging Face Discover federation.
-3. **M8.4 / Issue #23:** existing-Supabase capability catalog/version/ingestion persistence.
+2. **M8.3 / Issue #22 — complete:** GitHub Agent Finder + Hugging Face Discover federation.
+3. **M8.4 / Issue #23 — current:** existing-Supabase capability catalog/version/ingestion persistence.
 4. **M8.5 / Issue #24:** GitHub App source authentication and canonical source claims.
 5. **M8.6 / Issue #25:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
 6. **M8.7 / Issue #26:** stable resource/evidence/policy API.
@@ -203,4 +217,4 @@ M8 engineering improves the judgeable product without invalidating the already-p
 
 ## Current next action
 
-Open/review the **M8.3 / Issue #22** pull request, require green CI, merge, reconcile the final merged state, and stop. Do not begin M8.4 in this context.
+Open/review the **M8.4 / Issue #23** pull request, require green CI, merge, then have the repo owner apply `supabase/migrations/202608260001_m8_4_capability_catalog.sql` to the production Supabase project and review the security/performance advisors before M8.5 begins. Do not begin M8.5 in this context.
