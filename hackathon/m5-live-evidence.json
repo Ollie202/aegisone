@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1",
-  "kind": "ProofRailM5LiveRunSummary",
+  "kind": "AegisOneM5LiveRunSummary",
   "status": "GALILEO_SLICE_PROVEN_MAINNET_PENDING",
   "railwayDeployment": "cd9faa4c-4c02-4532-8f13-f4e41da19096",
   "implementationCommit": "eb96681ff683a25a56741b8ceaab8918cbceecac",
   "sourceClaim": {
     "assuranceLevel": "DECLARED",
-    "repository": "https://github.com/Ollie202/proofrail-0g.git",
+    "repository": "https://github.com/Ollie202/aegisone.git",
     "commitSha": "e9c82277cef2f7630977e2473664e14eed2f860d",
     "artifactPath": "examples/hello-proofrail/fixtures/publisher/hello-proofrail.json"
   },

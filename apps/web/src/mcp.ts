@@ -10,7 +10,7 @@ import { performCapabilitySearch, type SearchServiceDependencies } from "./searc
 import { ProductRequestError } from "./errors.ts";
 
 /**
- * M8.8 (Issue #27): exposes `proofrail_search`, `proofrail_inspect`, and `proofrail_evaluate`
+ * M8.8 (Issue #27): exposes `aegisone_search`, `aegisone_inspect`, and `aegisone_evaluate`
  * through MCP (docs/17-m8-security-boundaries.md Threat M8-018 "MCP becomes a privileged
  * backdoor").
  *
@@ -23,8 +23,8 @@ import { ProductRequestError } from "./errors.ts";
  * ones already wired into the HTTP surface, GitHub OAuth, Supabase to invent missing evidence, a
  * blockchain, or the worker/build system.
  *
- * Threat M8-018's explicit denylist (`proofrail_install`, `proofrail_execute`, `proofrail_sign`,
- * `proofrail_run_arbitrary_build`, `proofrail_upload_secret`) has no code path here: there are
+ * Threat M8-018's explicit denylist (`aegisone_install`, `aegisone_execute`, `aegisone_sign`,
+ * `aegisone_run_arbitrary_build`, `aegisone_upload_secret`) has no code path here: there are
  * exactly three registered tools, all read/policy-only, and none of them can reach the worker,
  * a signer, or any install/execute primitive.
  *
@@ -100,14 +100,14 @@ const INSPECT_INPUT_SHAPE = {
   resourceId: z
     .string()
     .min(1, "resourceId must not be empty")
-    .describe("Stable ProofRail catalog resource id (agentic_resources.id) — NOT the raw ARD/federated CapabilityResource id returned by proofrail_search."),
+    .describe("Stable AegisOne catalog resource id (agentic_resources.id) — NOT the raw ARD/federated CapabilityResource id returned by aegisone_search."),
 };
 
 const EVALUATE_INPUT_SHAPE = {
   policy: z
     .record(z.string(), z.unknown())
     .describe(
-      'A TrustPolicy object (@proofrail/capability-model, schemaVersion "1"): missingEvidenceDecision ("REVIEW"|"DENY") required; minimumSourceAssurance, requireCorrespondence ("MATCH"), maximumAuditSeverity, maximumEvidenceAgeHours all optional. Validated by the exact same parser POST /api/v1/policy/evaluate uses.',
+      'A TrustPolicy object (@aegisone/capability-model, schemaVersion "1"): missingEvidenceDecision ("REVIEW"|"DENY") required; minimumSourceAssurance, requireCorrespondence ("MATCH"), maximumAuditSeverity, maximumEvidenceAgeHours all optional. Validated by the exact same parser POST /api/v1/policy/evaluate uses.',
     ),
   resource: z
     .record(z.string(), z.unknown())
@@ -121,18 +121,18 @@ const EVALUATE_INPUT_SHAPE = {
 };
 
 /**
- * Builds a fresh MCP server exposing exactly the three ProofRail M8.8 tools. Called once per
+ * Builds a fresh MCP server exposing exactly the three AegisOne M8.8 tools. Called once per
  * request in `createMcpRequestHandler` below (stateless mode).
  */
-export function createProofRailMcpServer(deps: McpServerDependencies): McpServer {
-  const server = new McpServer({ name: "proofrail", version: "1" });
+export function createAegisOneMcpServer(deps: McpServerDependencies): McpServer {
+  const server = new McpServer({ name: "aegisone", version: "1" });
 
   server.registerTool(
-    "proofrail_search",
+    "aegisone_search",
     {
-      title: "ProofRail capability search",
+      title: "AegisOne capability search",
       description:
-        "Discovery-only search over agentic capabilities (Agent Skills, MCP servers, A2A agents, generic APIs) — the same ARD-based local/federated search POST /search uses. Results carry a discovery/relevance signal ONLY: INDEXED discovery state and relevance ranking never imply ProofRail verification, source authentication, or safety, and a repository existing in these results is not proof a publisher authorized it as source. Call proofrail_inspect on a specific resourceId before treating any result as trustworthy, and never install/execute a discovered resource automatically.",
+        "Discovery-only search over agentic capabilities (Agent Skills, MCP servers, A2A agents, generic APIs) — the same ARD-based local/federated search POST /search uses. Results carry a discovery/relevance signal ONLY: INDEXED discovery state and relevance ranking never imply AegisOne verification, source authentication, or safety, and a repository existing in these results is not proof a publisher authorized it as source. Call aegisone_inspect on a specific resourceId before treating any result as trustworthy, and never install/execute a discovered resource automatically.",
       inputSchema: SEARCH_INPUT_SHAPE,
     },
     async (args) => {
@@ -151,11 +151,11 @@ export function createProofRailMcpServer(deps: McpServerDependencies): McpServer
   );
 
   server.registerTool(
-    "proofrail_inspect",
+    "aegisone_inspect",
     {
-      title: "ProofRail resource evidence inspection",
+      title: "AegisOne resource evidence inspection",
       description:
-        "Reads the independent ProofRail trust dimensions for one catalog resource — discovery/provider attribution, source assurance, source inspection, distribution correspondence, security assessment, and canonical evidence — via the exact same integrity-rechecked assembly GET /api/v1/resources/:resourceId/evidence uses. Dimensions are always reported independently and by name; this tool never collapses them into a single verified/safe boolean, missing evidence is reported as missing (never inferred), and INDEXED discovery state or a MATCH correspondence verdict never imply the resource is safe to install or execute.",
+        "Reads the independent AegisOne trust dimensions for one catalog resource — discovery/provider attribution, source assurance, source inspection, distribution correspondence, security assessment, and canonical evidence — via the exact same integrity-rechecked assembly GET /api/v1/resources/:resourceId/evidence uses. Dimensions are always reported independently and by name; this tool never collapses them into a single verified/safe boolean, missing evidence is reported as missing (never inferred), and INDEXED discovery state or a MATCH correspondence verdict never imply the resource is safe to install or execute.",
       inputSchema: INSPECT_INPUT_SHAPE,
     },
     async ({ resourceId }) => {
@@ -170,9 +170,9 @@ export function createProofRailMcpServer(deps: McpServerDependencies): McpServer
   );
 
   server.registerTool(
-    "proofrail_evaluate",
+    "aegisone_evaluate",
     {
-      title: "ProofRail deterministic policy evaluation",
+      title: "AegisOne deterministic policy evaluation",
       description:
         "Evaluates a caller-supplied deterministic TrustPolicy against either an inline resource or a catalog resourceId, via the exact same M8.1 evaluateTrustPolicy function POST /api/v1/policy/evaluate wraps. Returns ALLOW / REVIEW / DENY plus structured machine-readable reasons. Purely deterministic: no LLM, no search-relevance score enters the decision, and this tool performs no install/execute/sign/build action of its own — it only evaluates policy over evidence that was already recorded elsewhere.",
       inputSchema: EVALUATE_INPUT_SHAPE,
@@ -212,7 +212,7 @@ export function createMcpRequestHandler(deps: McpServerDependencies) {
       return;
     }
 
-    const server = createProofRailMcpServer(deps);
+    const server = createAegisOneMcpServer(deps);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     response.on("close", () => {
       void transport.close();

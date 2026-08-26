@@ -13,10 +13,10 @@ async function git(args: string[], cwd: string): Promise<string> {
       cwd,
       env: {
         ...process.env,
-        GIT_AUTHOR_NAME: "ProofRail Fixture",
+        GIT_AUTHOR_NAME: "AegisOne Fixture",
         GIT_AUTHOR_EMAIL: "fixture@proofrail.invalid",
         GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
-        GIT_COMMITTER_NAME: "ProofRail Fixture",
+        GIT_COMMITTER_NAME: "AegisOne Fixture",
         GIT_COMMITTER_EMAIL: "fixture@proofrail.invalid",
         GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
       },
@@ -30,7 +30,7 @@ async function git(args: string[], cwd: string): Promise<string> {
   });
 }
 
-export async function makeHelloProofRailFixture(): Promise<{
+export async function makeHelloAegisOneFixture(): Promise<{
   cleanup: () => Promise<void>;
   repositoryPath: string;
   commitSha: string;

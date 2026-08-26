@@ -1,4 +1,4 @@
-# Codex Handoff — ProofRail M8 Backend
+# Codex Handoff — AegisOne M8 Backend
 
 Treat this repository as an existing proven system. Do not rewrite M1–M7 or replace the trust model.
 
@@ -30,7 +30,7 @@ Implement one issue at a time, in this order:
 2. M8.3 — federated discovery adapters.
 3. M8.4 — Supabase catalog persistence.
 4. M8.5 — source authentication / source claims.
-5. M8.6 — connect discovered Agent Skills to existing ProofRail verification.
+5. M8.6 — connect discovered Agent Skills to existing AegisOne verification.
 6. M8.7 — stable public read API + deterministic policy endpoint.
 7. M8.8 — MCP interface for agents.
 8. M8.9 — controlled substitution end-to-end demo.
@@ -41,9 +41,9 @@ Do not begin M9/frontend work until the M8 backend acceptance path is green.
 
 ## Core product flow
 
-`intent -> discovery -> normalized capability -> source assurance -> ProofRail evidence -> consumer policy -> ALLOW/REVIEW/DENY`
+`intent -> discovery -> normalized capability -> source assurance -> AegisOne evidence -> consumer policy -> ALLOW/REVIEW/DENY`
 
-Discovery answers what may be useful. ProofRail evidence answers what was actually observed. Consumer policy decides whether that evidence is sufficient for a particular agent/user.
+Discovery answers what may be useful. AegisOne evidence answers what was actually observed. Consumer policy decides whether that evidence is sufficient for a particular agent/user.
 
 ## Non-negotiable distinctions
 
@@ -116,4 +116,4 @@ Do not run live funded 0G work merely to test ordinary code. Local/unit/integrat
 
 ## Definition of backend MVP success
 
-A client can search real agentic resources, inspect a ProofRail-verified Agent Skill, see independently authenticated source/evidence dimensions, apply a deterministic policy, and obtain `ALLOW`, `REVIEW`, or `DENY`. A controlled substituted distribution with unchanged claimed identity/source must produce `MISMATCH` and fail a policy that requires `MATCH`. The underlying canonical evidence must remain independently inspectable through the existing 0G path.
+A client can search real agentic resources, inspect an AegisOne-verified Agent Skill, see independently authenticated source/evidence dimensions, apply a deterministic policy, and obtain `ALLOW`, `REVIEW`, or `DENY`. A controlled substituted distribution with unchanged claimed identity/source must produce `MISMATCH` and fail a policy that requires `MATCH`. The underlying canonical evidence must remain independently inspectable through the existing 0G path.

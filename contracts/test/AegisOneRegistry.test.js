@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ProofRailRegistry", function () {
+describe("AegisOneRegistry", function () {
   let registry;
   let submitter;
 
@@ -17,7 +17,7 @@ describe("ProofRailRegistry", function () {
 
   beforeEach(async function () {
     [submitter] = await ethers.getSigners();
-    const Registry = await ethers.getContractFactory("ProofRailRegistry");
+    const Registry = await ethers.getContractFactory("AegisOneRegistry");
     registry = await Registry.deploy();
     await registry.waitForDeployment();
   });

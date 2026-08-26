@@ -1,12 +1,12 @@
-# ProofRail registry contracts
+# AegisOne registry contracts
 
 M3 introduces a deliberately small append-only registry for compact reproduction-evidence commitments.
 
-## `ProofRailRegistry.sol`
+## `AegisOneRegistry.sol`
 
 A record commits to five values:
 
-- `manifestDigest` — SHA-256 digest of the canonical ProofRail provenance manifest;
+- `manifestDigest` — SHA-256 digest of the canonical AegisOne provenance manifest;
 - `sourceClaimDigest` — SHA-256 digest of the canonical release/source claim;
 - `publisherArtifactDigest` — SHA-256 digest of the publisher-distributed bytes;
 - `reproducedArtifactDigest` — SHA-256 digest of independently reproduced bytes;
@@ -30,8 +30,8 @@ Commands from repository root:
 
 ```bash
 pnpm install
-pnpm --filter @proofrail/contracts compile
-pnpm --filter @proofrail/contracts test
+pnpm --filter @aegisone/contracts compile
+pnpm --filter @aegisone/contracts test
 pnpm m3:live
 ```
 

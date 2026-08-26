@@ -76,7 +76,7 @@ function normalizeSubdirectory(subdirectory: string | null): string {
 
 /**
  * Retrieves the exact requested commit and packages the (sub)directory deterministically using
- * the existing `@proofrail/skill-audit` filesystem walker/canonical packer/validator/auditor —
+ * the existing `@aegisone/skill-audit` filesystem walker/canonical packer/validator/auditor —
  * never a new packaging or audit implementation. This function never calls
  * `verifySkillPackages`/`compareArtifacts`: there is no `publisherEntries` in scope here, so it
  * is structurally impossible for source-only inspection to produce a `MATCH`/`MISMATCH` value.
@@ -91,7 +91,7 @@ export async function inspectSourceOnly(
   assertRepositoryUrl(request.repositoryUrl, options.allowLocalFixtureRepository ?? false);
   const subdirectory = normalizeSubdirectory(request.subdirectory);
 
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "proofrail-skill-source-"));
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "aegisone-skill-source-"));
   const checkout = join(temporaryRoot, "source");
   try {
     // -c core.autocrlf=false / core.eol=lf: correspondence must reproduce the exact publisher

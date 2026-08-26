@@ -112,7 +112,7 @@ export class SupabaseJobStore implements JobStore {
   }
 
   async #invoke(action: string, body: Record<string, unknown>): Promise<SupabaseJobRow[]> {
-    const response = await this.#fetcher(`${this.#baseUrl}/functions/v1/proofrail-jobs`, {
+    const response = await this.#fetcher(`${this.#baseUrl}/functions/v1/aegisone-jobs`, {
       method: "POST",
       headers: {
         apikey: this.#publishableKey,

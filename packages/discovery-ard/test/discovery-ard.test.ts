@@ -7,13 +7,13 @@ import {
   ARD_MEDIA_TYPES,
   ARD_SPEC_COMMIT,
   ARD_UPSTREAM_FILES,
-  PROOFRAIL_ARD_METADATA,
+  AEGISONE_ARD_METADATA,
   ardEntryToCapabilityResource,
   assertValidArdCatalogManifest,
   assertValidArdEntry,
   capabilityResourceToArdEntry,
   createLocalCatalog,
-  createProofRailArdCatalogManifest,
+  createAegisOneArdCatalogManifest,
   parseArdSearchRequest,
   pinnedArdRawUrl,
   searchLocalCatalog,
@@ -68,14 +68,14 @@ test("records the immutable ARD v0.9 specification and schema provenance", () =>
   );
 });
 
-test("catalog generator advertises the bounded ProofRail search endpoint", () => {
-  const manifest = createProofRailArdCatalogManifest("https://proofrail.example/");
+test("catalog generator advertises the bounded AegisOne search endpoint", () => {
+  const manifest = createAegisOneArdCatalogManifest("https://aegisone.example/");
   assert.doesNotThrow(() => assertValidArdCatalogManifest(manifest));
   assert.equal(manifest.specVersion, "1.0");
   assert.equal(manifest.entries.length, 1);
   assert.equal(manifest.entries[0]!.type, ARD_MEDIA_TYPES.registry);
-  assert.equal(manifest.entries[0]!.url, "https://proofrail.example/search");
-  assert.equal(manifest.entries[0]!.metadata?.[PROOFRAIL_ARD_METADATA.ardSpecCommit], ARD_SPEC_COMMIT);
+  assert.equal(manifest.entries[0]!.url, "https://aegisone.example/search");
+  assert.equal(manifest.entries[0]!.metadata?.[AEGISONE_ARD_METADATA.ardSpecCommit], ARD_SPEC_COMMIT);
   assert.equal(manifest.entries[0]!.trustManifest, undefined);
 });
 
@@ -107,17 +107,17 @@ test("enforces strict ARD value-or-reference semantics", () => {
 test("emits namespaced evidence state only from a valid CapabilityResource", () => {
   const resource = verifiedResource();
   const entry = capabilityResourceToArdEntry(resource);
-  assert.equal(entry.metadata?.[PROOFRAIL_ARD_METADATA.sourceAssurance], "REPOSITORY_AUTHENTICATED");
-  assert.equal(entry.metadata?.[PROOFRAIL_ARD_METADATA.correspondence], "MATCH");
-  assert.equal(entry.metadata?.[PROOFRAIL_ARD_METADATA.securityAssessment], "COMPLETED");
-  assert.equal(entry.metadata?.[PROOFRAIL_ARD_METADATA.canonicalEvidence], "AVAILABLE");
+  assert.equal(entry.metadata?.[AEGISONE_ARD_METADATA.sourceAssurance], "REPOSITORY_AUTHENTICATED");
+  assert.equal(entry.metadata?.[AEGISONE_ARD_METADATA.correspondence], "MATCH");
+  assert.equal(entry.metadata?.[AEGISONE_ARD_METADATA.securityAssessment], "COMPLETED");
+  assert.equal(entry.metadata?.[AEGISONE_ARD_METADATA.canonicalEvidence], "AVAILABLE");
   assert.equal("verified" in (entry.metadata ?? {}), false);
 
   resource.trust.correspondence.reproducedSha256 = SHA_B;
   assert.throws(() => capabilityResourceToArdEntry(resource), /MATCH requires identical/);
 });
 
-test("ARD trustManifest and trust-looking metadata cannot upgrade ProofRail evidence", () => {
+test("ARD trustManifest and trust-looking metadata cannot upgrade AegisOne evidence", () => {
   const entry = structuredClone(createLocalCatalog()[0]!.entry);
   entry.trustManifest = {
     identity: "did:web:attacker.example",
@@ -127,9 +127,9 @@ test("ARD trustManifest and trust-looking metadata cannot upgrade ProofRail evid
   entry.metadata = {
     ...(entry.metadata ?? {}),
     verified: true,
-    [PROOFRAIL_ARD_METADATA.sourceAssurance]: "SIGNED_RELEASE",
-    [PROOFRAIL_ARD_METADATA.correspondence]: "MATCH",
-    [PROOFRAIL_ARD_METADATA.canonicalEvidence]: "AVAILABLE",
+    [AEGISONE_ARD_METADATA.sourceAssurance]: "SIGNED_RELEASE",
+    [AEGISONE_ARD_METADATA.correspondence]: "MATCH",
+    [AEGISONE_ARD_METADATA.canonicalEvidence]: "AVAILABLE",
   };
 
   const resource = ardEntryToCapabilityResource(entry, {
@@ -172,12 +172,12 @@ test("deterministic local search ranks matching entries and applies the type fil
     federation: "none",
     pageSize: 5,
   });
-  const first = searchLocalCatalog(request, records, "https://proofrail.example/search");
-  const second = searchLocalCatalog(request, records, "https://proofrail.example/search");
+  const first = searchLocalCatalog(request, records, "https://aegisone.example/search");
+  const second = searchLocalCatalog(request, records, "https://aegisone.example/search");
   assert.deepEqual(first, second);
   assert.equal(first.results.length, 1);
   assert.equal(first.results[0]!.type, ARD_MEDIA_TYPES.agentSkill);
-  assert.equal(first.results[0]!.identifier, "urn:air:proofrail.example:skill:pull-request-reviewer");
+  assert.equal(first.results[0]!.identifier, "urn:air:aegisone.example:skill:pull-request-reviewer");
   assert.ok(first.results[0]!.score > 0 && first.results[0]!.score <= 100);
   assert.deepEqual(first.referrals, []);
 });
@@ -206,5 +206,5 @@ test("parser enforces malformed-input, query-length, and result-count limits", (
   assert.throws(() => parseArdSearchRequest({ query: { text: "weather", unexpected: true } }), /unsupported field/);
 
   const request = parseArdSearchRequest({ query: { text: "api invoice" }, pageSize: 1 });
-  assert.equal(searchLocalCatalog(request, createLocalCatalog(), "https://proofrail.example/search").results.length, 1);
+  assert.equal(searchLocalCatalog(request, createLocalCatalog(), "https://aegisone.example/search").results.length, 1);
 });

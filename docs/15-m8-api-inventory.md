@@ -13,7 +13,7 @@
 
 Do not compile application semantics directly against upstream `main`.
 
-### Required ProofRail server endpoints
+### Required AegisOne server endpoints
 
 ```text
 GET  /.well-known/ai-catalog.json
@@ -49,20 +49,20 @@ Optional filter:
 }
 ```
 
-Search score is relevance only. It is not ProofRail trust/security evidence.
+Search score is relevance only. It is not AegisOne trust/security evidence.
 
 ### Important ARD invariants
 
 - catalog entry uses exactly one content form where applicable: `url` xor `data`;
 - media type identifies resource family;
 - `metadata.*` is extensible but registry support for filters is provider-defined;
-- ARD trust manifests are discovery metadata and cannot create ProofRail source assurance/correspondence;
-- ProofRail-specific fields should be namespaced under `metadata.org.proofrail.*` or equivalent adapter namespace;
+- ARD trust manifests are discovery metadata and cannot create AegisOne source assurance/correspondence;
+- AegisOne-specific fields should be namespaced under `metadata.org.aegisone.*` or equivalent adapter namespace;
 - unsupported filters must be explicit errors instead of silently ignored security assumptions.
 
-### ProofRail M8.2 support profile
+### AegisOne M8.2 support profile
 
-The adapter implementation is isolated in `@proofrail/discovery-ard` and records both the immutable upstream commit and the exact Git blob IDs for:
+The adapter implementation is isolated in `@aegisone/discovery-ard` and records both the immutable upstream commit and the exact Git blob IDs for:
 
 - `spec/ard.md`;
 - `spec/schemas/ai-catalog.schema.json`;
@@ -77,7 +77,7 @@ M8.2 supports:
 - body maximum 32 KiB, query maximum 2,000 Unicode code points, default page size 10, maximum 25;
 - deterministic lexical ranking over display name, description, tags, capabilities, and representative queries.
 
-ProofRail evidence states are emitted as flat namespaced `org.proofrail.*` metadata only after M8.1 validation. Inbound ARD metadata and `trustManifest` are always treated as discovery data and cannot populate ProofRail source assurance, inspection, correspondence, security, or canonical-evidence fields.
+AegisOne evidence states are emitted as flat namespaced `org.aegisone.*` metadata only after M8.1 validation. Inbound ARD metadata and `trustManifest` are always treated as discovery data and cannot populate AegisOne source assurance, inspection, correspondence, security, or canonical-evidence fields.
 
 ## 2. GitHub Agent Finder
 
@@ -118,7 +118,7 @@ Optional resource filter follows provider-supported ARD fields.
 - max accepted results: 25 per call even if upstream returns more;
 - validate response before normalization;
 - retain upstream resource identifier and source attribution;
-- do not treat returned source URL, trustManifest or relevance score as ProofRail verification;
+- do not treat returned source URL, trustManifest or relevance score as AegisOne verification;
 - retry at most once for safe transient failures if total search deadline permits; no retry storm.
 
 ## 3. Hugging Face Discover
@@ -140,7 +140,7 @@ POST https://huggingface-hf-discover.hf.space/search
 https://huggingface-hf-discover.hf.space/mcp
 ```
 
-ProofRail M8.3 uses the REST endpoint; M8.8 exposes ProofRail's own MCP interface rather than proxying this MCP endpoint directly.
+AegisOne M8.3 uses the REST endpoint; M8.8 exposes AegisOne's own MCP interface rather than proxying this MCP endpoint directly.
 
 ### Search request example
 
@@ -156,11 +156,11 @@ ProofRail M8.3 uses the REST endpoint; M8.8 exposes ProofRail's own MCP interfac
 }
 ```
 
-The hosted server currently combines indexed Skills and Hugging Face Space-derived capabilities. `application/mcp-server-card+json` is the current MCP card media type in responses; a legacy MCP media-type alias may be accepted upstream but ProofRail should normalize to the pinned ARD form.
+The hosted server currently combines indexed Skills and Hugging Face Space-derived capabilities. `application/mcp-server-card+json` is the current MCP card media type in responses; a legacy MCP media-type alias may be accepted upstream but AegisOne should normalize to the pinned ARD form.
 
 ### Authentication
 
-Public search does not require ProofRail to provision a paid API key. The upstream implementation can accept optional request-scoped HF credentials for private/expanded access, but M8 must not require or forward user HF tokens.
+Public search does not require AegisOne to provision a paid API key. The upstream implementation can accept optional request-scoped HF credentials for private/expanded access, but M8 must not require or forward user HF tokens.
 
 ### M8 adapter policy
 
@@ -171,7 +171,7 @@ Same safety envelope as Agent Finder:
 - 25-result cap;
 - strict response validation;
 - provider failure isolated from other discovery providers;
-- no server-side arbitrary catalog navigation supplied by the public caller. HF itself intentionally keeps arbitrary URL navigation client-side due SSRF concerns; ProofRail should follow the same principle.
+- no server-side arbitrary catalog navigation supplied by the public caller. HF itself intentionally keeps arbitrary URL navigation client-side due SSRF concerns; AegisOne should follow the same principle.
 
 ## 4. Official MCP Registry
 
@@ -220,9 +220,9 @@ Read/list ingestion is public. Publishing/auth endpoints are out of scope.
 
 ### M8 trust policy
 
-An official Registry entry is strong ecosystem metadata, not ProofRail source/artifact proof. Initial ingested MCP resources must remain `INDEXED` unless a separate ProofRail evidence path exists.
+An official Registry entry is strong ecosystem metadata, not AegisOne source/artifact proof. Initial ingested MCP resources must remain `INDEXED` unless a separate AegisOne evidence path exists.
 
-Do not call the Registry's GitHub/DNS publishing-auth mechanisms on behalf of resources merely to manufacture ProofRail assurance.
+Do not call the Registry's GitHub/DNS publishing-auth mechanisms on behalf of resources merely to manufacture AegisOne assurance.
 
 ### M8.10 implementation note
 
@@ -263,7 +263,7 @@ Security-sensitive build/source claims must resolve to a full immutable 40-chara
 GET https://api.github.com/repos/{owner}/{repo}/tarball/{ref}
 ```
 
-The existing ProofRail source-acquisition path already uses exact-SHA GitHub retrieval for M7. Reuse/harden it rather than creating a second downloader.
+The existing AegisOne source-acquisition path already uses exact-SHA GitHub retrieval for M7. Reuse/harden it rather than creating a second downloader.
 
 ### Public authentication/cost
 
@@ -374,7 +374,7 @@ Not required for M8 backend MVP.
 
 Useful later for npm-distributed agent packages because trusted publishing can issue provenance connecting package publication to a CI identity/source workflow.
 
-If added, normalize it as a provider-specific source-assurance adapter; do not place npm fields in `@proofrail/capability-model`.
+If added, normalize it as a provider-specific source-assurance adapter; do not place npm fields in `@aegisone/capability-model`.
 
 ## 9. Sigstore / cosign — future adapter
 
@@ -388,9 +388,9 @@ Future use:
 
 Like GitHub attestations, verification policy must constrain the expected identity; a cryptographically valid signature from the wrong identity is not sufficient.
 
-## 10. Supabase — current ProofRail project
+## 10. Supabase — current AegisOne project
 
-The existing ProofRail Supabase project is active and currently contains only:
+The existing AegisOne Supabase project is active and currently contains only:
 
 ```text
 public.verification_jobs
@@ -438,7 +438,7 @@ https://proofrail-app-production.up.railway.app
 Current start command:
 
 ```text
-pnpm --filter @proofrail/web start
+pnpm --filter @aegisone/web start
 ```
 
 Current health path:
@@ -509,7 +509,7 @@ No new Aristotle write is required for M8 MVP.
 
 Search/discovery must never trigger a funded 0G operation. Only an explicit authorized verification job may do so.
 
-## 13. Runtime APIs ProofRail itself should expose by backend freeze
+## 13. Runtime APIs AegisOne itself should expose by backend freeze
 
 ### Discovery
 
@@ -540,12 +540,12 @@ GET  /api/v1/source-claims/:claimId
 ### Agent/MCP tools
 
 ```text
-proofrail_search
-proofrail_inspect
-proofrail_evaluate
+aegisone_search
+aegisone_inspect
+aegisone_evaluate
 ```
 
-No public `proofrail_install`, `proofrail_execute`, `proofrail_sign`, or generic arbitrary-build tool in M8.
+No public `aegisone_install`, `aegisone_execute`, `aegisone_sign`, or generic arbitrary-build tool in M8.
 
 ## Adapter implementation checklist
 

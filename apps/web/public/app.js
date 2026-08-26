@@ -5,7 +5,7 @@
 //
 // Non-negotiable: this script never computes or reinterprets a trust/policy verdict. Every
 // ALLOW/REVIEW/DENY, MATCH/MISMATCH/DIVERGED, or source-assurance level rendered here comes
-// verbatim from a ProofRail backend JSON response.
+// verbatim from an AegisOne backend JSON response.
 
 import { resultListHtml } from "/static/ui/result-card.mjs";
 import { policyResultHtml, policyErrorHtml } from "/static/ui/policy-result.mjs";

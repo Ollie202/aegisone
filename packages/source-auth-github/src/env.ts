@@ -7,7 +7,7 @@ const MIN_STATE_SECRET_LENGTH = 32;
  * GitHub App has not been created/configured yet. This environment currently has no GitHub App
  * (`GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_OAUTH_CALLBACK_URL`/
  * `GITHUB_OAUTH_STATE_SECRET` do not exist anywhere), so callers must treat `null` as "GitHub
- * source authentication is unavailable" rather than throwing — the rest of ProofRail (search,
+ * source authentication is unavailable" rather than throwing — the rest of AegisOne (search,
  * DECLARED claims, read APIs) must keep working without it.
  */
 export function createGithubSourceAuthConfigFromEnv(env: NodeJS.ProcessEnv = process.env): GithubSourceAuthConfig | null {

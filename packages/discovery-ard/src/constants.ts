@@ -59,20 +59,20 @@ export const ARD_MEDIA_TYPE_TO_RESOURCE_KIND: Readonly<Record<ArdResourceMediaTy
   [ARD_MEDIA_TYPES.api]: "api",
 };
 
-export const PROOFRAIL_ARD_REGISTRY_IDENTIFIER =
+export const AEGISONE_ARD_REGISTRY_IDENTIFIER =
   "urn:air:proofrail-app-production.up.railway.app:registry:capability-search" as const;
 
-export const PROOFRAIL_ARD_METADATA = {
-  schemaVersion: "org.proofrail.schemaVersion",
-  resourceId: "org.proofrail.resourceId",
-  resourceKind: "org.proofrail.resourceKind",
-  discoveryStatus: "org.proofrail.discovery.status",
-  sourceAssurance: "org.proofrail.evidence.sourceAssurance",
-  sourceInspection: "org.proofrail.evidence.sourceInspection",
-  correspondence: "org.proofrail.evidence.correspondence",
-  securityAssessment: "org.proofrail.evidence.securityAssessment",
-  canonicalEvidence: "org.proofrail.evidence.canonicalEvidence",
-  ardSpecCommit: "org.proofrail.ard.specCommit",
+export const AEGISONE_ARD_METADATA = {
+  schemaVersion: "org.aegisone.schemaVersion",
+  resourceId: "org.aegisone.resourceId",
+  resourceKind: "org.aegisone.resourceKind",
+  discoveryStatus: "org.aegisone.discovery.status",
+  sourceAssurance: "org.aegisone.evidence.sourceAssurance",
+  sourceInspection: "org.aegisone.evidence.sourceInspection",
+  correspondence: "org.aegisone.evidence.correspondence",
+  securityAssessment: "org.aegisone.evidence.securityAssessment",
+  canonicalEvidence: "org.aegisone.evidence.canonicalEvidence",
+  ardSpecCommit: "org.aegisone.ard.specCommit",
 } as const;
 
 export function pinnedArdRawUrl(path: string): string {

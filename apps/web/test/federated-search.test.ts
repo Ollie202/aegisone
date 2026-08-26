@@ -48,7 +48,7 @@ function stubFailingProvider(id: string): DiscoveryProvider {
 
 async function startTestServer(providers: ReadonlyMap<string, DiscoveryProvider>): Promise<TestServer> {
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
     discoveryProviders: providers,
   });
   const server = createServer((request, response) => {

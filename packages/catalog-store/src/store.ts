@@ -16,7 +16,7 @@ import type {
 
 /**
  * Server-side-only mutable catalog persistence boundary. Nothing implementing this
- * interface may derive a ProofRail trust/evidence value from a stored row; see
+ * interface may derive an AegisOne trust/evidence value from a stored row; see
  * `convert.ts` for the one place catalog rows are turned back into a
  * `CapabilityResource` view, which always emits empty/unverified trust.
  */

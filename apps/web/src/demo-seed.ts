@@ -33,7 +33,7 @@ import type { CapabilityResource } from "../../../packages/capability-model/src/
  * it does not add a parallel rendering path.
  */
 
-export const DEMO_REPO_FULL_NAME = "proofrail-demo/m8-9-fixture-skill";
+export const DEMO_REPO_FULL_NAME = "aegisone-demo/m8-9-fixture-skill";
 const DEMO_REPO_ID = 8_009_001;
 
 const GENUINE_SKILL_MD = `---
@@ -80,7 +80,7 @@ function demoCommitSha(): string {
 function discoveredSkillResource(commitSha: string): CapabilityResource {
   return {
     schemaVersion: "1",
-    id: "gh:proofrail-demo/m8-9-fixture-skill@substitution-demo",
+    id: "gh:aegisone-demo/m8-9-fixture-skill@substitution-demo",
     kind: "agent-skill",
     name: "M8.9 Substitution Demo Skill",
     description: "Demo-fixture resource reusing M8.9's real tested substitution-demo identity and content.",
@@ -124,7 +124,7 @@ export async function seedDemoCatalog(store: CatalogStore): Promise<DemoSeedResu
 
   const authority: CanonicalSourceClaimAuthority = {
     githubUserId: 8009,
-    githubLogin: "proofrail-demo-maintainer",
+    githubLogin: "aegisone-demo-maintainer",
     permission: "admin",
   };
   const canonicalClaim = buildCanonicalSourceClaim({
@@ -146,7 +146,7 @@ export async function seedDemoCatalog(store: CatalogStore): Promise<DemoSeedResu
     sourceRepository: DEMO_REPO_FULL_NAME,
     sourceRepositoryId: DEMO_REPO_ID,
     sourceRepositoryNodeId: "R_demo_m8_9",
-    sourceOwnerLogin: "proofrail-demo",
+    sourceOwnerLogin: "aegisone-demo",
     sourceOwnerId: 8009,
     sourceCommitSha: commitSha,
     sourceSubdirectory: "m8-9-fixture-skill",

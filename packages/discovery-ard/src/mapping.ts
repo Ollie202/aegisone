@@ -2,7 +2,7 @@ import type { CapabilityResource, CapabilityTrustEvidence } from "../../capabili
 import { assertValidCapabilityResource } from "../../capability-model/src/validate.ts";
 import {
   ARD_MEDIA_TYPE_TO_RESOURCE_KIND,
-  PROOFRAIL_ARD_METADATA,
+  AEGISONE_ARD_METADATA,
   RESOURCE_KIND_TO_ARD_MEDIA_TYPE,
 } from "./constants.ts";
 import { ArdAdapterError } from "./errors.ts";
@@ -31,17 +31,17 @@ function emptyTrustEvidence(): CapabilityTrustEvidence {
   };
 }
 
-function proofRailMetadata(resource: CapabilityResource): ArdMetadata {
+function aegisOneMetadata(resource: CapabilityResource): ArdMetadata {
   return {
-    [PROOFRAIL_ARD_METADATA.schemaVersion]: resource.schemaVersion,
-    [PROOFRAIL_ARD_METADATA.resourceId]: resource.id,
-    [PROOFRAIL_ARD_METADATA.resourceKind]: resource.kind,
-    [PROOFRAIL_ARD_METADATA.discoveryStatus]: resource.discovery.status,
-    [PROOFRAIL_ARD_METADATA.sourceAssurance]: resource.trust.sourceAssurance.level,
-    [PROOFRAIL_ARD_METADATA.sourceInspection]: resource.trust.sourceInspection.status,
-    [PROOFRAIL_ARD_METADATA.correspondence]: resource.trust.correspondence.status,
-    [PROOFRAIL_ARD_METADATA.securityAssessment]: resource.trust.security.status,
-    [PROOFRAIL_ARD_METADATA.canonicalEvidence]: resource.trust.canonicalEvidence.status,
+    [AEGISONE_ARD_METADATA.schemaVersion]: resource.schemaVersion,
+    [AEGISONE_ARD_METADATA.resourceId]: resource.id,
+    [AEGISONE_ARD_METADATA.resourceKind]: resource.kind,
+    [AEGISONE_ARD_METADATA.discoveryStatus]: resource.discovery.status,
+    [AEGISONE_ARD_METADATA.sourceAssurance]: resource.trust.sourceAssurance.level,
+    [AEGISONE_ARD_METADATA.sourceInspection]: resource.trust.sourceInspection.status,
+    [AEGISONE_ARD_METADATA.correspondence]: resource.trust.correspondence.status,
+    [AEGISONE_ARD_METADATA.securityAssessment]: resource.trust.security.status,
+    [AEGISONE_ARD_METADATA.canonicalEvidence]: resource.trust.canonicalEvidence.status,
   };
 }
 
@@ -65,7 +65,7 @@ export function capabilityResourceToArdEntry(
     capabilities: cloneStrings(options.capabilities),
     representativeQueries: cloneStrings(options.representativeQueries),
     version: resource.currentVersion?.versionLabel ?? undefined,
-    metadata: proofRailMetadata(resource),
+    metadata: aegisOneMetadata(resource),
     ...(content.url !== undefined ? { url: content.url } : { data: structuredClone(content.data) }),
   };
 
@@ -117,7 +117,7 @@ export function ardEntryToCapabilityResource(
           distribution: null,
         },
     // ARD metadata and trustManifest are untrusted discovery data. They cannot
-    // populate ProofRail evidence, including when keys resemble our namespace.
+    // populate AegisOne evidence, including when keys resemble our namespace.
     trust: emptyTrustEvidence(),
   };
 

@@ -13,10 +13,10 @@ async function run(command: string, args: string[], cwd: string): Promise<void> 
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
-        GIT_AUTHOR_NAME: "ProofRail Fixture",
-        GIT_AUTHOR_EMAIL: "fixture@proofrail.test",
-        GIT_COMMITTER_NAME: "ProofRail Fixture",
-        GIT_COMMITTER_EMAIL: "fixture@proofrail.test",
+        GIT_AUTHOR_NAME: "AegisOne Fixture",
+        GIT_AUTHOR_EMAIL: "fixture@aegisone.test",
+        GIT_COMMITTER_NAME: "AegisOne Fixture",
+        GIT_COMMITTER_EMAIL: "fixture@aegisone.test",
       },
     });
     let output = "";
@@ -43,7 +43,7 @@ license: MIT
  * and returns the repository path plus the exact commit SHA. Local-path "remotes" are only
  * accepted by `inspectSourceOnly` when `allowLocalFixtureRepository: true` is passed. */
 export async function createFixtureGitRepository(skillMarkdown: string = SKILL_MD): Promise<{ repositoryPath: string; commitSha: string; subdirectory: string }> {
-  const root = await mkdtemp(join(tmpdir(), "proofrail-skill-fixture-repo-"));
+  const root = await mkdtemp(join(tmpdir(), "aegisone-skill-fixture-repo-"));
   await run("git", ["init", "--quiet", "--initial-branch=main"], root);
   await run("git", ["config", "core.autocrlf", "false"], root);
   await run("git", ["config", "core.eol", "lf"], root);

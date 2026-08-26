@@ -24,7 +24,7 @@ supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql   (adds capabil
 Command (from a machine with the real Supabase project credentials):
 
 ```bash
-supabase link --project-ref <the ProofRail project ref>
+supabase link --project-ref <the AegisOne project ref>
 supabase db push
 ```
 
@@ -39,7 +39,7 @@ expected policy names).
 
 ## 2. Review the Supabase security and performance advisors
 
-After applying the migrations above, open the Supabase dashboard for the ProofRail project:
+After applying the migrations above, open the Supabase dashboard for the AegisOne project:
 
 ```text
 https://supabase.com/dashboard/project/<project-ref>/advisors/security
@@ -50,7 +50,7 @@ Confirm:
 
 - no new security advisor warning is introduced by the four M8 tables (expected: none, since every
   table denies both `anon` and `authenticated` roles by policy — the only access path is the
-  service-role-only `proofrail-catalog` Edge Function);
+  service-role-only `aegisone-catalog` Edge Function);
 - no missing-index/table-bloat performance warning that would need addressing before M9 starts
   querying through the frozen API at real traffic volumes;
 - record the advisor findings (or "clean") in `PROJECT_STATE.md` once reviewed.
@@ -60,7 +60,7 @@ Confirm:
 Railway project `proofrail-0g`, exactly two services (do not add a third):
 
 ```text
-proofrail-app     start: pnpm --filter @proofrail/web start       health: /health
+proofrail-app     start: pnpm --filter @aegisone/web start       health: /health
 proofrail-worker  start: node --experimental-strip-types apps/worker/src/server.ts   health: /health
 ```
 
@@ -73,7 +73,7 @@ curl -sS https://<proofrail-worker-production-host>/health
 ```
 
 Both must return `200` with the expected JSON status shape (`apps/web/src/product.ts`'s
-`{ ok: true, service: "proofrail", mode: "product" }` for the app;
+`{ ok: true, service: "aegisone", mode: "product" }` for the app;
 `apps/worker/src/status.ts`'s status object, `signerConfigured: true`, for the worker). If either
 returns non-200 or the worker reports `signerConfigured: false`, treat M9 as **not** frontend-ready
 regardless of what this issue's code/contract gate says.
@@ -110,7 +110,7 @@ already satisfied — confirm which mode is configured in the dashboard.
 M8.5's OAuth flow is fully implemented and tested against mocked GitHub responses, but no real
 GitHub App exists in any environment yet. To prove a real `REPOSITORY_AUTHENTICATED` claim:
 
-1. Create/install a GitHub App named (or similar to) `ProofRail Source Verifier` per
+1. Create/install a GitHub App named (or similar to) `AegisOne Source Verifier` per
    `docs/14-source-authentication.md`'s "M8 GitHub App design" section.
 2. Add these variables to `proofrail-app` on Railway (never `proofrail-worker` — the app service is
    the only place GitHub OAuth secrets belong):
@@ -138,7 +138,7 @@ similar) at:
 ```json
 {
   "mcpServers": {
-    "proofrail": {
+    "aegisone": {
       "url": "https://proofrail-app-production.up.railway.app/mcp",
       "transport": "streamable-http"
     }
@@ -146,7 +146,7 @@ similar) at:
 }
 ```
 
-Confirm the client lists exactly `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` and
+Confirm the client lists exactly `aegisone_search`, `aegisone_inspect`, `aegisone_evaluate` and
 that at least one real call through each tool round-trips correctly in that product's own UI. This
 is the one item in `docs/21-m8-mcp-interface.md`'s "what is proven vs. what still needs a human"
 section that remains outstanding.

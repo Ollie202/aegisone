@@ -7,12 +7,12 @@ import { MCP_OFFICIAL_REGISTRY_PROVIDER_ID } from "./constants.ts";
  * (`{ server: {...}, _meta: {...} }`), a materially different wire shape from the M8.3
  * ARD-search-shaped providers (`normalize.ts`).
  *
- * An official Registry listing is ecosystem publication metadata, not ProofRail source or
+ * An official Registry listing is ecosystem publication metadata, not AegisOne source or
  * artifact proof (docs/15-m8-api-inventory.md section 4, docs/17-m8-security-boundaries.md
  * Threat M8-001). The Registry entry's own `repository`/`packages` fields are read only to
  * populate discovery-only pointers below; `currentVersion.source`/`currentVersion.distribution`
  * are always emitted `null` here and `trust` is always emitted empty/unavailable — exactly the
- * same discipline `normalize.ts` already applies to the M8.3 providers. A future ProofRail
+ * same discipline `normalize.ts` already applies to the M8.3 providers. A future AegisOne
  * source-claim/verification pass (M8.5/M8.6) may separately authenticate and inspect the
  * `repository.url` this function only ever stores as an unauthenticated discovery pointer.
  */
@@ -82,7 +82,7 @@ function pickResourceUrl(server: Record<string, unknown>, registryBaseUrl: strin
 /**
  * Normalizes one raw `{ server, _meta }` Registry list entry into a validated
  * `CapabilityResource`, or returns `null` if the entry does not carry the minimum fields
- * ProofRail requires. A dropped entry never throws and never fails the whole page fetch.
+ * AegisOne requires. A dropped entry never throws and never fails the whole page fetch.
  */
 export function normalizeMcpRegistryEntry(
   raw: unknown,
@@ -120,7 +120,7 @@ export function normalizeMcpRegistryEntry(
     },
     // The Registry's own `repository`/`packages` metadata is discovery data only. It is never
     // read past this point, and `currentVersion.source`/`distribution` are always `null` here:
-    // only a separate ProofRail source-claim/verification pass may ever populate them.
+    // only a separate AegisOne source-claim/verification pass may ever populate them.
     currentVersion: { id: `${resourceId}@${versionLabel}`, versionLabel, source: null, distribution: null },
     trust: emptyTrustEvidence(),
   };

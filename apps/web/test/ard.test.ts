@@ -16,7 +16,7 @@ interface TestServer {
 
 async function startTestServer(): Promise<TestServer> {
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
-    publicBaseUrl: "https://proofrail.example",
+    publicBaseUrl: "https://aegisone.example",
   });
   const server = createServer((request, response) => {
     void handler(request, response).catch((error) => {
@@ -38,7 +38,7 @@ async function stopTestServer(server: Server): Promise<void> {
   await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
 
-test("GET /.well-known/ai-catalog.json advertises the pinned ProofRail search registry", async () => {
+test("GET /.well-known/ai-catalog.json advertises the pinned AegisOne search registry", async () => {
   const running = await startTestServer();
   try {
     const response = await fetch(`${running.baseUrl}/.well-known/ai-catalog.json`);
@@ -50,7 +50,7 @@ test("GET /.well-known/ai-catalog.json advertises the pinned ProofRail search re
     };
     assert.equal(manifest.specVersion, "1.0");
     assert.equal(manifest.entries[0]!.type, ARD_MEDIA_TYPES.registry);
-    assert.equal(manifest.entries[0]!.url, "https://proofrail.example/search");
+    assert.equal(manifest.entries[0]!.url, "https://aegisone.example/search");
     assert.ok(Object.values(manifest.entries[0]!.metadata).includes(ARD_SPEC_COMMIT));
   } finally {
     await stopTestServer(running.server);
@@ -77,7 +77,7 @@ test("POST /search returns each supported local resource kind with relevance-onl
       assert.equal(body.results.length, 1);
       assert.equal(body.results[0]!.type, mediaType);
       assert.equal(typeof body.results[0]!.score, "number");
-      assert.equal(body.results[0]!.source, "https://proofrail.example/search");
+      assert.equal(body.results[0]!.source, "https://aegisone.example/search");
       assert.equal(body.results[0]!.trustManifest, undefined);
       assert.deepEqual(body.referrals, []);
     }

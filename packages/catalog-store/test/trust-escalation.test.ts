@@ -7,7 +7,7 @@ import { federatedResource } from "./fixtures.ts";
 
 // Same regression class as M8.1/M8.2/M8.3, applied at the DB/store layer: nothing a
 // discovery provider, an outage, or a forged provider_metadata payload can write into
-// this store may become a ProofRail MATCH/MISMATCH, REPOSITORY_AUTHENTICATED,
+// this store may become an AegisOne MATCH/MISMATCH, REPOSITORY_AUTHENTICATED,
 // SIGNED_RELEASE, or security finding.
 
 test("a DB-only inserted INDEXED resource remains unverified end-to-end", async () => {

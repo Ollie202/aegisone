@@ -15,13 +15,13 @@ This is the short research digest agents and humans should read when asking "why
 - Claiming we invented build provenance.
 - Claiming TEE-attested builds are novel.
 - Claiming decentralized/multi-builder rebuild networks are novel.
-- Treating ProofRail as the source of truth.
+- Treating AegisOne as the source of truth.
 - Using an LLM to decide whether the artifact matches.
 - Supporting arbitrary repositories in Wave 3.
 
 ## Strongest product framing
 
-> **ProofRail independently rebuilds software from its publisher-declared source and gives humans and AI agents evidence of whether the published software actually matches.**
+> **AegisOne independently rebuilds software from its publisher-declared source and gives humans and AI agents evidence of whether the published software actually matches.**
 
 ## Strongest Wave 3 demo
 

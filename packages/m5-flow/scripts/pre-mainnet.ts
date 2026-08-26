@@ -49,10 +49,10 @@ const [blockNumber, feeData, balanceWei, nonce] = await Promise.all([
 ]);
 
 const artifact = JSON.parse(
-  await readFile("contracts/artifacts/src/ProofRailRegistry.sol/ProofRailRegistry.json", "utf8"),
+  await readFile("contracts/artifacts/src/AegisOneRegistry.sol/AegisOneRegistry.json", "utf8"),
 ) as { abi: unknown[]; bytecode: string };
 if (!artifact.bytecode.startsWith("0x") || artifact.bytecode.length <= 2) {
-  throw new Error("Compiled ProofRailRegistry artifact has no deployment bytecode");
+  throw new Error("Compiled AegisOneRegistry artifact has no deployment bytecode");
 }
 
 let mainnetDeployEstimate: bigint | null = null;

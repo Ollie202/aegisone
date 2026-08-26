@@ -3,7 +3,7 @@
 Record real proof here immediately when created. Do not paste secrets.
 
 ## Repository
-- Repository: https://github.com/Ollie202/proofrail-0g
+- Repository: https://github.com/Ollie202/aegisone
 - Visibility: PUBLIC
 - Foundation completion commit: `f7d1d9a010c8067b7a719fe97d1042c00a611ff4`
 
@@ -50,7 +50,7 @@ Record real proof here immediately when created. Do not paste secrets.
 - Railway deployment: `cd9faa4c-4c02-4532-8f13-f4e41da19096`
 - M5 implementation commit: `eb96681ff683a25a56741b8ceaab8918cbceecac`
 - Source assurance: `DECLARED`
-- Source repository: `https://github.com/Ollie202/proofrail-0g.git`
+- Source repository: `https://github.com/Ollie202/aegisone.git`
 - Exact source commit requested/read back: `e9c82277cef2f7630977e2473664e14eed2f860d`
 - Runtime: Node `v22.14.0`
 - Provider: `0xa19C4E672576E186AF81548E950Bf74A736220C3`
@@ -116,7 +116,7 @@ Record real proof here immediately when created. Do not paste secrets.
 ## M7 — Agent Skill verification + audit
 - Railway live deployment: `6cec0482-813a-45d9-a831-0cea9dc3090e`.
 - Network / chain ID: 0G Galileo Testnet / `16602`.
-- Source repository: `https://github.com/Ollie202/proofrail-0g.git`.
+- Source repository: `https://github.com/Ollie202/aegisone.git`.
 - Exact source commit requested and independently resolved: `2f193aad92d2f807c2e25f67eb28c5090fa945cf`.
 - Source acquisition inside 0G Sandbox: exact-SHA GitHub commit API verification + tarball for that exact SHA (`GITHUB_API_EXACT_SHA_TARBALL`).
 - Skill directory: `examples/agent-skills/clean-review`.

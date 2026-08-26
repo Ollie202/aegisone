@@ -6,7 +6,7 @@ import {
   type ContractRunner,
   type Signer,
 } from "ethers";
-import { PROOFRAIL_REGISTRY_ABI } from "./abi.ts";
+import { AEGISONE_REGISTRY_ABI } from "./abi.ts";
 import {
   assertRegistryCommitments,
   requireBytes32,
@@ -43,7 +43,7 @@ export function computeRegistryRecordId(value: RegistryCommitments): Bytes32Hex 
 }
 
 export function registryContract(address: string, runner: ContractRunner): Contract {
-  return new Contract(getAddress(address), PROOFRAIL_REGISTRY_ABI, runner);
+  return new Contract(getAddress(address), AEGISONE_REGISTRY_ABI, runner);
 }
 
 export async function registerEvidence(

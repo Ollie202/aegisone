@@ -2,7 +2,7 @@ import type { CapabilityResource } from "../../capability-model/src/model.ts";
 import type { ArdResourceMediaType } from "../../discovery-ard/src/constants.ts";
 import type { DiscoveryProviderErrorCode } from "./errors.ts";
 
-/** Provider-independent parsed query. Mirrors the shape ProofRail already parses for local ARD search. */
+/** Provider-independent parsed query. Mirrors the shape AegisOne already parses for local ARD search. */
 export interface DiscoveryQuery {
   text: string;
   mediaTypes: ArdResourceMediaType[] | null;
@@ -32,7 +32,7 @@ export type DiscoveryProviderResult = DiscoveryProviderSuccess | DiscoveryProvid
 /**
  * Read-only external discovery federation boundary. Every implementation must call only its
  * one fixed allowlisted upstream origin, respect the shared timeout/size/result-count limits,
- * and never let upstream metadata escalate ProofRail trust evidence.
+ * and never let upstream metadata escalate AegisOne trust evidence.
  */
 export interface DiscoveryProvider {
   readonly id: string;

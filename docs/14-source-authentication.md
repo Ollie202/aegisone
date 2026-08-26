@@ -2,7 +2,7 @@
 
 ## Why this exists
 
-ProofRail has always separated two questions:
+AegisOne has always separated two questions:
 
 1. **Which source is being claimed for this release/capability?**
 2. **Do the distributed bytes correspond to independent reproduction from that source?**
@@ -17,11 +17,11 @@ M8 uses the M8.1 levels:
 
 ### `NONE`
 
-ProofRail has no authenticated publisher/source mapping. A discovery provider may have supplied a repository or URL, but ProofRail has not verified authority over it.
+AegisOne has no authenticated publisher/source mapping. A discovery provider may have supplied a repository or URL, but AegisOne has not verified authority over it.
 
 ### `DECLARED`
 
-An explicit mapping was supplied to ProofRail and the immutable source can be resolved, but publisher authority was not proven.
+An explicit mapping was supplied to AegisOne and the immutable source can be resolved, but publisher authority was not proven.
 
 Typical evidence:
 
@@ -63,7 +63,7 @@ Use a **GitHub App**, not a classic OAuth app, for the publisher claim flow. Git
 
 Suggested name:
 
-`ProofRail Source Verifier`
+`AegisOne Source Verifier`
 
 Suggested production URLs:
 
@@ -234,11 +234,11 @@ Conceptual schema:
 
 Fields that are not actually observed must be absent/null according to the canonical schema; never infer them.
 
-Canonicalize using the established ProofRail deterministic canonical JSON rules and compute:
+Canonicalize using the established AegisOne deterministic canonical JSON rules and compute:
 
 `sourceClaimDigest = SHA256(canonicalSourceClaimBytes)`
 
-The digest becomes part of ProofRail verification/canonical evidence. Supabase may cache the claim fields but may not alter the source assurance without the evidence record.
+The digest becomes part of AegisOne verification/canonical evidence. Supabase may cache the claim fields but may not alter the source assurance without the evidence record.
 
 ## Source claim persistence
 
@@ -357,7 +357,7 @@ Historical authenticated claims are immutable evidence. A new source mapping cre
 
 Private-source independent builds add secret handling and are **out of scope for M8 MVP**.
 
-The M8 source-auth flow may technically identify a user's private repository if the GitHub App installation permits it, but ProofRail should not claim it can independently reproduce private source until a separate secret-isolated source acquisition design is implemented and reviewed.
+The M8 source-auth flow may technically identify a user's private repository if the GitHub App installation permits it, but AegisOne should not claim it can independently reproduce private source until a separate secret-isolated source acquisition design is implemented and reviewed.
 
 For M8, support full verification only for public GitHub sources.
 

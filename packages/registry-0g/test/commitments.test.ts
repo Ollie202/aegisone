@@ -41,7 +41,7 @@ const verification = {
   },
 } as unknown as VerificationJson;
 
-test("registry commitments preserve ProofRail SHA-256 values as bytes32", () => {
+test("registry commitments preserve AegisOne SHA-256 values as bytes32", () => {
   const commitments = createRegistryCommitments(verification, ROOT);
   assert.equal(commitments.manifestDigest, `0x${verification.manifestSha256}`);
   assert.equal(commitments.publisherArtifactDigest, `0x${verification.artifacts.publisher.sha256}`);

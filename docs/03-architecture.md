@@ -2,7 +2,7 @@
 
 ## Architecture goal
 
-Keep ProofRail's trust/evidence model provider-independent while using 0G where independent execution, durable evidence, and public commitments materially reduce trust.
+Keep AegisOne's trust/evidence model provider-independent while using 0G where independent execution, durable evidence, and public commitments materially reduce trust.
 
 M8 adds **capability discovery, source authentication, mutable cataloging, consumer policy and agent access** around the already-proven verification engine. It does not replace the M1–M7 trust boundary.
 
@@ -26,7 +26,7 @@ flowchart TD
   H --> I["Storage root / proof evidence"]
   G --> J["0G registry adapter"]
   I --> J
-  J --> K["ProofRailRegistry"]
+  J --> K["AegisOneRegistry"]
   K --> L["CLI / API / agents / UI"]
   H --> L
   T --> L
@@ -36,7 +36,7 @@ For Agent Skills, deterministic security auditing is a **parallel** analysis pat
 
 ## M8 backend topology
 
-Production remains exactly two permanent Railway services plus the existing ProofRail Supabase project:
+Production remains exactly two permanent Railway services plus the existing AegisOne Supabase project:
 
 ```mermaid
 flowchart TD
@@ -48,24 +48,24 @@ flowchart TD
   A <--> S["Supabase mutable catalog/job/source-claim index"]
   A --> GH["GitHub App user auth / source claims"]
   A --> POL["Deterministic policy evaluator"]
-  A --> MCP["ProofRail MCP: search / inspect / evaluate"]
+  A --> MCP["AegisOne MCP: search / inspect / evaluate"]
   S --> W["proofrail-worker · internal/secret-bearing"]
   W --> SRC["Exact GitHub source acquisition"]
   W --> Z["0G Sandbox independent reproduction"]
-  Z --> C["ProofRail correspondence + Skill audit"]
+  Z --> C["AegisOne correspondence + Skill audit"]
   C --> O["0G Storage canonical evidence"]
-  O --> R["ProofRail registry commitments"]
+  O --> R["AegisOne registry commitments"]
   O --> A
   R --> A
 ```
 
 ### Roles
 
-- **ProofRail app = public control/read plane.** ARD/search, versioned resource/evidence reads, GitHub source-authentication web flow, deterministic policy endpoint, and later MCP transport.
+- **AegisOne app = public control/read plane.** ARD/search, versioned resource/evidence reads, GitHub source-authentication web flow, deterministic policy endpoint, and later MCP transport.
 - **Supabase = mutable app/catalog memory.** Discovery observations, stable resource/version IDs, source-claim observations, job lifecycle, and pointers/caches. It is not proof authority.
-- **ProofRail worker = secret-bearing execution plane.** Controlled verification orchestration, exact source acquisition, 0G execution/storage/registry writes, and optional cryptographic artifact-attestation tooling.
+- **AegisOne worker = secret-bearing execution plane.** Controlled verification orchestration, exact source acquisition, 0G execution/storage/registry writes, and optional cryptographic artifact-attestation tooling.
 - **0G Sandbox = independent reproducer.** Reconstructs the supported artifact/package from exact claimed source.
-- **0G Storage = durable evidence store.** Holds canonical ProofRail evidence.
+- **0G Storage = durable evidence store.** Holds canonical AegisOne evidence.
 - **0G registry = immutable commitment layer.** Holds compact commitments rather than large logs.
 
 No third permanent Railway microservice is required for M8.
@@ -75,7 +75,7 @@ No third permanent Railway microservice is required for M8.
 ```text
 user/agent intent
       ↓
-ProofRail ARD/search
+AegisOne ARD/search
       ↓
 provider adapters
       ↓
@@ -83,7 +83,7 @@ normalized CapabilityResource
       ↓
 mutable catalog/cache
       ↓
-available ProofRail evidence joined by stable resource/version
+available AegisOne evidence joined by stable resource/version
       ↓
 consumer policy
       ↓
@@ -95,7 +95,7 @@ Discovery and trust are deliberately separate:
 - upstream provider result -> `INDEXED` discovery state;
 - high relevance -> still only relevance;
 - upstream `trustManifest`/`verified` -> provider metadata only;
-- only ProofRail evidence validators may populate source assurance/correspondence/security/canonical evidence fields.
+- only AegisOne evidence validators may populate source assurance/correspondence/security/canonical evidence fields.
 
 ## Source authentication architecture
 
@@ -111,7 +111,7 @@ This can support `DECLARED` source assurance but does not prove publisher author
 
 A GitHub App user authorization flow proves an authenticated GitHub identity has sufficient effective write/push or admin-equivalent authority over the **stable GitHub repository ID** at claim time.
 
-ProofRail then canonicalizes the exact source claim:
+AegisOne then canonicalizes the exact source claim:
 
 ```text
 stable repository identity
@@ -174,7 +174,7 @@ independent canonical Skill package
               ↓ SHA-256
 ```
 
-Only this path emits normal ProofRail `MATCH` / `MISMATCH` / `DIVERGED` states.
+Only this path emits normal AegisOne `MATCH` / `MISMATCH` / `DIVERGED` states.
 
 Skill security auditing remains orthogonal. Valid combinations include:
 
@@ -245,7 +245,7 @@ Adapter for the live 0G Sandbox/Tapp surfaces proven in M4/M7.
 
 The currently proven public build path obtains exact immutable source, executes a constrained build/package step, retrieves artifact bytes, hashes them, and deletes the sandbox.
 
-M4 also obtained separate provider TDX evidence. The current quote does not bind ProofRail's artifact digest; the architecture must not describe the build itself as TEE-output-attested.
+M4 also obtained separate provider TDX evidence. The current quote does not bind AegisOne's artifact digest; the architecture must not describe the build itself as TEE-output-attested.
 
 Unavailable output binding remains explicit unavailable/provider-evidence-only state, not a reason to invent stronger claims.
 
@@ -257,7 +257,7 @@ Existing deterministic Agent Skill parsing/packaging/audit package. M8 reuses it
 
 Stores canonical provenance/comparison evidence and retrieves it with proof verification where supported.
 
-### `contracts/ProofRailRegistry.sol`
+### `contracts/AegisOneRegistry.sol`
 
 Stores compact commitments, not full logs.
 
@@ -265,15 +265,15 @@ Stores compact commitments, not full logs.
 
 Typed client for registry reads/writes.
 
-### `packages/mcp-proofrail` — M8.8
+### `packages/mcp-aegisone` — M8.8
 
 Recommended thin transport adapter over existing application services.
 
 Initial tools only:
 
-- `proofrail_search`
-- `proofrail_inspect`
-- `proofrail_evaluate`
+- `aegisone_search`
+- `aegisone_inspect`
+- `aegisone_evaluate`
 
 No auto-install/execute/sign/arbitrary-build tool.
 
@@ -295,7 +295,7 @@ The 0G private key remains worker-only.
 
 ## Supabase data architecture
 
-M8 extends the existing ProofRail Supabase project rather than creating a new database.
+M8 extends the existing AegisOne Supabase project rather than creating a new database.
 
 Planned normalized areas:
 
@@ -307,7 +307,7 @@ Planned normalized areas:
 - verification evidence pointers;
 - ingestion provider state.
 
-RLS remains enabled. Public browser clients need not write these tables directly; the versioned ProofRail API is the product contract.
+RLS remains enabled. Public browser clients need not write these tables directly; the versioned AegisOne API is the product contract.
 
 Detailed schema: `docs/16-m8-database-plan.md`.
 
@@ -345,7 +345,7 @@ Expensive verification remains internal/authorized; public search/inspect/policy
 
 Do not collapse everything into one green badge.
 
-- **Discovery Indexed** — a provider/catalog knows about the resource; no ProofRail trust implied.
+- **Discovery Indexed** — a provider/catalog knows about the resource; no AegisOne trust implied.
 - **Source Declared** — explicit mapping exists; publisher authority not proven.
 - **Repository Authenticated** — real GitHub repository-authority evidence exists for the exact claim.
 - **Signed Release** — reserve for actually cryptographically verified provenance/signature under expected identity constraints.
@@ -364,7 +364,7 @@ None means source code/Skill is safe by default.
 
 **Discovery is cheap; independent reproduction is expensive; evidence verification is cheap again.**
 
-ProofRail can index/search many resources without independently rebuilding them all. Expensive verification happens only for selected supported versions/jobs. Many consumers can then reuse/verify the resulting canonical evidence.
+AegisOne can index/search many resources without independently rebuilding them all. Expensive verification happens only for selected supported versions/jobs. Many consumers can then reuse/verify the resulting canonical evidence.
 
 This model keeps M8 viable on current solo-builder infrastructure and avoids an expensive global crawler/build farm.
 

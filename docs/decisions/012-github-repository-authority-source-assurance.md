@@ -6,7 +6,7 @@ Accepted for M8.5.
 
 ## Context
 
-ProofRail correspondence is only meaningful relative to an explicit source claim. Discovery systems, package metadata and user input can all point to a GitHub repository, but a repository URL or existing commit does not prove that the publisher authorized that repository/revision as the source for a distributed capability.
+AegisOne correspondence is only meaningful relative to an explicit source claim. Discovery systems, package metadata and user input can all point to a GitHub repository, but a repository URL or existing commit does not prove that the publisher authorized that repository/revision as the source for a distributed capability.
 
 M8 therefore needs a concrete first source-authentication mechanism that is feasible for a solo builder, interoperable with public GitHub repositories, and does not conflate identity/authority with artifact correspondence or code safety.
 
@@ -25,7 +25,7 @@ Use a **GitHub App user authorization flow** as the first M8 source-authenticati
 
 ### `NONE`
 
-No authenticated explicit source mapping exists. A discovery provider may have supplied a repository URL/identifier, but ProofRail has not proven publisher authority.
+No authenticated explicit source mapping exists. A discovery provider may have supplied a repository URL/identifier, but AegisOne has not proven publisher authority.
 
 ### `DECLARED`
 
@@ -36,10 +36,10 @@ An explicit mapping to a resolvable exact source commit exists, but repository a
 Earned only when all of the following are observed and validated:
 
 1. the claimant completes a real GitHub App user authorization flow;
-2. ProofRail resolves the authenticated GitHub user identity;
-3. ProofRail resolves the relevant GitHub App installation/repository access;
+2. AegisOne resolves the authenticated GitHub user identity;
+3. AegisOne resolves the relevant GitHub App installation/repository access;
 4. the authenticated user has sufficient effective **write/push or admin-equivalent** authority over the claimed repository;
-5. ProofRail records the repository's stable GitHub numeric ID in addition to human-readable owner/name;
+5. AegisOne records the repository's stable GitHub numeric ID in addition to human-readable owner/name;
 6. the claimed source is resolved to an exact immutable 40-character commit SHA;
 7. the exact source claim is canonicalized deterministically and SHA-256 digested;
 8. the authority observation and authentication time are recorded as evidence.
@@ -70,7 +70,7 @@ authenticated GitHub user identity
 observed effective repository authority
 ```
 
-The canonical claim digest becomes part of ProofRail evidence and may later be included in canonical 0G evidence/commitments.
+The canonical claim digest becomes part of AegisOne evidence and may later be included in canonical 0G evidence/commitments.
 
 Mutable Supabase rows may cache the claim/evidence but cannot manufacture/rewrite the authenticated assurance without passing the source-claim integrity checks.
 
@@ -100,7 +100,7 @@ Rejected. Anyone/upstream metadata can point at a public repository.
 
 Rejected as the primary mechanism. Commit authorship/signature does not necessarily prove authority to publish the distributed resource mapping, and repositories can have more complex governance.
 
-### Require publisher to commit a ProofRail challenge file into the repository
+### Require publisher to commit an AegisOne challenge file into the repository
 
 Not selected for the MVP because it creates repository mutations/UX friction and still needs a clear account/permission model. It may become an additional domain/repository challenge adapter later.
 

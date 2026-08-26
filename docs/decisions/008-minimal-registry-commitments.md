@@ -4,7 +4,7 @@
 
 ## Context
 
-ProofRail needs a public tamper-evident anchor for reproduction evidence without putting full provenance, logs, URLs, or mutable product labels onchain. The existing trust model separates source identity from source-to-artifact correspondence and forbids treating a matching build as a claim that software is safe.
+AegisOne needs a public tamper-evident anchor for reproduction evidence without putting full provenance, logs, URLs, or mutable product labels onchain. The existing trust model separates source identity from source-to-artifact correspondence and forbids treating a matching build as a claim that software is safe.
 
 M2 already produces a canonical provenance manifest and a real 0G Storage root. M3 therefore needs to anchor enough data for a verifier to bind an on-chain record back to that evidence while keeping the contract small.
 

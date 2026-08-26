@@ -2,13 +2,13 @@
 
 ## 2026-08-17 — 0G Chain registry live completion
 
-**Live finding:** M3 completed a real `ProofRailRegistry` deploy → register → read-back cycle on 0G Galileo Testnet from Railway. Solidity `0.8.24` compiled successfully for EVM target `cancun`, resolving the practical compiler/EVM compatibility question for the current Wave 3 spike.
+**Live finding:** M3 completed a real `ProofRailRegistry` deploy → register → read-back cycle on 0G Galileo Testnet from Railway (the contract was deployed under its then-current name before the AegisOne rename; the source file is now `contracts/src/AegisOneRegistry.sol`, but this already-deployed M3 contract's on-chain identity is historical and unchanged). Solidity `0.8.24` compiled successfully for EVM target `cancun`, resolving the practical compiler/EVM compatibility question for the current Wave 3 spike.
 
 **Observed evidence:** chain ID `16602`; contract `0x227Fcc243f25c395C93Df789EC72Bc75bf096017`; deployment transaction `0xc265ce3bcd03440a6b7f40e7d24bbfc99722635399763e583f84e4ef4f332ae1`; registration transaction `0xa20ae8bf02502020e4bef3ae22fb6f32b2a71fb4d6034e6cca6c3444f4f794c8`; record ID `0xf57437f137bba4a6104af296a7d470573ad49be112a7ef02f6b10b8e413f26e8`. The registered manifest digest equals the canonical M2 SHA-256, the registered provenance root equals the real M2 Storage root, the publisher/reproduced artifact digests are identical, and the runner reported `readbackMatches=true` after reading the record from the deployed contract.
 
 **Gas/cost finding:** deployment consumed `299829` gas and registration consumed `161123` gas. The runner queried Aristotle mainnet fee data read-only and observed a gas-price snapshot of `4000000007` wei, producing a combined estimate of `1843808003226664` wei / `0.001843808003226664 0G`. This is a point-in-time estimate only; no Aristotle transaction was signed or broadcast.
 
-**Operational finding:** ProofRail's root `railway.json` is intentionally M2-specific, so M3 uses an isolated `railway.m3.json`. The M3 runtime also needed Git because the deterministic fixture creates/checks a real repository commit; Railway Railpack's runtime apt-package facility was used to add Git to that service without weakening the fixture.
+**Operational finding:** AegisOne's root `railway.json` is intentionally M2-specific, so M3 uses an isolated `railway.m3.json`. The M3 runtime also needed Git because the deterministic fixture creates/checks a real repository commit; Railway Railpack's runtime apt-package facility was used to add Git to that service without weakening the fixture.
 
 **Impact:** The compact five-field registry schema is now proven end-to-end on Galileo and is frozen for the Wave 3 path. M3 is complete. The highest-risk remaining integration is M4: proving the real 0G Sandbox/Tapp build and attestation boundary.
 

@@ -2,7 +2,7 @@
 
 ## Core security claim
 
-ProofRail verifies evidence about **declared/authenticated source identity, artifact correspondence, and reproducibility**. It does not certify code safety.
+AegisOne verifies evidence about **declared/authenticated source identity, artifact correspondence, and reproducibility**. It does not certify code safety.
 
 ## Existing threats
 
@@ -12,7 +12,7 @@ ProofRail verifies evidence about **declared/authenticated source identity, arti
 | T-002 | Attacker declares a fake repository as the "official" source | High | Never auto-label official; represent source-claim assurance explicitly; M8 adds real repository-authority authentication | DECLARED claims can still be socially misleading |
 | T-003 | Publisher's GitHub/account/source is compromised | High | Exact immutable commit + independent build evidence; stronger signed provenance where available | Authentication cannot prove benign intent/account integrity |
 | T-004 | Builder lies about source/output | High | Exact immutable commit verification, retrieved artifact bytes, digest comparison; later multi-builder corroboration | M4 provider TDX evidence does not bind build output |
-| T-005 | ProofRail rewrites provenance | High | Canonical evidence + 0G Storage + registry commitment | UI/application can still misrepresent if integrity checks are bypassed |
+| T-005 | AegisOne rewrites provenance | High | Canonical evidence + 0G Storage + registry commitment | UI/application can still misrepresent if integrity checks are bypassed |
 | T-006 | Git branch/tag moves | Medium | Resolve to immutable commit SHA | Compromised history/account remains possible |
 | T-007 | Dependency substitution or nondeterminism | High | Lockfile/pinned environment; constrained supported stack | Some projects legitimately diverge |
 | T-008 | Legitimate builds produce different bytes | Medium | Return DIVERGED/INSUFFICIENT evidence rather than MALICIOUS | Root cause may be hard to diagnose |
@@ -27,7 +27,7 @@ ProofRail verifies evidence about **declared/authenticated source identity, arti
 
 ## M4 / TEE boundary
 
-The successful M4 build used the non-sealed public toolbox API. Real TDX evidence was obtained separately from the provider's registered Tapp node. The live quote v5 `report_data` equals the provider signer padded to 64 bytes and does not bind ProofRail's supplied artifact digest.
+The successful M4 build used the non-sealed public toolbox API. Real TDX evidence was obtained separately from the provider's registered Tapp node. The live quote v5 `report_data` equals the provider signer padded to 64 bytes and does not bind AegisOne's supplied artifact digest.
 
 Consequences:
 
@@ -48,7 +48,7 @@ An upstream ARD/registry result may claim `verified`, include a `trustManifest`,
 Mitigation:
 
 - upstream data maps only to discovery/provider metadata;
-- only ProofRail evidence validators can populate source assurance/correspondence/audit/canonical evidence;
+- only AegisOne evidence validators can populate source assurance/correspondence/audit/canonical evidence;
 - regression tests prove ARD/provider round-trip cannot upgrade `INDEXED` data.
 
 ### T-018 — discovery description/prompt manipulation
@@ -135,7 +135,7 @@ Mitigation:
 - Supabase is mutable catalog state only;
 - canonical source claims have deterministic digest;
 - cached strong evidence remains integrity checked;
-- canonical ProofRail evidence/0G commitments are the stronger historical path;
+- canonical AegisOne evidence/0G commitments are the stronger historical path;
 - DB-only inserted discovery/trust-looking rows must not create strong verdicts.
 
 ### T-027 — stale evidence silently treated as current
@@ -160,9 +160,9 @@ Mitigation:
 
 Initial M8 MCP tools are limited to:
 
-- `proofrail_search`
-- `proofrail_inspect`
-- `proofrail_evaluate`
+- `aegisone_search`
+- `aegisone_inspect`
+- `aegisone_evaluate`
 
 No install/execute/sign/arbitrary-build/secret-upload tool.
 
@@ -180,7 +180,7 @@ No install/execute/sign/arbitrary-build/secret-upload tool.
 - Provider TDX evidence alone is not a TEE-attested build.
 - Output binding is claimed only when evidence cryptographically binds the relevant output/commitment.
 - LLM output cannot change cryptographic correspondence or deterministic policy.
-- Search relevance cannot affect ProofRail trust policy.
+- Search relevance cannot affect AegisOne trust policy.
 - Public discovery/read routes cannot trigger uncontrolled funded verification.
 - Resource limits/funded-run caps are part of the security boundary.
 - `MATCH` never means safe.

@@ -89,14 +89,14 @@ async function main(): Promise<void> {
 
   const artifactPath = resolve(
     import.meta.dirname,
-    "../../../contracts/artifacts/src/ProofRailRegistry.sol/ProofRailRegistry.json",
+    "../../../contracts/artifacts/src/AegisOneRegistry.sol/AegisOneRegistry.json",
   );
   const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as HardhatArtifact;
   if (!artifact.bytecode.startsWith("0x") || artifact.bytecode.length <= 2) {
-    throw new Error("Compiled ProofRailRegistry bytecode is missing");
+    throw new Error("Compiled AegisOneRegistry bytecode is missing");
   }
   if (!sameHex(keccak256(artifact.bytecode), EXPECTED_BYTECODE_KECCAK256)) {
-    throw new Error("Refusing unexpected ProofRailRegistry deployment bytecode");
+    throw new Error("Refusing unexpected AegisOneRegistry deployment bytecode");
   }
 
   const registryInterface = new Contract(EXPECTED_CONTRACT, artifact.abi).interface;
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
   if (!deploymentTransaction) throw new Error("Registry deployment transaction is missing");
   const deploymentReceipt = await deploymentTransaction.wait();
   if (!deploymentReceipt || deploymentReceipt.status !== 1) {
-    throw new Error("ProofRailRegistry deployment did not succeed");
+    throw new Error("AegisOneRegistry deployment did not succeed");
   }
   const contractAddress = await deployment.getAddress();
   if (!sameHex(contractAddress, EXPECTED_CONTRACT)) {

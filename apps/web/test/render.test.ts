@@ -7,20 +7,20 @@ import { renderVerificationHtml } from "../src/render.ts";
 const recipe: BuildRecipe = {
   version: "1",
   runtime: "node-22",
-  workingDirectory: "examples/hello-proofrail",
+  workingDirectory: "examples/hello-aegisone",
   commands: [{ executable: "node", args: ["build.mjs"] }],
-  artifactPath: "dist/hello-proofrail.json",
+  artifactPath: "dist/hello-aegisone.json",
   networkPolicy: "none",
   resourceLimits: { timeoutMs: 60_000, maxOutputBytes: 1_024 },
   environment: {},
 };
 const claim: ReleaseClaim = {
   claimVersion: "1",
-  projectId: "hello-proofrail@1",
+  projectId: "hello-aegisone@1",
   publisherIdentity: { type: "github", subject: "Ollie202", assuranceLevel: "DECLARED", evidenceReferences: [] },
-  source: { provider: "git", repository: "https://github.com/Ollie202/proofrail-0g.git", commitSha: "e9c82277cef2f7630977e2473664e14eed2f860d" },
+  source: { provider: "git", repository: "https://github.com/Ollie202/aegisone.git", commitSha: "e9c82277cef2f7630977e2473664e14eed2f860d" },
   recipeDigest: recipeDigest(recipe),
-  artifactName: "hello-proofrail.json",
+  artifactName: "hello-aegisone.json",
   claimAssuranceLevel: "DECLARED",
 };
 const environment: BuildEnvironment = {

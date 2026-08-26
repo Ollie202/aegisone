@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1",
-  "kind": "ProofRailAristotleMainnetVerification",
+  "kind": "AegisOneAristotleMainnetVerification",
   "verifiedAt": "2026-08-17T20:59:22Z",
   "independentVerification": {
     "githubActionsRunId": 32068243865,

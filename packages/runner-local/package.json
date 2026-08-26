@@ -1,5 +1,5 @@
 {
-  "name": "@proofrail/runner-local",
+  "name": "@aegisone/runner-local",
   "private": true,
   "version": "0.1.0",
   "type": "module",

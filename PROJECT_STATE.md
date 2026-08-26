@@ -2,15 +2,17 @@
 
 **Last updated:** 2026-08-26  
 **Phase:** M9 active — M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 merged (PR #43, backend security/deployment/contract-freeze) — the backend JSON/MCP contract is declared frontend-ready, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`; M9 (Issue #31, Hub frontend) implemented on `agent/m9-hub-frontend`, PR pending review/merge — see "M9" section below
-**Product name:** ProofRail
+**Product name:** AegisOne
+
+**2026-08-26 — Rebrand:** the product was renamed from ProofRail to AegisOne (repository `Ollie202/proofrail-0g` renamed to `Ollie202/aegisone`). This was a mechanical rename of the npm package scope (`@proofrail/*` → `@aegisone/*`), branding text, and the two Supabase Edge Function folders (`proofrail-catalog`/`proofrail-jobs` → `aegisone-catalog`/`aegisone-jobs`) — no product logic changed. The Railway service names (`proofrail-app`, `proofrail-worker`), the production URL (`https://proofrail-app-production.up.railway.app`), and every `PROOFRAIL_*` environment variable name were deliberately left unchanged to avoid breaking the live deployment, since this environment has no Railway/Supabase credentials to update the actual live infrastructure to match. The live Supabase project still has the Edge Functions deployed under their old `proofrail-catalog`/`proofrail-jobs` names until the repo owner redeploys them under the new folder names; see `docs/decisions/014-rebrand-proofrail-to-aegisone.md` for the full rationale and the infra-identifier exceptions.
 
 ## Current product thesis
 
-ProofRail is evolving from a proof-first software/Agent Skill verifier into a **trust-aware discovery layer for agent capabilities**.
+AegisOne is evolving from a proof-first software/Agent Skill verifier into a **trust-aware discovery layer for agent capabilities**.
 
 The M8 backend flow is:
 
-> **intent → capability discovery → source assurance → ProofRail evidence → consumer trust policy → ALLOW / REVIEW / DENY**
+> **intent → capability discovery → source assurance → AegisOne evidence → consumer trust policy → ALLOW / REVIEW / DENY**
 
 The original trust boundary remains unchanged:
 
@@ -45,7 +47,7 @@ Supabase is **not** a proof authority. It may index/cache discovery, source clai
 
 ## Current production data/infrastructure observed during M8 planning
 
-The existing ProofRail Supabase project remains the only database project to extend. Its current public tables are:
+The existing AegisOne Supabase project remains the only database project to extend. Its current public tables are:
 
 - `verification_jobs`
 - `proofrail_app_auth`
@@ -79,14 +81,14 @@ Key observed proof:
 - Storage proof verification and exact byte equality: true
 - M7 Aristotle state: `PREPARED_NOT_SUBMITTED`
 
-## M8 — ProofRail Hub / verified capability discovery
+## M8 — AegisOne Hub / verified capability discovery
 
 Issue #18 is the backend-first M8 master plan.
 
 M8 is intentionally narrower than a universal agent marketplace:
 
-- **Agent Skills:** full ProofRail verification target using the existing M7 engine.
-- **MCP servers:** real discovery/indexing is stretch scope after the core Skill vertical slice; `INDEXED` does not imply ProofRail verification.
+- **Agent Skills:** full AegisOne verification target using the existing M7 engine.
+- **MCP servers:** real discovery/indexing is stretch scope after the core Skill vertical slice; `INDEXED` does not imply AegisOne verification.
 - **A2A agents / APIs:** represented in the provider-independent model; no full-verification promise in the M8 MVP.
 - **ARD:** discovery adapter only. The provider-independent trust model does not depend on ARD internals.
 - **Trust policy:** deterministic consumer-side evaluation, not an LLM safety score.
@@ -100,9 +102,9 @@ Issue #19 / PR #20 merged to `main`.
 
 Completed:
 
-- provider-independent `@proofrail/capability-model` package;
+- provider-independent `@aegisone/capability-model` package;
 - resource kinds for Agent Skills, MCP servers, A2A agents, and APIs;
-- mutable discovery/relevance metadata separated from ProofRail trust evidence;
+- mutable discovery/relevance metadata separated from AegisOne trust evidence;
 - exact source inspection separated from distribution correspondence;
 - validation preventing source-only inspection from claiming `MATCH`/`MISMATCH`;
 - `MATCH`/`MISMATCH` require a distinct distributed artifact plus independently reproduced digest;
@@ -118,14 +120,14 @@ Final M8.1 CI passed before merge. Do not redo this milestone.
 
 Issue #21 / PR #34 merged to `main`.
 
-- `@proofrail/discovery-ard`, isolated from the provider-independent capability model;
+- `@aegisone/discovery-ard`, isolated from the provider-independent capability model;
 - the exact ARD v0.9 upstream pin and schema/blob provenance;
 - `GET /.well-known/ai-catalog.json` and `POST /search` in `proofrail-app`;
 - deterministic bounded in-memory search across Agent Skill, MCP server, A2A agent, and generic OpenAPI resource fixtures;
 - strict JSON/body/query/page-size limits and explicit unsupported-filter/federation errors;
 - `url` xor `data` validation;
-- namespaced ProofRail evidence-state output only from validated M8.1 resources;
-- regression coverage proving ARD `trustManifest`, trust-looking metadata, `INDEXED` state, and relevance scores cannot upgrade ProofRail evidence or policy results.
+- namespaced AegisOne evidence-state output only from validated M8.1 resources;
+- regression coverage proving ARD `trustManifest`, trust-looking metadata, `INDEXED` state, and relevance scores cannot upgrade AegisOne evidence or policy results.
 
 Final M8.2 CI passed before merge. Do not redo this milestone.
 
@@ -133,42 +135,42 @@ Final M8.2 CI passed before merge. Do not redo this milestone.
 
 Issue #22 / PR #35 merged to `main`. Provides:
 
-- `@proofrail/discovery-providers`, a new package that owns real read-only HTTP federation to two fixed allowlisted origins and normalizes their results into `@proofrail/capability-model`'s `CapabilityResource`;
+- `@aegisone/discovery-providers`, a new package that owns real read-only HTTP federation to two fixed allowlisted origins and normalizes their results into `@aegisone/capability-model`'s `CapabilityResource`;
 - a `DiscoveryProvider` interface (`id`, `search(query, signal)`) and one shared ARD-wire-shaped provider factory reused by both concrete adapters;
 - **GitHub Agent Finder** adapter, pinned to `ards-project/ard-connectors@53cc4f3a4596cf51482fabeb554d124ca248ed07`, endpoint `POST https://agentfinder.github.com/api/v1/search`;
 - **Hugging Face Discover** adapter, pinned to `huggingface/hf-discover@49c927439fcaa8f210cfd42186c0641acef579fa`, endpoint `POST https://huggingface-hf-discover.hf.space/search`; both live endpoints were reachable and stable during implementation, so both were built rather than deferring one;
 - a bounded HTTP layer: fixed origin allowlist, no redirect following, ~3s per-provider timeout / ~5s total federated deadline via `AbortSignal.any`, a streamed 1 MiB response cap, a 25-result-per-provider cap, and at most one retry for a transient failure;
 - `federatedDiscoverySearch`, which fans a query out to every configured provider in parallel, isolates one provider's failure from the others (partial results plus a per-provider status), and deterministically deduplicates merged results by normalized resource URL;
-- a deliberately lenient inbound entry normalizer (`normalizeProviderEntry`) that is separate from `@proofrail/discovery-ard`'s stricter outbound `urn:air:` catalog validator — the live GitHub Agent Finder response uses `urn:ai:...` identifiers, so reusing the outbound validator for inbound third-party data would have silently dropped every one of its results;
+- a deliberately lenient inbound entry normalizer (`normalizeProviderEntry`) that is separate from `@aegisone/discovery-ard`'s stricter outbound `urn:air:` catalog validator — the live GitHub Agent Finder response uses `urn:ai:...` identifiers, so reusing the outbound validator for inbound third-party data would have silently dropped every one of its results;
 - `apps/web`'s `POST /search` now accepts `federation` as `"none"` (unchanged M8.2 local-catalog behavior, byte-for-byte) or as a non-empty array of registered provider ids, in which case it returns federated `CapabilityResource`/provider-status results instead of the local `ArdEntry` shape;
-- regression coverage proving forged upstream `trustManifest`, forged `org.proofrail.*`-looking metadata, `verified` flags, and out-of-range/maximum scores can never create or upgrade `trust` on a normalized resource — `trust` is always emitted empty/unavailable for federated results;
+- regression coverage proving forged upstream `trustManifest`, forged `org.aegisone.*`-looking metadata, `verified` flags, and out-of-range/maximum scores can never create or upgrade `trust` on a normalized resource — `trust` is always emitted empty/unavailable for federated results;
 - live smoke tests (`packages/discovery-providers/test/live/*.live.test.ts`, run via `pnpm m8.3:live`, not part of `pnpm check`/`pnpm test`) that made real calls to both pinned endpoints and to the combined federated path; all three passed.
 
 Final M8.3 CI passed before merge. No Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, frontend, or 0G write behavior was added. Do not redo M8.3.
 
 ## M8.4 — COMPLETE
 
-Issue #23 / PR #36 merged to `main`. Extends the existing ProofRail Supabase project (no new project/database) with:
+Issue #23 / PR #36 merged to `main`. Extends the existing AegisOne Supabase project (no new project/database) with:
 
 - four new public tables (`supabase/migrations/202608260001_m8_4_capability_catalog.sql`): `agentic_resources` (version-independent capability identity, deduplicated by a deterministic `canonical_key`), `resource_discoveries` (provider-specific mutable discovery observations, unique on `(provider_id, provider_resource_id)`), `resource_versions` (exact source/distribution *claims* only — never implying correspondence — unique on an application-computed `(resource_id, version_key)`, a documented deviation from the plan doc's suggested columns because nullable-column uniqueness is unsafe for upsert), and `ingestion_sources` (incremental-refresh cursor/state per provider, seeded with `github-agent-finder`, `hugging-face-discover`, `mcp-official-registry`);
 - all four tables have RLS enabled with an explicit `deny to anon, authenticated` policy and no anonymous/authenticated read or write path, mirroring `proofrail_app_auth`'s M6 pattern;
-- a token-gated Supabase Edge Function (`supabase/functions/proofrail-catalog`) that holds the service-role credential internally and checks the same `proofrail_app_auth` app-token digest `packages/job-store`'s Edge Function already uses — Railway still never holds the service-role secret;
-- `@proofrail/catalog-store`: a provider-independent (Supabase-specific code stays out of `@proofrail/capability-model`) persistence package with `computeCanonicalKeyFromResource` (deterministic dedup key: `urn:air:` identifier, else `<providerSlug>::<providerResourceId>`, else a normalized resource URL — dedup bookkeeping only, never proof), `buildResourceUpsertPlan` (pure DB-free mapping from a validated `CapabilityResource` to the persisted row shape), `catalogRecordToCapabilityResource` (the one function that reconstructs a `CapabilityResource` from catalog rows — it always emits empty/`NOT_RUN`/`NONE` trust evidence because it has no evidence table to read from yet), `InMemoryCatalogStore`, and `SupabaseCatalogStore`;
+- a token-gated Supabase Edge Function (`supabase/functions/aegisone-catalog`) that holds the service-role credential internally and checks the same `proofrail_app_auth` app-token digest `packages/job-store`'s Edge Function already uses — Railway still never holds the service-role secret;
+- `@aegisone/catalog-store`: a provider-independent (Supabase-specific code stays out of `@aegisone/capability-model`) persistence package with `computeCanonicalKeyFromResource` (deterministic dedup key: `urn:air:` identifier, else `<providerSlug>::<providerResourceId>`, else a normalized resource URL — dedup bookkeeping only, never proof), `buildResourceUpsertPlan` (pure DB-free mapping from a validated `CapabilityResource` to the persisted row shape), `catalogRecordToCapabilityResource` (the one function that reconstructs a `CapabilityResource` from catalog rows — it always emits empty/`NOT_RUN`/`NONE` trust evidence because it has no evidence table to read from yet), `InMemoryCatalogStore`, and `SupabaseCatalogStore`;
 - regression coverage proving: a DB-only inserted `INDEXED` resource remains unverified end-to-end; `markProviderDiscoveriesStale` (incremental-refresh outage handling) only ever mutates `discovery_status` and never deletes or mutates resource/version identity or trust evidence; forged `provider_metadata`/injected `trustManifest`-shaped fields cannot reach a stored row or the reconstructed `CapabilityResource`; stable dedup-key behavior across repeated observations and across ARD-shaped vs. federated-shaped resources.
 
-Local `pnpm check` and `pnpm test` were green for `@proofrail/catalog-store` and every other package before merge (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures noted below remain and are not part of M8.4). **The migration has not been applied to the production Supabase project** — no agent context in this environment has `SUPABASE_ACCESS_TOKEN`/project ref/db password. Applying `supabase/migrations/202608260001_m8_4_capability_catalog.sql` (and the M8.5 migration below) and reviewing the Supabase security/performance advisors afterward remains the repo owner's action (`supabase link` + `supabase db push`, or the dashboard SQL editor). source_claims / source_claim_authority_observations were deferred to M8.5 (below); capability_verifications remains deferred to M8.6 per `docs/16-m8-database-plan.md`.
+Local `pnpm check` and `pnpm test` were green for `@aegisone/catalog-store` and every other package before merge (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures noted below remain and are not part of M8.4). **The migration has not been applied to the production Supabase project** — no agent context in this environment has `SUPABASE_ACCESS_TOKEN`/project ref/db password. Applying `supabase/migrations/202608260001_m8_4_capability_catalog.sql` (and the M8.5 migration below) and reviewing the Supabase security/performance advisors afterward remains the repo owner's action (`supabase link` + `supabase db push`, or the dashboard SQL editor). source_claims / source_claim_authority_observations were deferred to M8.5 (below); capability_verifications remains deferred to M8.6 per `docs/16-m8-database-plan.md`.
 
 ## M8.5 — COMPLETE
 
 Issue #24 on `agent/m8-github-source-auth` implements the first real source-authentication mechanism:
 
-- `@proofrail/source-auth-github`: a new provider-specific package (GitHub-specific logic stays out of `@proofrail/capability-model`) with an HMAC-signed, expiring, single-use-by-cookie-clearing OAuth `state` (`oauth-state.ts`), a bounded GitHub REST client (`github-client.ts`: token exchange, authenticated user, installations, installation repositories, collaborator permission, repository, exact-commit resolution — strict timeout, response-size cap, no redirects, never logs the code/token/secret), the M8 authority ladder (`permission.ts`: `admin`/`write`/`maintain` sufficient, `read`/`triage`/`none`/unknown insufficient — never guessed from an unrecognized label), canonical source-claim construction and `SHA256` digesting reusing `packages/core`'s canonical JSON rules (`claim.ts`), and a process-local, non-persistent claim-session store for the short-lived GitHub user access token (`session.ts` — the token is never written to Supabase or logged);
-- `@proofrail/catalog-store` extended with `source_claims`/`source_claim_authority_observations` persistence (`NewSourceClaim`, `SourceClaim`, `createSourceClaim`/`getSourceClaim`/`listActiveSourceClaimsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `source-claim-transition.ts`, the pure decision function (new / supersede / explicit `SOURCE_CLAIM_CONFLICT`) shared by the in-memory store and mirrored in the `proofrail-catalog` Edge Function (Deno cannot import it directly; both sides are covered by tests) — only a claim's `claimStatus` ever changes after insert, every evidence column is immutable, and a new mapping always creates a new row;
+- `@aegisone/source-auth-github`: a new provider-specific package (GitHub-specific logic stays out of `@aegisone/capability-model`) with an HMAC-signed, expiring, single-use-by-cookie-clearing OAuth `state` (`oauth-state.ts`), a bounded GitHub REST client (`github-client.ts`: token exchange, authenticated user, installations, installation repositories, collaborator permission, repository, exact-commit resolution — strict timeout, response-size cap, no redirects, never logs the code/token/secret), the M8 authority ladder (`permission.ts`: `admin`/`write`/`maintain` sufficient, `read`/`triage`/`none`/unknown insufficient — never guessed from an unrecognized label), canonical source-claim construction and `SHA256` digesting reusing `packages/core`'s canonical JSON rules (`claim.ts`), and a process-local, non-persistent claim-session store for the short-lived GitHub user access token (`session.ts` — the token is never written to Supabase or logged);
+- `@aegisone/catalog-store` extended with `source_claims`/`source_claim_authority_observations` persistence (`NewSourceClaim`, `SourceClaim`, `createSourceClaim`/`getSourceClaim`/`listActiveSourceClaimsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `source-claim-transition.ts`, the pure decision function (new / supersede / explicit `SOURCE_CLAIM_CONFLICT`) shared by the in-memory store and mirrored in the `aegisone-catalog` Edge Function (Deno cannot import it directly; both sides are covered by tests) — only a claim's `claimStatus` ever changes after insert, every evidence column is immutable, and a new mapping always creates a new row;
 - `supabase/migrations/202608260002_m8_5_source_claims.sql`: `source_claims` and `source_claim_authority_observations`, following the exact `202608260001` convention (RLS enabled, `deny to anon, authenticated`, CHECK constraints on enums/commit-SHA/digest formats, indexes including a unique index on `claim_digest_sha256`);
 - `apps/web`'s `GET /auth/github/start`, `GET /auth/github/callback`, `GET /api/v1/source-auth/github/repositories`, `POST /api/v1/source-claims`, `GET /api/v1/source-claims/:claimId` (`apps/web/src/source-auth.ts`), wired into `createProductRequestHandler`/`server.ts`: `/auth/github/*` and the repository-listing endpoint return `503 github_source_auth_unavailable` when the GitHub App is not configured (true in every environment right now), while `POST /api/v1/source-claims` still works without any GitHub App configured — it independently resolves the repository/exact commit from the public GitHub REST API and records a `DECLARED` claim. Only a request carrying a valid session cookie from a completed OAuth round trip, and only when the collaborator-permission lookup confirms effective `write`/`admin`/`maintain` authority, upgrades a claim to `REPOSITORY_AUTHENTICATED`; a session with `read`/`triage`/`none` authority is recorded (as an authority observation) but the claim stays `DECLARED`. Private repositories are rejected outright (`private_repository_unsupported`) rather than silently attempted. `GET /api/v1/source-claims/:claimId` recomputes the claim digest from the stored canonical JSON before responding and fails closed (`409 source_claim_integrity_check_failed`) if a stored row was mutated out from under its digest;
 - regression coverage: OAuth state signature/expiry/replay (state is invalidated the moment the browser's cookie is cleared, which the callback handler always does), a full mocked-fetch OAuth round trip from `/auth/github/start` through an authenticated `REPOSITORY_AUTHENTICATED` claim, read-only/triage authority never upgrading a claim even with a valid session, an unauthenticated caller always landing on `DECLARED`, a private repository rejected, an unresolvable repository never becoming a claim, two claims for different repositories on the same resource version producing an explicit `SOURCE_CLAIM_CONFLICT` (both claims flagged `conflicted`, neither silently "wins"), a same-repository second claim superseding the first without mutating its immutable evidence fields, and the claim-digest integrity recheck on read.
 
-Local `pnpm check` and `pnpm test` are green for `@proofrail/source-auth-github`, `@proofrail/catalog-store`, `@proofrail/web`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain and are unrelated to M8.5). **Live proof that a real public-repository claim reaches `REPOSITORY_AUTHENTICATED` in production is pending two repo-owner actions that no agent context can perform**: (1) creating/installing the `ProofRail Source Verifier` GitHub App per `docs/14-source-authentication.md` and supplying `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway (none of these exist anywhere in this environment); (2) one interactive browser authorization against a real public repository the owner controls, since the OAuth authorize step cannot be scripted. The full code path — state issuance/validation, token exchange, installation/repository listing, permission resolution, canonical claim construction/digest, persistence, conflict detection, immutability — is implemented and covered by deterministic tests against mocked GitHub API responses only. `SIGNED_RELEASE` (GitHub Artifact Attestations with actual `gh attestation verify` cryptographic verification) was not attempted in this issue and remains explicitly unavailable; no code path emits it.
+Local `pnpm check` and `pnpm test` are green for `@aegisone/source-auth-github`, `@aegisone/catalog-store`, `@aegisone/web`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain and are unrelated to M8.5). **Live proof that a real public-repository claim reaches `REPOSITORY_AUTHENTICATED` in production is pending two repo-owner actions that no agent context can perform**: (1) creating/installing the `AegisOne Source Verifier` GitHub App per `docs/14-source-authentication.md` and supplying `GITHUB_APP_CLIENT_ID`/`GITHUB_APP_CLIENT_SECRET`/`GITHUB_APP_SLUG`/`GITHUB_OAUTH_CALLBACK_URL`/`GITHUB_OAUTH_STATE_SECRET` to `proofrail-app` via Railway (none of these exist anywhere in this environment); (2) one interactive browser authorization against a real public repository the owner controls, since the OAuth authorize step cannot be scripted. The full code path — state issuance/validation, token exchange, installation/repository listing, permission resolution, canonical claim construction/digest, persistence, conflict detection, immutability — is implemented and covered by deterministic tests against mocked GitHub API responses only. `SIGNED_RELEASE` (GitHub Artifact Attestations with actual `gh attestation verify` cryptographic verification) was not attempted in this issue and remains explicitly unavailable; no code path emits it.
 
 Issue #24 / PR #37 merged to `main`. M8.5 is complete; do not redo it.
 
@@ -176,20 +178,20 @@ Issue #24 / PR #37 merged to `main`. M8.5 is complete; do not redo it.
 
 Issue #25 on `agent/m8-skill-verification-enrichment` connects discovered/persisted Agent Skill resource versions and M8.5 source claims to the existing proven M7 Agent Skill verification pipeline, as orchestration/linkage only:
 
-- new package `@proofrail/skill-verification-link`: bounded exact-commit Git source acquisition (`source-acquisition.ts`) reusing the same `git clone --no-checkout` / `git checkout --detach <sha>` / `rev-parse HEAD` verification pattern `packages/runner-local` already uses in the proven M1-M7 build path, plus `packages/skill-audit`'s existing, unmodified `readSkillDirectory`/`validateSkillPackage`/`auditSkillPackage`; an SSRF-hardened bounded distribution-artifact downloader (`distribution-fetch.ts`) — HTTPS-only, no userinfo, default port only, DNS-resolved loopback/RFC1918/link-local/CGNAT/multicast/reserved-address blocking, redirect re-validation capped at 3 hops, a 20 MiB response cap — scoped to ProofRail's own canonical `proofrail-agent-skill-package-v1` package format (decoded via the existing `decodeCanonicalSkillPackage`, never a second archive extractor, since the M7 source-claim contract already requires this exact format); the top-level orchestrator (`enrichment.ts`) whose source-only branch (`evaluateSourceOnly`) contains, by construction, no reference anywhere in its body to `verifySkillPackages`/`compareArtifacts`/`MATCH`/`MISMATCH` — a dedicated test reads the compiled source of that function and asserts none of those tokens appear, and its `correspondence.status` is a hardcoded `NOT_EVALUATED` literal, never derived from a comparison call; a distribution-present branch (`evaluateWithDistribution`) that always calls the existing unmodified `verifySkillPackages`; `authorization.ts` (a `VerificationAuthorization` type brandable only via a private module-scope symbol, constructible only by `authorizeVerificationTrigger` after a constant-time token-digest check, plus `VerificationConcurrencyLimiter` capping in-flight work rather than queuing unbounded concurrency);
-- `@proofrail/catalog-store` extended with `capability_verifications` persistence (`NewCapabilityVerification`/`CapabilityVerification`, `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `capability-verification-validation.ts` — the same MATCH/MISMATCH/DIVERGED/NOT_EVALUATED digest-presence sanity rules from docs/16 enforced in application code before any write, mirrored again in the `proofrail-catalog` Edge Function, and enforced a third time as Postgres `CHECK` constraints in the migration; every verification always inserts a new row, never mutating a prior canonical verdict;
+- new package `@aegisone/skill-verification-link`: bounded exact-commit Git source acquisition (`source-acquisition.ts`) reusing the same `git clone --no-checkout` / `git checkout --detach <sha>` / `rev-parse HEAD` verification pattern `packages/runner-local` already uses in the proven M1-M7 build path, plus `packages/skill-audit`'s existing, unmodified `readSkillDirectory`/`validateSkillPackage`/`auditSkillPackage`; an SSRF-hardened bounded distribution-artifact downloader (`distribution-fetch.ts`) — HTTPS-only, no userinfo, default port only, DNS-resolved loopback/RFC1918/link-local/CGNAT/multicast/reserved-address blocking, redirect re-validation capped at 3 hops, a 20 MiB response cap — scoped to AegisOne's own canonical `proofrail-agent-skill-package-v1` package format (decoded via the existing `decodeCanonicalSkillPackage`, never a second archive extractor, since the M7 source-claim contract already requires this exact format); the top-level orchestrator (`enrichment.ts`) whose source-only branch (`evaluateSourceOnly`) contains, by construction, no reference anywhere in its body to `verifySkillPackages`/`compareArtifacts`/`MATCH`/`MISMATCH` — a dedicated test reads the compiled source of that function and asserts none of those tokens appear, and its `correspondence.status` is a hardcoded `NOT_EVALUATED` literal, never derived from a comparison call; a distribution-present branch (`evaluateWithDistribution`) that always calls the existing unmodified `verifySkillPackages`; `authorization.ts` (a `VerificationAuthorization` type brandable only via a private module-scope symbol, constructible only by `authorizeVerificationTrigger` after a constant-time token-digest check, plus `VerificationConcurrencyLimiter` capping in-flight work rather than queuing unbounded concurrency);
+- `@aegisone/catalog-store` extended with `capability_verifications` persistence (`NewCapabilityVerification`/`CapabilityVerification`, `createCapabilityVerification`/`getLatestCapabilityVerification`/`listCapabilityVerificationsByResourceVersion` on `CatalogStore`, implemented in both `InMemoryCatalogStore` and `SupabaseCatalogStore`) plus `capability-verification-validation.ts` — the same MATCH/MISMATCH/DIVERGED/NOT_EVALUATED digest-presence sanity rules from docs/16 enforced in application code before any write, mirrored again in the `aegisone-catalog` Edge Function, and enforced a third time as Postgres `CHECK` constraints in the migration; every verification always inserts a new row, never mutating a prior canonical verdict;
 - `supabase/migrations/202608260003_m8_6_capability_verifications.sql`: `capability_verifications`, following the exact `202608260001`/`202608260002` convention (RLS enabled, `deny to anon, authenticated`, CHECK constraints on enums/SHA formats, and the docs/16 "Database-level sanity checks" as explicit named constraints);
 - `apps/web`/`apps/worker` gain **no new route** in this issue — nothing public or otherwise can currently reach `runSkillVerificationEnrichment` except tests and the local fixture, satisfying "verification authorization prevents anonymous 0G spend" by there being no reachable trigger surface at all; `authorization.ts` exists specifically so the M8.7/M8.8 trigger surface reuses this gate instead of skipping it;
 - regression coverage: source-only inspection never emits `MATCH`/`MISMATCH` (both by direct assertion and by the structural source-inspection test above); a genuine local distribution artifact plus the exact claimed source commit yields `MATCH`; a tampered/substituted distribution with the same claimed source yields `MISMATCH`, never a downgraded label; an invalid/mismatched distribution digest fails the entire enrichment call closed (never silently falls back to source-only `NOT_EVALUATED`); path-traversal subdirectories, non-full/invalid commit SHAs, nonexistent commits, and non-GitHub-HTTPS repository URLs are all rejected before any clone; SSRF tests covering loopback-by-default blocking, non-HTTPS schemes, userinfo credentials, oversized responses, malformed (non-canonical-package) bodies, and excess redirect hops; a DB-only row attempting `MATCH`/`MISMATCH`/`DIVERGED` without correct digest presence is rejected at both the in-memory store and the Supabase-store/Edge-Function boundary; a `VerificationAuthorization` cannot be fabricated by a plain object literal (brand-symbol check) and a missing/wrong/misconfigured token is rejected; a concurrency limiter rejects work beyond its cap instead of queuing unbounded concurrency;
 - one bounded non-funded/local integration fixture (`packages/skill-verification-link/test/integration-fixture.test.ts`) proves the whole M8.6 surface end-to-end: a throwaway local Git repository plus a `127.0.0.1` HTTP server stand in for source/distribution (no 0G Sandbox/Storage/registry call, no secret/signer material, no network egress), covering both source-only `INSPECTED`/`NOT_EVALUATED` persistence into `InMemoryCatalogStore` and, once a genuine local distribution artifact is supplied, the same linkage upgrading to a persisted `MATCH` row.
 
-Local `pnpm check` and `pnpm test` are green for `@proofrail/skill-verification-link`, `@proofrail/catalog-store`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before this change by stashing and re-running — and are unrelated to M8.6). No new HTTP route, no live/funded 0G run, no UI change, no MCP Registry work, and no mainnet transaction were part of this issue.
+Local `pnpm check` and `pnpm test` are green for `@aegisone/skill-verification-link`, `@aegisone/catalog-store`, and every other package (the same two pre-existing, unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before this change by stashing and re-running — and are unrelated to M8.6). No new HTTP route, no live/funded 0G run, no UI change, no MCP Registry work, and no mainnet transaction were part of this issue.
 
 ## M8.7 — COMPLETE
 
 Issue #26 on `agent/m8-stable-api` freezes a small versioned machine-readable API over the M8.1-M8.6
 capability/evidence/policy model, so humans, CI, and later MCP/frontend clients consume stable
-ProofRail JSON instead of scraping HTML or reading Supabase directly:
+AegisOne JSON instead of scraping HTML or reading Supabase directly:
 
 - `apps/web/src/api-v1.ts`: `GET /api/v1/resources/:resourceId`, `GET /api/v1/resources/:resourceId/versions/:versionId`,
   `GET /api/v1/resources/:resourceId/evidence`, `POST /api/v1/policy/evaluate`, wired into
@@ -208,12 +210,12 @@ ProofRail JSON instead of scraping HTML or reading Supabase directly:
   and fails closed (to `NONE`/`NOT_EVALUATED`/`NOT_RUN`, never a downgraded-but-trusted verdict)
   the moment a stored row no longer satisfies its own invariants — covered by a direct simulated
   DB-tampering regression test for both dimensions;
-- `@proofrail/catalog-store` gained `getResourceById`/`getResourceVersionById` (both stores + the
-  `proofrail-catalog` Edge Function) so the stable API can address catalog rows by their own stable
+- `@aegisone/catalog-store` gained `getResourceById`/`getResourceVersionById` (both stores + the
+  `aegisone-catalog` Edge Function) so the stable API can address catalog rows by their own stable
   id, and a new nullable `capability_verifications.source_snapshot_sha256` column
   (`supabase/migrations/202608260004_m8_7_source_snapshot_digest.sql`, additive/backward-compatible)
   so the exact-source-snapshot digest an M8.6 `INSPECTED` result already computes is no longer
-  dropped before it reaches this API — `@proofrail/skill-verification-link`'s
+  dropped before it reaches this API — `@aegisone/skill-verification-link`'s
   `buildCapabilityVerificationInput` now populates it; a row without it (including every row
   written before this column existed) presents `sourceInspection` as `NOT_RUN` rather than a
   partially-populated `INSPECTED`;
@@ -227,8 +229,8 @@ ProofRail JSON instead of scraping HTML or reading Supabase directly:
   DB-tampering fail-closed cases above; and an explicit assertion that no response byte-string
   contains a bare `"verified":true`/`"safe":true`.
 
-Local `pnpm check` and `pnpm test` are green for `@proofrail/web`, `@proofrail/catalog-store`, and
-`@proofrail/skill-verification-link` (the same two pre-existing, unrelated `packages/cli`/
+Local `pnpm check` and `pnpm test` are green for `@aegisone/web`, `@aegisone/catalog-store`, and
+`@aegisone/skill-verification-link` (the same two pre-existing, unrelated `packages/cli`/
 `packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before
 this change by stashing and re-running — and are unrelated to M8.7). The new migration has not
 been applied to the production Supabase project, consistent with M8.4-M8.6 (repo-owner action,
@@ -236,8 +238,8 @@ tracked below). No MCP transport, UI, auto-install, or new verification algorith
 
 ## M8.8 — COMPLETE
 
-Issue #27 on `agent/m8-mcp-interface` exposes `proofrail_search`, `proofrail_inspect`, and
-`proofrail_evaluate` through MCP (docs/17-m8-security-boundaries.md Threat M8-018 "MCP becomes a
+Issue #27 on `agent/m8-mcp-interface` exposes `aegisone_search`, `aegisone_inspect`, and
+`aegisone_evaluate` through MCP (docs/17-m8-security-boundaries.md Threat M8-018 "MCP becomes a
 privileged backdoor"), as a thin transport adapter over the exact application services already
 proven in M8.2/M8.3/M8.7 — full detail in `docs/21-m8-mcp-interface.md`:
 
@@ -248,28 +250,28 @@ proven in M8.2/M8.3/M8.7 — full detail in `docs/21-m8-mcp-interface.md`:
   shared, always-on HTTP service (`proofrail-app`), and over session-stateful mode because these
   three tools are pure request/response reads with no need for server-initiated notifications;
 - exactly three tools, matching Threat M8-018's allowlist; none of the denylisted tools
-  (`proofrail_install`, `proofrail_execute`, `proofrail_sign`, `proofrail_run_arbitrary_build`,
-  `proofrail_upload_secret`) exist anywhere in this codebase, and a regression test asserts the
+  (`aegisone_install`, `aegisone_execute`, `aegisone_sign`, `aegisone_run_arbitrary_build`,
+  `aegisone_upload_secret`) exist anywhere in this codebase, and a regression test asserts the
   connected tool list is exactly the three allowed names;
-- `proofrail_search` calls `apps/web/src/search-service.ts`'s `performCapabilitySearch` — the
+- `aegisone_search` calls `apps/web/src/search-service.ts`'s `performCapabilitySearch` — the
   M8.2/M8.3 local-catalog/federated dispatch logic, moved out of `product.ts`'s inline `POST
   /search` handler into its own module (with `apps/web/src/errors.ts` holding the shared
   `ProductRequestError` class) specifically so neither `product.ts` nor `mcp.ts` needs to import
-  the other — `POST /search` and `proofrail_search` now share one function byte-for-byte rather
+  the other — `POST /search` and `aegisone_search` now share one function byte-for-byte rather
   than two copies of the same dispatch logic;
-- `proofrail_inspect` calls a new exported `buildEvidenceResponse` in `apps/web/src/api-v1.ts`,
+- `aegisone_inspect` calls a new exported `buildEvidenceResponse` in `apps/web/src/api-v1.ts`,
   extracted (behavior-preserving) from the M8.7 `GET /api/v1/resources/:resourceId/evidence`
   handler, so both surfaces present the same M8.5/M8.6 integrity-rechecked evidence, itemized
   history, and independent trust dimensions byte-identically — never a collapsed verified/safe
   boolean, and a regression test proves a purely `INDEXED` (discovery-only) resource still reports
   every dimension as `NONE`/`NOT_RUN`/`NOT_EVALUATED` through this transport, the same invariant
   M8.1-M8.7 already enforced at every other layer;
-- `proofrail_evaluate` calls a new exported `runPolicyEvaluation` in `apps/web/src/api-v1.ts`,
+- `aegisone_evaluate` calls a new exported `runPolicyEvaluation` in `apps/web/src/api-v1.ts`,
   extracted from the M8.7 `POST /api/v1/policy/evaluate` handler, which itself calls the unmodified
   M8.1 `evaluateTrustPolicy` — deterministic, no LLM, and a search-relevance score can never enter
-  this evaluation since `proofrail_search`'s output is never threaded into `proofrail_evaluate` as
+  this evaluation since `aegisone_search`'s output is never threaded into `aegisone_evaluate` as
   evidence;
-- this implementation deliberately does not create the `packages/mcp-proofrail` package
+- this implementation deliberately does not create the `packages/mcp-aegisone` package
   `AGENTS.md`'s planned-package-boundaries list names — creating it would require it to import back
   from `apps/web` (a circular dependency, since `apps/web` must also mount the MCP HTTP route) or
   reimplement the M8.7 assembly logic a second time; the reasoning and the correct follow-up if a
@@ -287,7 +289,7 @@ proven in M8.2/M8.3/M8.7 — full detail in `docs/21-m8-mcp-interface.md`:
   its UI — that requires a human to point a real external client at a running deployment, per
   `docs/21-m8-mcp-interface.md`'s explicit "what is proven vs. what still needs a human" section.
 
-Local `pnpm check` and `pnpm test` are green for `@proofrail/web` (69/69 tests, including the 14
+Local `pnpm check` and `pnpm test` are green for `@aegisone/web` (69/69 tests, including the 14
 new MCP tests) and every other package (the same two pre-existing, unrelated `packages/cli`/
 `packages/runner-local` fixture git-checkout failures remain — confirmed present on `main` before
 this change since this issue's diff touches only `apps/web` and `docs/`). No new privileged
@@ -308,7 +310,7 @@ Sandbox/Storage/registry call, no spend of any kind):
   GitHub repository) reaching `REPOSITORY_AUTHENTICATED`; (3) the unmodified M8.6
   `runSkillVerificationEnrichment` against a genuine local distribution artifact -> `MATCH`,
   persisted via `CatalogStore.createCapabilityVerification`; (4) `POST /api/v1/policy/evaluate`
-  (M8.7 REST) and the `proofrail_evaluate` MCP tool (M8.8) both returning `ALLOW` under a policy
+  (M8.7 REST) and the `aegisone_evaluate` MCP tool (M8.8) both returning `ALLOW` under a policy
   requiring `REPOSITORY_AUTHENTICATED` + `MATCH`; (5) a second, deliberately tampered distribution
   artifact (same claimed identity/version/source, a bounded unambiguous content change — an
   injected exfiltration instruction, never confusable with ordinary version drift) against the
@@ -323,7 +325,7 @@ Sandbox/Storage/registry call, no spend of any kind):
   unmodified M8.1 (`evaluateTrustPolicy`), M8.5 (`buildCanonicalSourceClaim`,
   `computeSourceClaimDigest`), M8.6 (`runSkillVerificationEnrichment`,
   `buildCapabilityVerificationInput`), M8.7 (`runPolicyEvaluation`, the evidence/resource
-  serializers), and M8.8 (the `proofrail_evaluate`/MCP transport) functions;
+  serializers), and M8.8 (the `aegisone_evaluate`/MCP transport) functions;
 - `docs/22-m8-9-live-run-runbook.md`: a step-by-step runbook (repository/commit setup, real GitHub
   App OAuth, real 0G Sandbox reproduction via `packages/sandbox-0g`, real 0G Storage upload/proof
   readback via `packages/storage-0g` following the exact `hackathon/m7-live-evidence.json`
@@ -331,7 +333,7 @@ Sandbox/Storage/registry call, no spend of any kind):
   ledger-entry template) that a human with real GitHub App credentials and 0G Galileo testnet
   funds can follow to produce the live version of this same proof — not executed by this agent.
 
-Local `pnpm check` and `pnpm test` are green, including the new test (`@proofrail/web` now 70/70
+Local `pnpm check` and `pnpm test` are green, including the new test (`@aegisone/web` now 70/70
 tests). **Not proven in this environment and explicitly left unavailable, per this repository's
 "leave a gap explicit rather than inferring/marketing around it" discipline**: (1) a real
 repository-authenticated GitHub source claim — the M8.5 GitHub App still has no live credentials
@@ -356,7 +358,7 @@ inventing a parallel path:
 - `packages/discovery-providers/src/mcp-registry.ts` (`createMcpOfficialRegistryProvider`,
   `fetchMcpRegistryServersPage`), `mcp-registry-normalize.ts` (`normalizeMcpRegistryEntry`), and
   `mcp-registry-sync.ts` (`runMcpOfficialRegistryIngestion`) added to the existing
-  `@proofrail/discovery-providers` package (not a new package: the pinned contract is a third
+  `@aegisone/discovery-providers` package (not a new package: the pinned contract is a third
   provider, not a new trust boundary);
 - pinned to `modelcontextprotocol/registry@6036804f1c62633b5e7d2927f411a6f4127f148a`, base
   `https://registry.modelcontextprotocol.io`, read family `/v0.1/`
@@ -378,11 +380,11 @@ inventing a parallel path:
   source claim or correspondence evidence, exactly the M8.3 `normalize.ts` discipline;
 - `createMcpOfficialRegistryProvider` implements the shared `DiscoveryProvider` interface (maps
   `query.text` to the Registry's `search` list parameter, `version=latest`) so it plugs directly
-  into the existing `federatedDiscoverySearch`/`POST /search` surface and the `proofrail_search`
+  into the existing `federatedDiscoverySearch`/`POST /search` surface and the `aegisone_search`
   MCP tool without any changes to either — `apps/web/src/product.ts`'s `defaultDiscoveryProviders`
   now registers `mcp-official-registry` alongside the two M8.3 providers;
 - `runMcpOfficialRegistryIngestion` is the bounded incremental-sync path into the M8.4 catalog
-  (`@proofrail/catalog-store`, already seeded with an `mcp-official-registry` `ingestion_sources`
+  (`@aegisone/catalog-store`, already seeded with an `mcp-official-registry` `ingestion_sources`
   row by the M8.4 migration): it resumes from the persisted `cursor`, walks up to
   `MCP_REGISTRY_MAX_PAGES_PER_SYNC` (20) pages per call (docs/17 Threat M8-015 response
   amplification — a full backfill spans multiple scheduled runs via the persisted cursor rather
@@ -418,8 +420,8 @@ inventing a parallel path:
   `lastSuccessAt`. All three passed against `https://registry.modelcontextprotocol.io` on
   2026-08-26.
 
-Local `pnpm check` and `pnpm test` are green for `@proofrail/discovery-providers` (71/71 tests),
-`@proofrail/catalog-store`, `@proofrail/web`, and every other package (the same two pre-existing,
+Local `pnpm check` and `pnpm test` are green for `@aegisone/discovery-providers` (71/71 tests),
+`@aegisone/catalog-store`, `@aegisone/web`, and every other package (the same two pre-existing,
 unrelated `packages/cli`/`packages/runner-local` fixture git-checkout failures remain — confirmed
 present on `main` before this change too, and are unrelated to M8.10). No Supabase migration
 change, no new HTTP route beyond the existing `POST /search`/MCP surface already accepting a
@@ -446,8 +448,8 @@ test matrix and operational pre-frontend gate, and `docs/19-m8-implementation-ch
   write-time validation to model a mutated Supabase row rather than a rejected write) are both
   proven, through a real `node:http` server and a real `@modelcontextprotocol/sdk` client, to never
   reach `ALLOW`/`MATCH`/`REPOSITORY_AUTHENTICATED` on any of `GET /api/v1/resources/:id`,
-  `GET /api/v1/resources/:id/evidence`, `POST /api/v1/policy/evaluate`, `proofrail_inspect`, or
-  `proofrail_evaluate`. Every other security-matrix item already had adequate regression coverage
+  `GET /api/v1/resources/:id/evidence`, `POST /api/v1/policy/evaluate`, `aegisone_inspect`, or
+  `aegisone_evaluate`. Every other security-matrix item already had adequate regression coverage
   from M8.2–M8.10 and is cited (not duplicated) in `docs/24-m8-11-contract-freeze.md`'s closure
   table;
 - **Contract freeze**: `docs/24-m8-11-contract-freeze.md` is the new consolidated index — a table
@@ -475,7 +477,7 @@ test matrix and operational pre-frontend gate, and `docs/19-m8-implementation-ch
   corrected from a stale "IMPLEMENTED ON ISSUE BRANCH / MERGE GATE PENDING" to "COMPLETE" — `git
   log` confirms PRs #37–#42 (covering all of M8.5 through M8.10) are already merged to `main`; the
   prior wording no longer matched reality and is fixed here as part of "PROJECT_STATE reconciled";
-- **CI/evidence gate**: full root `pnpm check`/`pnpm test` green (71/71 in `@proofrail/web`,
+- **CI/evidence gate**: full root `pnpm check`/`pnpm test` green (71/71 in `@aegisone/web`,
   including the new hostile full-stack test; the same two pre-existing, unrelated
   `packages/cli`/`packages/runner-local` git-checkout fixture failures remain — confirmed present on
   unmodified `main` by stashing this issue's changes and re-running, so they are not a regression
@@ -495,7 +497,7 @@ written from within the issue's own branch — see the PR itself for final CI st
 
 ## M9 — HUB FRONTEND IMPLEMENTED / GITHUB OAUTH + LIVE 0G LINKS DEFERRED
 
-Issue #31 on `agent/m9-hub-frontend` builds the human-facing ProofRail Hub over the M8.11-frozen
+Issue #31 on `agent/m9-hub-frontend` builds the human-facing AegisOne Hub over the M8.11-frozen
 backend contract (`docs/24-m8-11-contract-freeze.md`).
 
 - **Technology decision (ADR-013, `docs/decisions/013-m9-hub-frontend-technology-and-visual-direction.md`)**:
@@ -512,7 +514,7 @@ backend contract (`docs/24-m8-11-contract-freeze.md`).
   dark "proof-first" landing page is preserved unchanged and moved to `/proof` (still real M5
   mainnet + M7 live-evidence content, not deleted);
 - **`/` (Hub/Search)**: `docs/18` primary page #1. Server-renders real results for a `?q=` query
-  (calling the exact `performCapabilitySearch` function `POST /search`/`proofrail_search` already
+  (calling the exact `performCapabilitySearch` function `POST /search`/`aegisone_search` already
   use) and a debounced client-side re-search (`POST /search`, local or federated) via
   `apps/web/src/ui/result-card.mjs`. Local-catalog cards never read an ARD `trustManifest` as trust
   evidence (tested); federated `CapabilityResource` cards render the real independent `trust`
@@ -534,7 +536,7 @@ backend contract (`docs/24-m8-11-contract-freeze.md`).
   environment yet, unchanged from M8.5/M8.9) rather than crashing or hiding the DECLARED-claim path,
   which still works without a configured GitHub App;
 - **Demo-seed path** (`apps/web/src/demo-seed.ts`, `docs/18` "Judge demo mode"): reuses M8.9's own
-  tested fixture repository identity (`proofrail-demo/m8-9-fixture-skill`) and the exact
+  tested fixture repository identity (`aegisone-demo/m8-9-fixture-skill`) and the exact
   genuine/substituted `SKILL.md` bodies `apps/web/test/m8-9-substitution-demo.test.ts` already
   established, computing real SHA-256 digests through the same production hashing functions
   (`canonicalSkillPackageBytes`, `buildCanonicalSourceClaim`/`computeSourceClaimDigest`) — no
@@ -562,7 +564,7 @@ backend contract (`docs/24-m8-11-contract-freeze.md`).
   (real local-catalog results), and `POST /api/v1/policy/evaluate` against the seeded demo resource
   (`DENY`/`correspondence_not_match`, as above) — all returned the expected status/content.
 
-Local `pnpm check`/`pnpm test` are green for every package this issue touched (`@proofrail/web`,
+Local `pnpm check`/`pnpm test` are green for every package this issue touched (`@aegisone/web`,
 101/101 tests including 34 new M9 tests). The same two pre-existing, unrelated
 `packages/cli`/`packages/runner-local` fixture git-checkout failures remain (confirmed present and
 unrelated: this issue's diff touches only `apps/web/`, `planning/`, `PROJECT_STATE.md`, and
@@ -582,9 +584,9 @@ Issue #31 on `agent/m9-hub-frontend`, PR pending review/merge at the time this s
 2. **M8.3 / Issue #22 — complete:** GitHub Agent Finder + Hugging Face Discover federation.
 3. **M8.4 / Issue #23 — complete:** existing-Supabase capability catalog/version/ingestion persistence.
 4. **M8.5 / Issue #24 — complete:** GitHub App source authentication and canonical source claims.
-5. **M8.6 / Issue #25 — complete:** enrich Agent Skill resources with the existing ProofRail verification pipeline.
+5. **M8.6 / Issue #25 — complete:** enrich Agent Skill resources with the existing AegisOne verification pipeline.
 6. **M8.7 / Issue #26 — complete:** stable resource/evidence/policy API.
-7. **M8.8 / Issue #27 — complete:** `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate` through MCP.
+7. **M8.8 / Issue #27 — complete:** `aegisone_search`, `aegisone_inspect`, `aegisone_evaluate` through MCP.
 8. **M8.9 / Issue #28 — current:** local/deterministic substitution proof implemented (repository-authenticated genuine distribution → `MATCH`; controlled substituted distribution → `MISMATCH`; policy ALLOW/DENY through REST and MCP; source assurance unchanged); the real-0G-evidence live run remains pending per `docs/22-m8-9-live-run-runbook.md`.
 9. **M8.10 / Issue #29 — complete (PR #42):** official MCP Registry indexing stretch, following the M8.3 provider/safety envelope; live-verified against production, no pin deviation required.
 10. **M8.11 / Issue #30:** security/deployment/backend contract freeze.
@@ -615,7 +617,7 @@ Those pins are implementation targets, not claims that upstream standards are fi
 
 ## Source-authentication manual dependency
 
-M8.5 requires one user-authenticated setup action that cannot be fabricated by a coding agent: create/install the ProofRail GitHub App and supply the generated client ID/client secret to `proofrail-app` through Railway.
+M8.5 requires one user-authenticated setup action that cannot be fabricated by a coding agent: create/install the AegisOne GitHub App and supply the generated client ID/client secret to `proofrail-app` through Railway.
 
 The integration should be implemented/tested first, then request only the real values needed for the live flow.
 
@@ -623,7 +625,7 @@ The integration should be implemented/tested first, then request only the real v
 
 ## Mainnet safety state
 
-The existing M5 Aristotle registry remains the only completed ProofRail mainnet anchor. M7 commitments remain `PREPARED_NOT_SUBMITTED`.
+The existing M5 Aristotle registry remains the only completed AegisOne mainnet anchor. M7 commitments remain `PREPARED_NOT_SUBMITTED`.
 
 No M8 mainnet transaction is required. Any future mainnet write requires a fresh read-only preflight and separate explicit approval.
 
@@ -644,7 +646,7 @@ acceptance criteria are fully met — the full list with exact commands/URLs is
 `docs/23-m8-11-production-readiness.md`: (1) apply the four pending Supabase migrations
 (`202608260001`–`202608260004`) and review the security/performance advisors; (2) confirm both
 Railway health endpoints and that production topology is still exactly two services after this and
-every other pending branch deploys; (3) create/install the `ProofRail Source Verifier` GitHub App
+every other pending branch deploys; (3) create/install the `AegisOne Source Verifier` GitHub App
 and supply its credentials to `proofrail-app` via Railway, then complete one interactive browser
 authorization against a real public repository; (4) a human should point a real external MCP client
 at a running `proofrail-app` deployment to confirm the three tools render/behave correctly; (5)

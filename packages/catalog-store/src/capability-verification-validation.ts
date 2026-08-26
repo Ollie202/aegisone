@@ -4,7 +4,7 @@ import type { NewCapabilityVerification } from "./model.ts";
  * Pure sanity-check logic for a new `capability_verifications` row (docs/16-m8-database-plan.md
  * "Table: capability_verifications" > "Database-level sanity checks"). Kept dependency-free so
  * it can run identically in `InMemoryCatalogStore`, before `SupabaseCatalogStore` calls the
- * Edge Function, and inside the `proofrail-catalog` Edge Function itself (Deno cannot import
+ * Edge Function, and inside the `aegisone-catalog` Edge Function itself (Deno cannot import
  * this file directly; the Postgres CHECK constraints in
  * `supabase/migrations/202608260003_m8_6_capability_verifications.sql` are the authoritative,
  * always-enforced copy of the same rules — this function exists so the same bad row is rejected

@@ -95,7 +95,7 @@ function githubHeaders(token?: string): Record<string, string> {
   const headers: Record<string, string> = {
     accept: "application/vnd.github+json",
     "x-github-api-version": GITHUB_API_VERSION,
-    "user-agent": "proofrail-source-auth",
+    "user-agent": "aegisone-source-auth",
   };
   if (token) headers.authorization = `Bearer ${token}`;
   return headers;

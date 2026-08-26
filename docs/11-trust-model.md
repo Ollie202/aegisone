@@ -1,20 +1,20 @@
 # Trust Model
 
-This document answers the recurring question: **what exactly does ProofRail know, and why should anyone trust it?**
+This document answers the recurring question: **what exactly does AegisOne know, and why should anyone trust it?**
 
-## ProofRail is not the source of truth
+## AegisOne is not the source of truth
 
-ProofRail is designed so users/agents do not need to trust a mutable ProofRail opinion. It assembles independently checkable claims and evidence, then lets a consumer policy decide whether that evidence is sufficient.
+AegisOne is designed so users/agents do not need to trust a mutable AegisOne opinion. It assembles independently checkable claims and evidence, then lets a consumer policy decide whether that evidence is sufficient.
 
 M8 adds discovery, but discovery does not become truth.
 
 ## The M8 trust questions are separate
 
-For every capability, ProofRail may know different amounts about several independent dimensions:
+For every capability, AegisOne may know different amounts about several independent dimensions:
 
 1. **Discovery:** what resource might satisfy the requested intent?
 2. **Source assurance:** who, if anyone, authenticated the mapping between this resource/version and a source repository/revision?
-3. **Source inspection:** did ProofRail independently retrieve/inspect the exact immutable source snapshot?
+3. **Source inspection:** did AegisOne independently retrieve/inspect the exact immutable source snapshot?
 4. **Distribution correspondence:** do the distributed bytes correspond to independent reproduction from that exact claimed source?
 5. **Security assessment:** what deterministic findings were observed in the Skill/package?
 6. **Canonical evidence:** is there integrity-protected evidence/0G storage/registry data for the observation?
@@ -24,13 +24,13 @@ None of these dimensions silently rewrites another.
 
 ## Claim 1 — Which source belongs to the release/capability?
 
-ProofRail cannot infer the official source with certainty from arbitrary bytes or a search result.
+AegisOne cannot infer the official source with certainty from arbitrary bytes or a search result.
 
 The source-assurance ladder is:
 
 ### `NONE`
 
-A discovery provider/metadata may reference a repository, but ProofRail has not received an authenticated explicit source claim.
+A discovery provider/metadata may reference a repository, but AegisOne has not received an authenticated explicit source claim.
 
 ### `DECLARED`
 
@@ -62,7 +62,7 @@ Detailed implementation: `docs/14-source-authentication.md`.
 
 ## Claim 2 — Was the exact source independently inspected?
 
-ProofRail may retrieve an exact immutable source commit and inspect/package/audit it.
+AegisOne may retrieve an exact immutable source commit and inspect/package/audit it.
 
 For Agent Skills this can legitimately produce:
 
@@ -70,11 +70,11 @@ For Agent Skills this can legitimately produce:
 
 But source inspection alone is **not distribution correspondence**.
 
-If there is no distinct distributed/publisher artifact, ProofRail must leave correspondence as `NOT_EVALUATED` or `INSUFFICIENT_EVIDENCE`.
+If there is no distinct distributed/publisher artifact, AegisOne must leave correspondence as `NOT_EVALUATED` or `INSUFFICIENT_EVIDENCE`.
 
 ## Claim 3 — Does the distributed artifact correspond to that source?
 
-This is the core ProofRail correspondence job.
+This is the core AegisOne correspondence job.
 
 ```text
 separate distributed/publisher artifact
@@ -102,7 +102,7 @@ A repository/source archive cannot be compared against itself twice and called a
 
 ## Claim 4 — Is the capability safe?
 
-ProofRail does not currently make a universal safety certification.
+AegisOne does not currently make a universal safety certification.
 
 For Agent Skills, deterministic static auditing is a separate evidence dimension that can identify known risky instruction/script/resource patterns.
 
@@ -124,13 +124,13 @@ ARD, GitHub Agent Finder, Hugging Face Discover and the MCP Registry help answer
 
 > “what might help with this task?”
 
-Their identifiers, descriptions, scores and trust metadata are useful discovery context only until ProofRail separately validates evidence.
+Their identifiers, descriptions, scores and trust metadata are useful discovery context only until AegisOne separately validates evidence.
 
 Search relevance is explicitly excluded from the M8 deterministic trust-policy evaluator.
 
 ## Claim 6 — What does canonical/0G evidence add?
 
-Supabase/application rows are mutable. Strong ProofRail observations therefore have canonical deterministic evidence whose digest can be stored/retrieved through 0G Storage and committed in the ProofRail registry.
+Supabase/application rows are mutable. Strong AegisOne observations therefore have canonical deterministic evidence whose digest can be stored/retrieved through 0G Storage and committed in the AegisOne registry.
 
 The database may cache summaries/pointers, but changing a row cannot create a cryptographic correspondence result or authenticated source claim.
 
@@ -138,7 +138,7 @@ Consumers can inspect the underlying evidence rather than trust a screenshot/dat
 
 ## M4 / TEE boundary — unchanged
 
-M4 independently proved that the hosted 0G Sandbox path can toolbox-clone an exact immutable ProofRail commit, execute the committed Node.js build, return the produced artifact bytes, and reproduce the expected artifact SHA-256 exactly.
+M4 independently proved that the hosted 0G Sandbox path can toolbox-clone an exact immutable AegisOne commit, execute the committed Node.js build, return the produced artifact bytes, and reproduce the expected artifact SHA-256 exactly.
 
 M4 separately obtained real TDX quote evidence from the execution provider's TappRegistry node. That evidence is useful provider/runtime evidence, but it is **not evidence that the artifact was computed inside the TEE**:
 
@@ -148,13 +148,13 @@ M4 separately obtained real TDX quote evidence from the execution provider's Tap
 - it does not match the construction that would bind the supplied artifact-digest challenge;
 - the live evidence envelope omits the required artifact/runtime output binding.
 
-Therefore ProofRail may say **independent 0G rebuild** and **provider TDX evidence available**. It must not say **TEE-attested artifact build**, **TEE-computed artifact**, or **artifact digest bound to TDX attestation** for the current flow.
+Therefore AegisOne may say **independent 0G rebuild** and **provider TDX evidence available**. It must not say **TEE-attested artifact build**, **TEE-computed artifact**, or **artifact digest bound to TDX attestation** for the current flow.
 
 A future stronger path may earn those labels only if measured execution/output binding is independently verifiable.
 
 ## Source-claim conflicts
 
-ProofRail must not silently choose between conflicting source assertions.
+AegisOne must not silently choose between conflicting source assertions.
 
 Examples:
 
@@ -170,11 +170,11 @@ Historical authenticated claims are not rewritten to make a newer claim look con
 
 Git commits identify exact source revisions. A one-line change creates a new commit. A release/source claim stays pinned to the original immutable SHA; a later revision gets a new claim/version/evidence record.
 
-## Why GitHub alone is not the same thing as ProofRail
+## Why GitHub alone is not the same thing as AegisOne
 
 GitHub can provide source hosting, repository authority, releases and strong publisher-side build provenance/attestations.
 
-ProofRail's additional value is **independent correspondence evidence and policy aggregation outside the publisher's build path**, plus a discovery layer that makes these evidence dimensions consumable by agents.
+AegisOne's additional value is **independent correspondence evidence and policy aggregation outside the publisher's build path**, plus a discovery layer that makes these evidence dimensions consumable by agents.
 
 Repository authentication says who had authority to make the source claim. Signed provenance can say what a publisher-side build identity produced. Independent 0G reproduction asks whether another environment can produce the same distributed bytes from the exact claimed source. These reinforce one another but are not interchangeable.
 
@@ -209,11 +209,11 @@ Policy output is:
 
 with structured reasons.
 
-ProofRail supplies evidence; the consumer chooses requirements.
+AegisOne supplies evidence; the consumer chooses requirements.
 
 Future policies may add multiple independent builders/TEE-output-binding constraints only after those evidence paths genuinely exist.
 
-## What ProofRail must never imply without separate proof
+## What AegisOne must never imply without separate proof
 
 Forbidden/misleading phrases include:
 
@@ -229,13 +229,13 @@ Forbidden/misleading phrases include:
 
 Discovery can operate over many indexed resources cheaply. Expensive independent verification is performed only for explicit supported jobs/versions, then consumers verify/reuse the resulting evidence many times.
 
-ProofRail therefore does **not** need to independently rebuild every Skill returned by search.
+AegisOne therefore does **not** need to independently rebuild every Skill returned by search.
 
 Current resource/build limits remain part of the trust/security boundary. Arbitrary private-source and arbitrary build-recipe execution are not M8 MVP promises.
 
 ## Agent usage
 
-Agents query ProofRail for discovery/evidence/policy; they do not need ProofRail to become a generic agent itself.
+Agents query AegisOne for discovery/evidence/policy; they do not need AegisOne to become a generic agent itself.
 
 M8 MCP surface is intentionally read/policy oriented:
 

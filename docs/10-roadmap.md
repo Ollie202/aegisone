@@ -2,7 +2,7 @@
 
 ## Proven foundation — M1–M7
 
-ProofRail's original buildathon foundation is complete and live-proven:
+AegisOne's original buildathon foundation is complete and live-proven:
 
 - explicit source claims and immutable commit pinning;
 - deterministic independent reproduction and exact-byte comparison;
@@ -19,7 +19,7 @@ This foundation is not being replaced by M8.
 
 ## M8 — Verified Capability Discovery Backend — ACTIVE
 
-**Goal:** make ProofRail consumable as trust-aware discovery infrastructure for humans and autonomous agents.
+**Goal:** make AegisOne consumable as trust-aware discovery infrastructure for humans and autonomous agents.
 
 Core thesis:
 
@@ -27,7 +27,7 @@ Core thesis:
 intent
  -> capability discovery
  -> source assurance
- -> ProofRail evidence
+ -> AegisOne evidence
  -> consumer trust policy
  -> ALLOW | REVIEW | DENY
 ```
@@ -53,7 +53,7 @@ intent
 
 ### M8.4 — capability catalog
 
-- extend existing ProofRail Supabase project;
+- extend existing AegisOne Supabase project;
 - stable resources/versions/discovery observations;
 - mutable catalog cannot create proof.
 
@@ -79,9 +79,9 @@ intent
 
 ### M8.8 — MCP agent interface
 
-- `proofrail_search`;
-- `proofrail_inspect`;
-- `proofrail_evaluate`;
+- `aegisone_search`;
+- `aegisone_inspect`;
+- `aegisone_evaluate`;
 - no auto-install/execute/sign.
 
 ### M8.9 — controlled substitution vertical slice
@@ -98,7 +98,7 @@ This is the core backend MVP proof.
 
 - read-only official Registry ingestion;
 - real MCP resources in discovery;
-- remains `INDEXED` until independent ProofRail evidence exists.
+- remains `INDEXED` until independent AegisOne evidence exists.
 
 ### M8.11 — backend freeze
 
@@ -107,7 +107,7 @@ This is the core backend MVP proof.
 - complete CI/Gitleaks;
 - frozen REST/ARD/MCP contract for frontend.
 
-## M9 — Human-facing ProofRail Hub
+## M9 — Human-facing AegisOne Hub
 
 **Start condition:** M8.11 explicitly declares backend frontend-ready.
 
@@ -187,4 +187,4 @@ The durable opportunity is:
 
 > **broad agentic capability discovery + independently checkable source/distribution evidence + consumer-owned policy + interoperable proof history.**
 
-ProofRail should become the layer an agent asks before it grants a newly discovered capability access to its environment.
+AegisOne should become the layer an agent asks before it grants a newly discovered capability access to its environment.

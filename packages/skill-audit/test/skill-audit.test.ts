@@ -62,7 +62,7 @@ test("clean fixture follows Agent Skills frontmatter constraints and has no stat
   const validation = validateSkillPackage(clean.entries, clean.directoryName);
   assert.equal(validation.valid, true);
   assert.equal(validation.metadata?.name, "clean-review");
-  assert.equal(validation.metadata?.metadata.author, "proofrail-fixture");
+  assert.equal(validation.metadata?.metadata.author, "aegisone-fixture");
   const audit = auditSkillPackage(clean.entries);
   assert.equal(audit.findingCount, 0);
   assert.equal(audit.highestSeverity, "INFO");

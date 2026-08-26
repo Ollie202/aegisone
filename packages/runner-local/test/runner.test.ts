@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createVerification } from "../../core/src/verify.ts";
 import { runLocalBuild } from "../src/run.ts";
-import { makeHelloProofRailFixture } from "../../../examples/hello-proofrail/fixture.ts";
+import { makeHelloAegisOneFixture } from "../../../examples/hello-aegisone/fixture.ts";
 
 test("independent checkout of the exact fixture commit reproduces publisher bytes", async (context) => {
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   context.after(fixture.cleanup);
   const build = await runLocalBuild({ source: fixture.claim.source, recipe: fixture.recipe, repositoryPath: fixture.repositoryPath });
   const result = createVerification({
@@ -18,12 +18,12 @@ test("independent checkout of the exact fixture commit reproduces publisher byte
   assert.equal(result.correspondence.status, "MATCH");
   assert.equal(result.artifacts.publisher.sha256, result.artifacts.reproduced.sha256);
   assert.equal(result.sourceClaim.commitSha, fixture.commitSha);
-  assert.equal(fixture.commitSha, "85ce179a7487605112dd3e36129896082cc2cff0");
+  assert.equal(fixture.commitSha, "db273bc1686e8906e3cd1fc1912f286f96cc51ca");
   assert.equal(result.manifest.environment.runnerType, "local");
 });
 
 test("one-byte publisher artifact substitution returns MISMATCH", async (context) => {
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   context.after(fixture.cleanup);
   const build = await runLocalBuild({ source: fixture.claim.source, recipe: fixture.recipe, repositoryPath: fixture.repositoryPath });
   const mutated = Uint8Array.from(fixture.publisherBytes);
@@ -40,7 +40,7 @@ test("one-byte publisher artifact substitution returns MISMATCH", async (context
 });
 
 test("runner refuses a nonexistent or unpinned revision", async (context) => {
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   context.after(fixture.cleanup);
   await assert.rejects(
     runLocalBuild({ source: { ...fixture.claim.source, commitSha: "f".repeat(40) }, recipe: fixture.recipe, repositoryPath: fixture.repositoryPath }),
@@ -53,7 +53,7 @@ test("runner refuses a nonexistent or unpinned revision", async (context) => {
 });
 
 test("runner enforces artifact output limit", async (context) => {
-  const fixture = await makeHelloProofRailFixture();
+  const fixture = await makeHelloAegisOneFixture();
   context.after(fixture.cleanup);
   await assert.rejects(
     runLocalBuild({

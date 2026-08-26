@@ -76,7 +76,7 @@ function verifiedMatchResource(): CapabilityResource {
   return resource;
 }
 
-test("indexed discovery is valid without implying ProofRail verification", () => {
+test("indexed discovery is valid without implying AegisOne verification", () => {
   const resource = indexedResource();
   assert.deepEqual(validateCapabilityResource(resource), []);
   assert.equal(resource.discovery.status, "INDEXED");

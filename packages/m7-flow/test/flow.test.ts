@@ -11,14 +11,14 @@ const COMMIT = "32748a084bf977089a9ad1d5b0858f4041a51fff";
 function sourceClaim() {
   return {
     schemaVersion: "1" as const,
-    repository: "https://github.com/Ollie202/proofrail-0g.git",
+    repository: "https://github.com/Ollie202/aegisone.git",
     commitSha: COMMIT,
     subdirectory: "examples/agent-skills/clean-review",
     publisherIdentity: {
       type: "github" as const,
-      subject: "Ollie202/proofrail-0g",
+      subject: "Ollie202/aegisone",
       assuranceLevel: "DECLARED" as const,
-      evidenceReferences: ["https://github.com/Ollie202/proofrail-0g"],
+      evidenceReferences: ["https://github.com/Ollie202/aegisone"],
     },
     packageFormat: "proofrail-agent-skill-package-v1" as const,
   };

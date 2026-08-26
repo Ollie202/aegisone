@@ -43,7 +43,7 @@ export function policyFormHtml(policy = {}) {
 }
 
 /** Reads the form's current values into a `TrustPolicy`-shaped object
- * (`@proofrail/capability-model`). Isomorphic so both the server (rendering a pre-filled form from
+ * (`@aegisone/capability-model`). Isomorphic so both the server (rendering a pre-filled form from
  * a query string) and the browser (reading `FormData` before `POST /api/v1/policy/evaluate`) use
  * the identical construction rule. */
 export function policyFromFormValues(values) {

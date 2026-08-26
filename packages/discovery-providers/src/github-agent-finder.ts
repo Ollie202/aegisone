@@ -11,7 +11,7 @@ export interface GithubAgentFinderProviderOptions extends Pick<ArdWireProviderCo
  * Endpoint: `POST https://agentfinder.github.com/api/v1/search`. Public, unauthenticated.
  *
  * Live-observed response entries use provider-native `urn:ai:...` identifiers rather than
- * ProofRail's own `urn:air:` catalog convention; normalization in `./normalize.ts` does not
+ * AegisOne's own `urn:air:` catalog convention; normalization in `./normalize.ts` does not
  * assume any particular identifier scheme.
  */
 export function createGithubAgentFinderProvider(options: GithubAgentFinderProviderOptions = {}): DiscoveryProvider {

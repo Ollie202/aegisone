@@ -7,11 +7,11 @@ import type {
 import type { SkillEnrichmentResult } from "./model.ts";
 
 /**
- * Maps an M8.6 enrichment result onto the three `@proofrail/capability-model` (M8.1) evidence
+ * Maps an M8.6 enrichment result onto the three `@aegisone/capability-model` (M8.1) evidence
  * dimensions this package is responsible for: source inspection, correspondence, and security.
  * Source assurance (M8.5 `SourceAssuranceEvidence`) and canonical evidence (0G Storage/registry
  * pointers) are deliberately *not* produced here — they come from independent sources
- * (`@proofrail/source-auth-github` and, once a worker completes a live run, the storage/registry
+ * (`@aegisone/source-auth-github` and, once a worker completes a live run, the storage/registry
  * clients) and must stay independent per AGENTS.md: "source assurance stays independent of
  * correspondence/audit, and vice versa". Callers assemble the full `CapabilityTrustEvidence` by
  * combining this with those other two dimensions themselves.

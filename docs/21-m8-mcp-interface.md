@@ -1,4 +1,4 @@
-# M8.8 — MCP interface (`proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`)
+# M8.8 — MCP interface (`aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`)
 
 Status: implemented on `agent/m8-mcp-interface` (Issue #27). Wraps the M8.7 frozen contract
 (`docs/20-m8-api-contract.md`) and the M8.2/M8.3 search surface through MCP
@@ -10,13 +10,13 @@ A **thin transport adapter**, not a second implementation of search, evidence as
 evaluation. Every tool handler in `apps/web/src/mcp.ts` calls the exact same application services
 the REST API already calls:
 
-- `proofrail_search` → `apps/web/src/search-service.ts`'s `performCapabilitySearch` (the same
+- `aegisone_search` → `apps/web/src/search-service.ts`'s `performCapabilitySearch` (the same
   function `POST /search` now calls; M8.2 local-catalog and M8.3 federated dispatch logic was
   moved there unchanged so both the HTTP route and this tool share it byte-for-byte).
-- `proofrail_inspect` → `apps/web/src/api-v1.ts`'s `buildEvidenceResponse` (the same function
+- `aegisone_inspect` → `apps/web/src/api-v1.ts`'s `buildEvidenceResponse` (the same function
   `GET /api/v1/resources/:resourceId/evidence` now calls, including its M8.5/M8.6 integrity
   re-check before presenting `REPOSITORY_AUTHENTICATED`/`SIGNED_RELEASE`/`MATCH`/`MISMATCH`).
-- `proofrail_evaluate` → `apps/web/src/api-v1.ts`'s `runPolicyEvaluation` (the same function
+- `aegisone_evaluate` → `apps/web/src/api-v1.ts`'s `runPolicyEvaluation` (the same function
   `POST /api/v1/policy/evaluate` now calls: `parsePolicy` + `resolvePolicySubjectResource` +
   the unmodified M8.1 `evaluateTrustPolicy`).
 
@@ -24,9 +24,9 @@ No LLM, discovery provider beyond the ones already wired into the HTTP surface, 
 Supabase evidence invention, blockchain call, or worker/build invocation exists anywhere in this
 module.
 
-## Package layout: `apps/web/src/mcp.ts`, not a new `packages/mcp-proofrail`
+## Package layout: `apps/web/src/mcp.ts`, not a new `packages/mcp-aegisone`
 
-`AGENTS.md`'s "Planned M8 package boundaries" lists `packages/mcp-proofrail` as the target name for
+`AGENTS.md`'s "Planned M8 package boundaries" lists `packages/mcp-aegisone` as the target name for
 this adapter. This implementation deliberately does not create that package, and the deviation is
 recorded here rather than left implicit:
 
@@ -36,7 +36,7 @@ recorded here rather than left implicit:
   call the *exact* functions `apps/web/src/api-v1.ts` and the search route already use, not a
   reimplementation of them. Those functions live in `apps/web` (they assemble catalog rows into
   the frozen API response shape) and `apps/web` itself must mount the MCP HTTP route — so a
-  standalone `packages/mcp-proofrail` importing them back would create `apps/web → mcp-proofrail →
+  standalone `packages/mcp-aegisone` importing them back would create `apps/web → mcp-aegisone →
   apps/web`, a circular dependency.
 - Given the issue's own explicit alternative ("call into the same functions apps/web/src/api-v1.ts
   and the search handler call, or make internal HTTP calls to the running proofrail-app... pick
@@ -50,18 +50,18 @@ recorded here rather than left implicit:
   either depending on the other.
 
 If a later milestone needs the search/evidence/policy assembly logic from outside `apps/web`
-(e.g. a real `packages/mcp-proofrail` consumed by something other than this HTTP service), the
+(e.g. a real `packages/mcp-aegisone` consumed by something other than this HTTP service), the
 correct follow-up is to relocate that assembly logic into a package first, then have both
 `apps/web` and the new package depend on it — not to duplicate it.
 
 ## Tool surface
 
 Exactly three tools, matching Threat M8-018's allowlist. None of the explicitly banned tools
-(`proofrail_install`, `proofrail_execute`, `proofrail_sign`, `proofrail_run_arbitrary_build`,
-`proofrail_upload_secret`) exist in this codebase; a regression test in `apps/web/test/mcp.test.ts`
+(`aegisone_install`, `aegisone_execute`, `aegisone_sign`, `aegisone_run_arbitrary_build`,
+`aegisone_upload_secret`) exist in this codebase; a regression test in `apps/web/test/mcp.test.ts`
 asserts the connected tool list is exactly the three allowed names.
 
-### `proofrail_search`
+### `aegisone_search`
 
 Discovery-only. Input:
 
@@ -79,10 +79,10 @@ Output: the same JSON `POST /search` returns (local `ArdEntry` results or federa
 `CapabilityResource` results, unchanged). `INDEXED` state and relevance scores are discovery
 signals only — never a trust or safety verdict.
 
-### `proofrail_inspect`
+### `aegisone_inspect`
 
 Input: `{ resourceId: string }` — the stable catalog id (`agentic_resources.id`), not the raw
-ARD/federated resource id `proofrail_search` returns.
+ARD/federated resource id `aegisone_search` returns.
 
 Output: the exact `EvidenceApiResponse` shape from `docs/20-m8-api-contract.md`
 (`GET /api/v1/resources/:resourceId/evidence`) — discovery, source assurance, source inspection,
@@ -95,13 +95,13 @@ purely `INDEXED` (discovery-only) resource reports every dimension as
 `404 resource_not_found` (as a tool `isError` result, not a thrown protocol error) when the id does
 not resolve.
 
-### `proofrail_evaluate`
+### `aegisone_evaluate`
 
 Input:
 
 ```ts
 {
-  policy: object;       // TrustPolicy, @proofrail/capability-model schemaVersion "1"
+  policy: object;       // TrustPolicy, @aegisone/capability-model schemaVersion "1"
   resource?: object;    // inline CapabilityResource — exactly one of resource/resourceId
   resourceId?: string;  // catalog resourceId, looked up with the same integrity re-check
 }
@@ -109,7 +109,7 @@ Input:
 
 Output: the M8.1 `TrustPolicyResult` unchanged — `{ schemaVersion, decision: "ALLOW"|"REVIEW"|"DENY", reasons }`.
 Purely deterministic; a search-relevance score can never enter this evaluation because
-`proofrail_search`'s output is never fed into `proofrail_evaluate` as evidence — only an already
+`aegisone_search`'s output is never fed into `aegisone_evaluate` as evidence — only an already
 catalogued/verified resource (by id) or a caller-validated inline resource is.
 
 ## Malformed input / error taxonomy
@@ -158,7 +158,7 @@ Streamable HTTP server):
 ```json
 {
   "mcpServers": {
-    "proofrail": {
+    "aegisone": {
       "url": "https://proofrail-app-production.up.railway.app/mcp",
       "transport": "streamable-http"
     }
@@ -166,12 +166,12 @@ Streamable HTTP server):
 }
 ```
 
-Locally (against `pnpm --filter @proofrail/web start`, default `http://localhost:3000`):
+Locally (against `pnpm --filter @aegisone/web start`, default `http://localhost:3000`):
 
 ```json
 {
   "mcpServers": {
-    "proofrail": {
+    "aegisone": {
       "url": "http://localhost:3000/mcp",
       "transport": "streamable-http"
     }
@@ -184,7 +184,7 @@ matching every other M8 public HTTP route.
 
 ## What is proven vs. what still needs a human
 
-**Proven by automated test** (`apps/web/test/mcp.test.ts`, part of `pnpm --filter @proofrail/web test`
+**Proven by automated test** (`apps/web/test/mcp.test.ts`, part of `pnpm --filter @aegisone/web test`
 and root `pnpm check`/`pnpm test`): a real `@modelcontextprotocol/sdk` TypeScript `Client` (not a
 hand-rolled test double) connects over an actual `StreamableHTTPClientTransport` to a real
 `node:http` server running `createProductRequestHandler`, lists tools, and calls all three tools

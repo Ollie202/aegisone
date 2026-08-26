@@ -37,11 +37,11 @@ if (network.chainId !== CHAIN_ID) {
 }
 
 const artifact = JSON.parse(
-  await readFile("contracts/artifacts/src/ProofRailRegistry.sol/ProofRailRegistry.json", "utf8"),
+  await readFile("contracts/artifacts/src/AegisOneRegistry.sol/AegisOneRegistry.json", "utf8"),
 ) as { abi: unknown[] };
 
 const code = await provider.getCode(CONTRACT);
-if (code === "0x") throw new Error("Expected ProofRailRegistry contract has no code");
+if (code === "0x") throw new Error("Expected AegisOneRegistry contract has no code");
 
 const registry = new Contract(CONTRACT, artifact.abi, provider);
 if (!(await registry.exists(RECORD_ID))) throw new Error("Expected M5 registry record does not exist");
@@ -95,15 +95,15 @@ for (let blockNumber = registrationBlock; blockNumber >= firstCandidateBlock && 
     }
   }
 }
-if (!deploymentTxHash) throw new Error("Could not locate nonce-0 ProofRailRegistry deployment transaction");
+if (!deploymentTxHash) throw new Error("Could not locate nonce-0 AegisOneRegistry deployment transaction");
 
 const deploymentTx = await provider.getTransaction(deploymentTxHash);
 const deploymentReceipt = await provider.getTransactionReceipt(deploymentTxHash);
 if (!deploymentTx || !deploymentReceipt || deploymentReceipt.status !== 1) {
-  throw new Error("ProofRailRegistry deployment transaction/receipt is missing or unsuccessful");
+  throw new Error("AegisOneRegistry deployment transaction/receipt is missing or unsuccessful");
 }
 if (!sameHex(deploymentTx.from, WALLET) || deploymentTx.nonce !== 0 || deploymentTx.to !== null) {
-  throw new Error("ProofRailRegistry deployment transaction identity/nonce mismatch");
+  throw new Error("AegisOneRegistry deployment transaction identity/nonce mismatch");
 }
 if (!sameHex(deploymentReceipt.contractAddress, CONTRACT)) {
   throw new Error(`Deployment receipt contract ${deploymentReceipt.contractAddress} does not match expected ${CONTRACT}`);
@@ -120,7 +120,7 @@ const endingBalanceWei = await provider.getBalance(WALLET);
 
 console.log(JSON.stringify({
   schemaVersion: "1",
-  kind: "ProofRailAristotleMainnetVerification",
+  kind: "AegisOneAristotleMainnetVerification",
   verifiedAtBlock: latestBlock,
   network: {
     name: "0G Mainnet / Aristotle",

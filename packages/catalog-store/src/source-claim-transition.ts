@@ -3,8 +3,8 @@
  * version that may already have an active claim (docs/14-source-authentication.md "Source
  * conflicts", docs/17-m8-security-boundaries.md Threat M8-012). Kept dependency-free so it can
  * be evaluated identically by `InMemoryCatalogStore`, `SupabaseCatalogStore`'s edge-function
- * caller, and the `proofrail-catalog` Edge Function itself (Deno cannot import this file
- * directly, so `supabase/functions/proofrail-catalog/index.ts` re-implements the same three
+ * caller, and the `aegisone-catalog` Edge Function itself (Deno cannot import this file
+ * directly, so `supabase/functions/aegisone-catalog/index.ts` re-implements the same three
  * rules — keep both in sync if this logic changes; both are covered by tests).
  *
  * Rules:
@@ -12,7 +12,7 @@
  *  - an active claim exists for the *same* stable repository -> "supersede" (old claim becomes
  *    `superseded`; the new claim's evidence fields are still a brand-new immutable row)
  *  - an active claim exists for a *different* repository     -> "conflict" (both claims are
- *    marked `conflicted`; ProofRail never silently picks the "stronger"-looking one)
+ *    marked `conflicted`; AegisOne never silently picks the "stronger"-looking one)
  */
 export interface ActiveClaimSummary {
   readonly id: string;

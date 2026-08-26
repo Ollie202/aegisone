@@ -22,11 +22,11 @@ The successful M4 run on Galileo:
 7. obtained exactly 53 bytes with SHA-256 `9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154`, matching the known publisher artifact;
 8. deleted the sandbox in cleanup.
 
-Separately, ProofRail queried the provider's registered Tapp node at `http://47.84.230.89:50051` and received real TDX quote evidence. The live quote is v5. Its 64-byte `report_data` is the provider signer address followed by zero padding:
+Separately, AegisOne queried the provider's registered Tapp node at `http://47.84.230.89:50051` and received real TDX quote evidence. The live quote is v5. Its 64-byte `report_data` is the provider signer address followed by zero padding:
 
 `0xa19c4e672576e186af81548e950bf74a736220c30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000`
 
-ProofRail supplied the reproduced artifact SHA-256 as the GetEvidence challenge. The quote did not match the current upstream SHA-512 runtime-data construction for that challenge and the evidence envelope did not expose `runtime_data`. The quote did match the legacy signer-only scheme.
+AegisOne supplied the reproduced artifact SHA-256 as the GetEvidence challenge. The quote did not match the current upstream SHA-512 runtime-data construction for that challenge and the evidence envelope did not expose `runtime_data`. The quote did match the legacy signer-only scheme.
 
 The observed sealed-only provider surface rejects toolbox operations, so the public API did not offer a path that was both sealed/TEE-bound and capable of the required arbitrary clone/build/retrieve workflow.
 

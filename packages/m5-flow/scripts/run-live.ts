@@ -9,9 +9,9 @@ import { getEvidence, summarizeEvidence } from "../../sandbox-0g/src/tapp.ts";
 import { performStorageRoundTrip, ZeroGSdkTransport } from "../../storage-0g/src/index.ts";
 import { attachStorageEvidence, createJudgeableSlice } from "../src/index.ts";
 
-const SOURCE_REPO = "https://github.com/Ollie202/proofrail-0g.git";
+const SOURCE_REPO = "https://github.com/Ollie202/aegisone.git";
 const SOURCE_COMMIT = "e9c82277cef2f7630977e2473664e14eed2f860d";
-const SOURCE_PATH = "/tmp/proofrail-m5";
+const SOURCE_PATH = "/tmp/aegisone-m5";
 const FIXTURE_DIR = `${SOURCE_PATH}/examples/hello-proofrail`;
 const ARTIFACT_PATH = `${FIXTURE_DIR}/dist/hello-proofrail.json`;
 const PUBLISHER_ARTIFACT_PATH = "examples/hello-proofrail/fixtures/publisher/hello-proofrail.json";
@@ -37,9 +37,9 @@ const claim: ReleaseClaim = {
   projectId: "hello-proofrail@1.0.0",
   publisherIdentity: {
     type: "github",
-    subject: "Ollie202/proofrail-0g",
+    subject: "Ollie202/aegisone",
     assuranceLevel: "DECLARED",
-    evidenceReferences: ["https://github.com/Ollie202/proofrail-0g"],
+    evidenceReferences: ["https://github.com/Ollie202/aegisone"],
   },
   source: { provider: "git", repository: SOURCE_REPO, commitSha: SOURCE_COMMIT },
   recipeDigest: recipeDigest(recipe),
@@ -128,7 +128,7 @@ try {
   output.sandboxFunding = { acknowledgeTx, depositTx, depositedWei: depositDelta.toString() };
 
   const client = new SandboxApiClient(selected.listing.url, wallet);
-  const created = await client.create({ image: selected.snapshot.name, name: `proofrail-m5-${Date.now()}`, sealed: false });
+  const created = await client.create({ image: selected.snapshot.name, name: `aegisone-m5-${Date.now()}`, sealed: false });
   id = sandboxId(created);
   output.sandbox = { id, providerAddress: selected.info.providerAddress, providerUrl: selected.listing.url, snapshot: selected.snapshot };
 

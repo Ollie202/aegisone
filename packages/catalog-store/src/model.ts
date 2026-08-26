@@ -3,9 +3,9 @@ import type { CapabilityResourceKind, DiscoveryStatus } from "../../capability-m
 export type { CapabilityResourceKind, DiscoveryStatus };
 
 /**
- * Mutable catalog/discovery domain types persisted in the existing ProofRail
+ * Mutable catalog/discovery domain types persisted in the existing AegisOne
  * Supabase project (M8.4). These are application/catalog memory only: nothing here
- * is, or can become, a ProofRail MATCH/MISMATCH, source-assurance, security, or
+ * is, or can become, an AegisOne MATCH/MISMATCH, source-assurance, security, or
  * canonical-evidence value. See docs/16-m8-database-plan.md.
  */
 
@@ -177,7 +177,7 @@ export interface CreateSourceClaimResult {
 /**
  * M8.6 capability-verification linkage/evidence-pointer persistence
  * (docs/16-m8-database-plan.md "Table: capability_verifications"). A row here is a mutable
- * *pointer/cache* into canonical ProofRail evidence already produced by the existing M7
+ * *pointer/cache* into canonical AegisOne evidence already produced by the existing M7
  * Agent Skill verification pipeline (`packages/skill-audit` + `packages/core`); it is never
  * itself proof authority, and nothing in this module computes MATCH/MISMATCH — callers must
  * supply an already-validated `DistributionCorrespondenceEvidence`-shaped result. Historical:

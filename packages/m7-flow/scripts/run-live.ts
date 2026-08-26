@@ -7,11 +7,11 @@ import { decodeCanonicalSkillPackage, readSkillDirectory, summarizeSkillPackage 
 import { performStorageRoundTrip, ZeroGSdkTransport } from "../../storage-0g/src/index.ts";
 import { attachM7StorageEvidence, createM7SkillSlice, type SkillBuildEnvironment, type SkillSourceClaim } from "../src/index.ts";
 
-const SOURCE_REPO = "https://github.com/Ollie202/proofrail-0g.git";
+const SOURCE_REPO = "https://github.com/Ollie202/aegisone.git";
 const SOURCE_COMMIT = process.env.PROOFRAIL_M7_SOURCE_COMMIT?.trim() ?? "";
 const WRITE_GATE = process.env.PROOFRAIL_M7_GALILEO_WRITE?.trim();
 const REQUIRED_GATE = "I_UNDERSTAND_THIS_WRITES_GALILEO_TESTNET";
-const SOURCE_PATH = "/tmp/proofrail-m7";
+const SOURCE_PATH = "/tmp/aegisone-m7";
 const SKILL_SUBDIRECTORY = "examples/agent-skills/clean-review";
 const PACKAGE_PATH = "/tmp/clean-review.skillpkg";
 const LOCAL_SKILL_DIRECTORY = SKILL_SUBDIRECTORY;
@@ -90,9 +90,9 @@ const sourceClaim: SkillSourceClaim = {
   subdirectory: SKILL_SUBDIRECTORY,
   publisherIdentity: {
     type: "github",
-    subject: "Ollie202/proofrail-0g",
+    subject: "Ollie202/aegisone",
     assuranceLevel: "DECLARED",
-    evidenceReferences: ["https://github.com/Ollie202/proofrail-0g"],
+    evidenceReferences: ["https://github.com/Ollie202/aegisone"],
   },
   packageFormat: "proofrail-agent-skill-package-v1",
 };
@@ -140,7 +140,7 @@ try {
   output.sandboxFunding = { acknowledgeTx, depositTx, depositedWei: depositDelta.toString() };
 
   sandboxClient = new SandboxApiClient(selected.listing.url, sandboxWallet);
-  const created = await sandboxClient.create({ image: selected.snapshot.name, name: `proofrail-m7-${Date.now()}`, sealed: false });
+  const created = await sandboxClient.create({ image: selected.snapshot.name, name: `aegisone-m7-${Date.now()}`, sealed: false });
   createdSandboxId = sandboxId(created);
   output.sandbox = {
     id: createdSandboxId,

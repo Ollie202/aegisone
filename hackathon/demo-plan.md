@@ -7,7 +7,7 @@
 
 Open these tabs so there is no dead time:
 
-1. Live ProofRail app.
+1. Live AegisOne app.
 2. Public GitHub repository.
 3. M5 Aristotle registration transaction on 0G ChainScan.
 4. M7 Galileo registration transaction on 0G ChainScan.
@@ -16,11 +16,11 @@ Record at a mobile-readable zoom. Do not expose Railway/Supabase dashboards or s
 
 ## 0–12s — The trust gap
 
-**Screen:** top of the ProofRail homepage.
+**Screen:** top of the AegisOne homepage.
 
 **Say:**
 
-> A public GitHub repo does not prove the file users download was actually built from that source. ProofRail rebuilds the exact declared commit independently and compares the bytes.
+> A public GitHub repo does not prove the file users download was actually built from that source. AegisOne rebuilds the exact declared commit independently and compares the bytes.
 
 ## 12–32s — Real software MATCH
 
@@ -52,7 +52,7 @@ MISMATCH
 
 **Say:**
 
-> Now change only the distributed file. The source still looks clean, but the bytes no longer match. ProofRail reports MISMATCH while the independent reproduction stays unchanged.
+> Now change only the distributed file. The source still looks clean, but the bytes no longer match. AegisOne reports MISMATCH while the independent reproduction stays unchanged.
 
 ## 50–66s — Agent Skills: provenance is not safety
 
@@ -60,7 +60,7 @@ MISMATCH
 
 **Say:**
 
-> ProofRail also verifies Agent Skills. Correspondence and security are separate. This skill matches source exactly, while deterministic static analysis reports its findings independently. A MATCH never means the skill is safe.
+> AegisOne also verifies Agent Skills. Correspondence and security are separate. This skill matches source exactly, while deterministic static analysis reports its findings independently. A MATCH never means the skill is safe.
 
 Point briefly to:
 
@@ -90,10 +90,10 @@ Evidence to show:
 
 **Say:**
 
-> ProofRail gives humans and agents evidence they can verify before trusting software. It proves correspondence without pretending that matching source automatically means safe.
+> AegisOne gives humans and agents evidence they can verify before trusting software. It proves correspondence without pretending that matching source automatically means safe.
 
 ## Claims not to make
 
 - Do **not** say the M7 Agent Skill record is on Aristotle mainnet; it is `PREPARED_NOT_SUBMITTED`.
 - Do **not** call the current build “TEE-attested output.” The live TDX evidence is provider/runtime evidence only; artifact-digest binding is unavailable.
-- Do **not** say ProofRail discovers the official repository automatically. The demonstrated source assurance is publisher-declared unless stronger identity evidence exists.
+- Do **not** say AegisOne discovers the official repository automatically. The demonstrated source assurance is publisher-declared unless stronger identity evidence exists.

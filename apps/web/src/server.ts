@@ -21,7 +21,7 @@ if (evidencePath) {
   const server = createServer((request, response) => {
     if (request.url === "/health") {
       response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      response.end('{"ok":true,"service":"proofrail","mode":"evidence-viewer"}\n');
+      response.end('{"ok":true,"service":"aegisone","mode":"evidence-viewer"}\n');
       return;
     }
     if (request.url !== "/" && request.url !== "/index.html") {
@@ -32,7 +32,7 @@ if (evidencePath) {
     response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
     response.end(html);
   });
-  server.listen(port, "0.0.0.0", () => process.stdout.write(`ProofRail evidence viewer listening on :${port}\n`));
+  server.listen(port, "0.0.0.0", () => process.stdout.write(`AegisOne evidence viewer listening on :${port}\n`));
 } else {
   const store = createJobStoreFromEnv();
   // The M8.4 Supabase migration has not been applied to production yet (PROJECT_STATE.md), and
@@ -44,7 +44,7 @@ if (evidencePath) {
     catalogStore = createCatalogStoreFromEnv();
   } catch (error) {
     process.stdout.write(
-      `ProofRail catalog store unavailable, falling back to in-memory (non-persistent): ${error instanceof Error ? error.message : String(error)}\n`,
+      `AegisOne catalog store unavailable, falling back to in-memory (non-persistent): ${error instanceof Error ? error.message : String(error)}\n`,
     );
   }
   const handler = createProductRequestHandler(store, { catalogStore });
@@ -54,5 +54,5 @@ if (evidencePath) {
       response.end(`${JSON.stringify({ error: "internal_error", message: error instanceof Error ? error.message : String(error) })}\n`);
     });
   });
-  server.listen(port, "0.0.0.0", () => process.stdout.write(`ProofRail product runtime listening on :${port}\n`));
+  server.listen(port, "0.0.0.0", () => process.stdout.write(`AegisOne product runtime listening on :${port}\n`));
 }

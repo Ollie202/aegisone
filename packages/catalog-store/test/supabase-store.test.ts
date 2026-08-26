@@ -17,7 +17,7 @@ function makeStore(responder: (action: string, body: Record<string, unknown>) =>
     return new Response(JSON.stringify(responder(action, rest)), { status: 200, headers: { "content-type": "application/json" } });
   };
   const store = new SupabaseCatalogStore({
-    url: "https://proofrail.supabase.co",
+    url: "https://aegisone.supabase.co",
     publishableKey: "sb_publishable_test",
     appToken: "server-app-secret",
     fetcher: fakeFetch as typeof fetch,
@@ -66,7 +66,7 @@ test("upsertDiscoveredResource sends the derived plan and the app token header",
   assert.equal(result.version, null);
 
   assert.equal(requests.length, 1);
-  assert.match(requests[0]!.url, /functions\/v1\/proofrail-catalog$/);
+  assert.match(requests[0]!.url, /functions\/v1\/aegisone-catalog$/);
   const headers = requests[0]!.init?.headers as Record<string, string>;
   assert.equal(headers.authorization, "Bearer sb_publishable_test");
   assert.equal(headers["x-proofrail-app-token"], "server-app-secret");
@@ -127,7 +127,7 @@ test("a non-OK Edge Function response raises rather than returning a fabricated 
   const fakeFetch = async (): Promise<Response> =>
     new Response(JSON.stringify({ error: "database_error", message: "boom" }), { status: 400, headers: { "content-type": "application/json" } });
   const store = new SupabaseCatalogStore({
-    url: "https://proofrail.supabase.co",
+    url: "https://aegisone.supabase.co",
     publishableKey: "sb_publishable_test",
     appToken: "server-app-secret",
     fetcher: fakeFetch as typeof fetch,

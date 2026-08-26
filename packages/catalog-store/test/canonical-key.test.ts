@@ -37,7 +37,7 @@ test("throws when no identifier, provider pairing, or usable URL exists", () => 
   assert.throws(() => computeCanonicalKey({ resourceUrl: "not a url" }), /computeCanonicalKey requires/);
 });
 
-test("deriveProviderId reads the short slug prefix ProofRail's own normalizers use", () => {
+test("deriveProviderId reads the short slug prefix AegisOne's own normalizers use", () => {
   assert.equal(deriveProviderId(ardResource()), "ard");
   assert.equal(deriveProviderId(federatedResource()), "github-agent-finder");
 });

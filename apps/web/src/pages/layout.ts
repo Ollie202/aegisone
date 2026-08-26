@@ -133,7 +133,7 @@ export function renderLayoutHtml(options: LayoutOptions): string {
 <body>
 <main class="shell">
   <nav class="topnav">
-    <a class="brand" href="/">ProofRail Hub</a>
+    <a class="brand" href="/">AegisOne Hub</a>
     <div class="navlinks">
       ${navLink("/", "Search", options.activeNav === "hub")}
       ${navLink("/source/claim", "Source claim", options.activeNav === "source-claim")}
@@ -142,8 +142,8 @@ export function renderLayoutHtml(options: LayoutOptions): string {
   </nav>
   ${options.bodyHtml}
   <footer class="footer">
-    <span>ProofRail — discovery, source assurance, correspondence, security, and policy are always shown as independent dimensions, never a single trust score.</span>
-    <span><a href="https://github.com/Ollie202/proofrail-0g" rel="noopener noreferrer" target="_blank">public source</a></span>
+    <span>AegisOne — discovery, source assurance, correspondence, security, and policy are always shown as independent dimensions, never a single trust score.</span>
+    <span><a href="https://github.com/Ollie202/aegisone" rel="noopener noreferrer" target="_blank">public source</a></span>
   </footer>
 </main>
 ${options.scriptTag ?? ""}

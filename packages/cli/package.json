@@ -1,9 +1,9 @@
 {
-  "name": "@proofrail/cli",
+  "name": "@aegisone/cli",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "bin": { "proofrail": "./src/cli.ts" },
+  "bin": { "aegisone": "./src/cli.ts" },
   "scripts": {
     "check": "node --experimental-strip-types --test test/*.test.ts",
     "test": "node --experimental-strip-types --test test/*.test.ts"

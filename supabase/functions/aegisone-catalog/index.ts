@@ -3,9 +3,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 // M8.4: token-gated server-to-server Edge Function for the mutable capability
 // catalog (agentic_resources / resource_discoveries / resource_versions /
-// ingestion_sources). Mirrors the proofrail-jobs Edge Function pattern: this
+// ingestion_sources). Mirrors the aegisone-jobs Edge Function pattern: this
 // function holds Supabase's service-role credential internally so Railway never
-// needs it, and every request is additionally gated by a high-entropy ProofRail
+// needs it, and every request is additionally gated by a high-entropy AegisOne
 // app token whose SHA-256 digest is checked against public.proofrail_app_auth.
 //
 // This function persists discovery/version bookkeeping only. It has no code path
@@ -47,7 +47,7 @@ async function authorized(request: Request): Promise<boolean> {
     .select("token_sha256")
     .eq("singleton", true)
     .single();
-  if (error || !data?.token_sha256) throw new Error(`ProofRail auth configuration unavailable: ${error?.message ?? "missing row"}`);
+  if (error || !data?.token_sha256) throw new Error(`AegisOne auth configuration unavailable: ${error?.message ?? "missing row"}`);
   return constantTimeEqual(await sha256Hex(token), data.token_sha256);
 }
 
@@ -443,7 +443,7 @@ Deno.serve(async (request) => {
 
     // M8.6: createCapabilityVerification always inserts a new immutable
     // capability_verifications row linking a resource version (and optional source claim /
-    // verification job) to canonical ProofRail evidence already produced elsewhere. This
+    // verification job) to canonical AegisOne evidence already produced elsewhere. This
     // function never computes MATCH/MISMATCH itself; it only persists an already-validated
     // result and rejects one that fails the same sanity checks the Postgres CHECK constraints
     // enforce (docs/16 "Database-level sanity checks").

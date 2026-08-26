@@ -96,7 +96,7 @@ export function securitySectionHtml(resource, findings) {
 export function independentExecutionSectionHtml(resource) {
   return `<section class="passportSection" id="independent-execution">
     <h2>Independent execution</h2>
-    <p class="passportNote">Independent reproduction runs in the ProofRail 0G Sandbox when a distribution artifact and exact source commit are available. ProofRail records provider/runtime execution evidence only: unless canonical evidence explicitly binds the artifact digest to attestation evidence, no TEE artifact-output binding is claimed here.</p>
+    <p class="passportNote">Independent reproduction runs in the AegisOne 0G Sandbox when a distribution artifact and exact source commit are available. AegisOne records provider/runtime execution evidence only: unless canonical evidence explicitly binds the artifact digest to attestation evidence, no TEE artifact-output binding is claimed here.</p>
     ${fieldRow("Correspondence result", correspondenceBadge(resource.trust?.correspondence?.status))}
   </section>`;
 }

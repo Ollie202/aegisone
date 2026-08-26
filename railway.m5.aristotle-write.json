@@ -5,7 +5,7 @@
     "buildCommand": "corepack enable && corepack prepare pnpm@10.15.0 --activate && pnpm install --no-frozen-lockfile"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @proofrail/contracts compile && node --experimental-strip-types packages/m5-flow/scripts/aristotle-mainnet.ts",
+    "startCommand": "pnpm --filter @aegisone/contracts compile && node --experimental-strip-types packages/m5-flow/scripts/aristotle-mainnet.ts",
     "restartPolicyType": "NEVER"
   }
 }

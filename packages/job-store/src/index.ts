@@ -25,7 +25,7 @@ export function createJobStoreFromEnv(env: JobStoreEnvironment = process.env): J
   }
 
   throw new Error(
-    "ProofRail product mode requires SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY + PROOFRAIL_SUPABASE_APP_TOKEN. " +
+    "AegisOne product mode requires SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY + PROOFRAIL_SUPABASE_APP_TOKEN. " +
     "Use PROOFRAIL_JOB_STORE=memory only for local smoke tests.",
   );
 }

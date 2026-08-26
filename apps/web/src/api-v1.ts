@@ -286,7 +286,7 @@ export interface ResourceApiResponse {
   readonly integrity: AssembledIntegrity;
 }
 
-/** Pure serializer shared by `GET /api/v1/resources/:resourceId` and the `proofrail_inspect` MCP
+/** Pure serializer shared by `GET /api/v1/resources/:resourceId` and the `aegisone_inspect` MCP
  * tool (M8.8) so both surfaces present byte-identical evidence for the same stored resource. */
 export function toResourceApiResponse(assembled: AssembledResource): ResourceApiResponse {
   return {
@@ -380,7 +380,7 @@ export interface EvidenceApiResponse {
 }
 
 /** Pure assembler shared by `GET /api/v1/resources/:resourceId/evidence` and the
- * `proofrail_inspect` MCP tool (M8.8): the exact same integrity-rechecked evidence, itemized
+ * `aegisone_inspect` MCP tool (M8.8): the exact same integrity-rechecked evidence, itemized
  * history, and independent trust dimensions reach both surfaces byte-identically. Returns `null`
  * when no resource exists with the given id. */
 export async function buildEvidenceResponse(store: CatalogStore, resourceId: string): Promise<EvidenceApiResponse | null> {
@@ -530,7 +530,7 @@ export interface TrustPolicyResult {
   readonly reasons: readonly { readonly code: string; readonly decision: string; readonly message: string }[];
 }
 
-/** Pure evaluator shared by `POST /api/v1/policy/evaluate` and the `proofrail_evaluate` MCP tool
+/** Pure evaluator shared by `POST /api/v1/policy/evaluate` and the `aegisone_evaluate` MCP tool
  * (M8.8): both surfaces parse the same `raw.policy`/`raw.resource`/`raw.resourceId` shape through
  * the same `parsePolicy`/`resolvePolicySubjectResource` validation and call the same unmodified
  * M8.1 `evaluateTrustPolicy` — no LLM, discovery provider, GitHub OAuth, Supabase evidence

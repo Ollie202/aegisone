@@ -7,7 +7,7 @@
 //   - local catalog (`federation: "none"`/absent): `{ results: ArdSearchResult[], referrals }` —
 //     each result is a raw pinned-ARD catalog entry (identifier/displayName/type/description/
 //     tags/score/source, possibly an upstream `trustManifest`). AGENTS.md/docs/17 Threat M8-020:
-//     an ARD `trustManifest`/`verified`/score-looking field is NEVER read here as ProofRail trust
+//     an ARD `trustManifest`/`verified`/score-looking field is NEVER read here as AegisOne trust
 //     evidence — local-catalog cards always render as discovery-only.
 //   - federated (`federation: [...]`): `{ results: CapabilityResource[], providerStatuses }` —
 //     each result already carries the full independent M8.1 `trust` object (still discovery-only
@@ -43,7 +43,7 @@ export function normalizeSearchResults(searchResponse) {
         discoveryStatus: entry.discovery?.status ?? "INDEXED",
         providerSource: entry.discovery?.source ?? null,
         trust: entry.trust ?? null,
-        // A resourceId only exists for resources ProofRail's own catalog has stored (i.e. reachable
+        // A resourceId only exists for resources AegisOne's own catalog has stored (i.e. reachable
         // via /api/v1/resources/:resourceId). Discovery-only federated results are not catalog rows
         // and therefore never link to a Passport page pretending they are.
         catalogResourceId: typeof entry.catalogResourceId === "string" ? entry.catalogResourceId : null,
@@ -93,7 +93,7 @@ export function resultCardHtml(item) {
       ${canonicalEvidenceBadge(item.trust.canonicalEvidence?.status, item.trust.canonicalEvidence?.verifiedAt)}
     </div>`;
   } else {
-    trustRow = `<div class="cardBadges">${discoveryBadge(item.discoveryStatus)}<span class="cardNote">No ProofRail evidence yet — discovery only.</span></div>`;
+    trustRow = `<div class="cardBadges">${discoveryBadge(item.discoveryStatus)}<span class="cardNote">No AegisOne evidence yet — discovery only.</span></div>`;
   }
 
   const titleInner = href ? `<a href="${href}">${name}</a>` : name;

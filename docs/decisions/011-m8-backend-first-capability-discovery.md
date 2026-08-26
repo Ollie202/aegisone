@@ -6,15 +6,15 @@ Accepted for M8.
 
 ## Context
 
-ProofRail M1–M7 proved deterministic source-to-artifact correspondence, Agent Skill packaging/auditing, independent 0G reproduction, durable 0G evidence, and compact registry commitments.
+AegisOne M1–M7 proved deterministic source-to-artifact correspondence, Agent Skill packaging/auditing, independent 0G reproduction, durable 0G evidence, and compact registry commitments.
 
-M8 expands the product from verification-only workflows into capability discovery for humans and autonomous agents. The main architectural risk is turning ProofRail into a generic marketplace/search UI that weakens the existing trust model, duplicates proof logic in frontend code, or creates new infrastructure cost/complexity before the backend evidence path is stable.
+M8 expands the product from verification-only workflows into capability discovery for humans and autonomous agents. The main architectural risk is turning AegisOne into a generic marketplace/search UI that weakens the existing trust model, duplicates proof logic in frontend code, or creates new infrastructure cost/complexity before the backend evidence path is stable.
 
 The existing production topology is intentionally small:
 
 - `proofrail-app`
 - `proofrail-worker`
-- existing ProofRail Supabase project
+- existing AegisOne Supabase project
 - 0G Sandbox / Storage / registry adapters
 
 The M8 product needs discovery, catalog persistence, source authentication, stable machine APIs, deterministic policy, and MCP consumption before a new human Hub frontend is useful.
@@ -30,7 +30,7 @@ intent
   -> federated capability discovery
   -> provider-independent CapabilityResource
   -> source assurance
-  -> ProofRail verification evidence
+  -> AegisOne verification evidence
   -> deterministic consumer trust policy
   -> ALLOW | REVIEW | DENY
 ```
@@ -46,11 +46,11 @@ Responsibilities:
 
 M8 introduces adapter/package boundaries as needed rather than new network services:
 
-- `@proofrail/discovery-ard`
+- `@aegisone/discovery-ard`
 - discovery-provider adapters
 - catalog-store abstraction
 - GitHub source-auth adapter
-- thin ProofRail MCP adapter
+- thin AegisOne MCP adapter
 
 The M9 human Hub frontend begins only after M8.11 freezes the backend API/MCP contract and completes the security/deployment gate.
 
@@ -60,7 +60,7 @@ Discovery is never verification.
 
 - `INDEXED` is a mutable discovery state.
 - relevance/search score is not a trust score.
-- provider metadata/trust manifests cannot populate ProofRail correspondence/source-auth/security evidence without separate validation.
+- provider metadata/trust manifests cannot populate AegisOne correspondence/source-auth/security evidence without separate validation.
 - frontend and MCP consume the same stable backend evidence model rather than implementing alternate trust logic.
 
 ## Cost consequences
@@ -81,11 +81,11 @@ Rejected for the MVP. Workspace packages inside the current app/worker topology 
 
 ### Crawl/index the entire agentic ecosystem ourselves
 
-Rejected for M8. Existing federated providers/registries can supply broad discovery. ProofRail's differentiation is evidence/trust enrichment, not operating a global crawler/embedding stack.
+Rejected for M8. Existing federated providers/registries can supply broad discovery. AegisOne's differentiation is evidence/trust enrichment, not operating a global crawler/embedding stack.
 
 ### Verify every discovered capability immediately
 
-Rejected. Discovery is cheap; independent reproduction is expensive. ProofRail indexes broadly and verifies selected supported versions/jobs.
+Rejected. Discovery is cheap; independent reproduction is expensive. AegisOne indexes broadly and verifies selected supported versions/jobs.
 
 ## Consequences
 

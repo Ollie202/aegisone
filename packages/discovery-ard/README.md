@@ -1,8 +1,8 @@
-# `@proofrail/discovery-ard`
+# `@aegisone/discovery-ard`
 
-Pinned Agentic Resource Discovery (ARD) adapter for ProofRail M8.2.
+Pinned Agentic Resource Discovery (ARD) adapter for AegisOne M8.2.
 
-This package owns ARD request, response, media-type, catalog, and mapping details. `@proofrail/capability-model` remains ARD-agnostic. M8.2 searches only the deterministic in-memory catalog in this package; it performs no upstream network calls and has no wallet, signer, Supabase, LLM, or 0G capability.
+This package owns ARD request, response, media-type, catalog, and mapping details. `@aegisone/capability-model` remains ARD-agnostic. M8.2 searches only the deterministic in-memory catalog in this package; it performs no upstream network calls and has no wallet, signer, Supabase, LLM, or 0G capability.
 
 ## Upstream contract pin
 
@@ -29,4 +29,4 @@ The corresponding immutable raw-file URLs and blob IDs are exported from `src/co
 - page size: default 10, maximum 25;
 - deterministic lexical ranking only.
 
-Search score is relevance metadata only. ARD `trustManifest` and arbitrary metadata are ignored when mapping an external entry into ProofRail. Namespaced `org.proofrail.*` metadata is emitted only from a `CapabilityResource` that passes the M8.1 validator, and it is not accepted back as proof.
+Search score is relevance metadata only. ARD `trustManifest` and arbitrary metadata are ignored when mapping an external entry into AegisOne. Namespaced `org.aegisone.*` metadata is emitted only from a `CapabilityResource` that passes the M8.1 validator, and it is not accepted back as proof.

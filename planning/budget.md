@@ -33,7 +33,7 @@ The final M5 write was separately gated and explicitly approved for exactly two 
 Approved sequence:
 
 - wallet: `0x067Ac9bcb6B640bF65a0b17eeE705859c8292Dbb`;
-- nonce `0`: deploy `ProofRailRegistry` with gas limit `368309`;
+- nonce `0`: deploy `ProofRailRegistry` (now `AegisOneRegistry` in source; this already-deployed mainnet contract's on-chain identity is historical and unchanged) with gas limit `368309`;
 - nonce `1`: register the M5 record with gas limit `193348`;
 - combined safety gas limit: `561657`;
 - maximum approved combined fee: `0.002246628007863198 0G`.

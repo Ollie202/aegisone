@@ -10,7 +10,7 @@ function makeStore(responder: (action: string, body: Record<string, unknown>) =>
     return new Response(JSON.stringify(responder(action, rest)), { status: 200, headers: { "content-type": "application/json" } });
   };
   return new SupabaseCatalogStore({
-    url: "https://proofrail.supabase.co",
+    url: "https://aegisone.supabase.co",
     publishableKey: "sb_publishable_test",
     appToken: "server-app-secret",
     fetcher: fakeFetch as typeof fetch,

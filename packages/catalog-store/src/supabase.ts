@@ -315,7 +315,7 @@ export interface SupabaseCatalogStoreConfig {
   fetcher?: typeof fetch;
 }
 
-/** Thin client for the token-gated `proofrail-catalog` Edge Function. Mirrors
+/** Thin client for the token-gated `aegisone-catalog` Edge Function. Mirrors
  * `SupabaseJobStore`: Railway never holds the Supabase service-role secret, only a
  * normal publishable key plus the independent `PROOFRAIL_SUPABASE_APP_TOKEN`. */
 export class SupabaseCatalogStore implements CatalogStore {
@@ -332,7 +332,7 @@ export class SupabaseCatalogStore implements CatalogStore {
   }
 
   async #invoke(action: string, body: Record<string, unknown>): Promise<EdgeResponse> {
-    const response = await this.#fetcher(`${this.#baseUrl}/functions/v1/proofrail-catalog`, {
+    const response = await this.#fetcher(`${this.#baseUrl}/functions/v1/aegisone-catalog`, {
       method: "POST",
       headers: {
         apikey: this.#publishableKey,

@@ -14,7 +14,7 @@ compatibility: |-
   Requires git.
   Works offline.
 metadata:
-  author: proofrail
+  author: aegisone
 ---
 # Block Skill
 `;
@@ -22,5 +22,5 @@ metadata:
   assert.equal(validation.valid, true, JSON.stringify(validation.issues));
   assert.equal(validation.metadata?.description, "Review repository changes and explain important risks.\n");
   assert.equal(validation.metadata?.compatibility, "Requires git.\nWorks offline.");
-  assert.equal(validation.metadata?.metadata.author, "proofrail");
+  assert.equal(validation.metadata?.metadata.author, "aegisone");
 });

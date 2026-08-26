@@ -1,7 +1,7 @@
 /**
  * GitHub-specific source-authentication domain types. Nothing in this package leaks
- * into `@proofrail/capability-model`; it produces normalized authority observations
- * and canonical source-claim material that `apps/web` hands to `@proofrail/catalog-store`
+ * into `@aegisone/capability-model`; it produces normalized authority observations
+ * and canonical source-claim material that `apps/web` hands to `@aegisone/catalog-store`
  * for persistence. See docs/14-source-authentication.md.
  */
 

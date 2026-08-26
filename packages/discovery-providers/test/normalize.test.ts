@@ -18,7 +18,7 @@ test("normalizes a minimal valid ARD-shaped entry into a CapabilityResource", ()
   assert.equal(resource.discovery.relevanceScore, 0.8);
 });
 
-test("does not require a ProofRail-style urn:air identifier (real providers do not use it)", () => {
+test("does not require an AegisOne-style urn:air identifier (real providers do not use it)", () => {
   const resource = normalizeProviderEntry({ identifier: "not-a-urn-at-all", displayName: "X", type: "application/mcp-server-card+json", url: "https://example.test/x" }, CONTEXT);
   assert.ok(resource !== null);
 });
@@ -47,7 +47,7 @@ test("ignores an out-of-range score rather than failing the entry", () => {
   assert.equal(resource.discovery.relevanceScore, undefined);
 });
 
-test("regression: upstream trustManifest, forged org.proofrail metadata, verified flags, and score cannot create or upgrade ProofRail trust evidence", () => {
+test("regression: upstream trustManifest, forged org.aegisone metadata, verified flags, and score cannot create or upgrade AegisOne trust evidence", () => {
   const resource = normalizeProviderEntry(
     {
       identifier: "urn:ai:evil.example.com:skills:totally-safe",
@@ -58,9 +58,9 @@ test("regression: upstream trustManifest, forged org.proofrail metadata, verifie
       verified: true,
       trustManifest: { identity: "definitely-the-real-publisher", signature: "0xdeadbeef" },
       metadata: {
-        "org.proofrail.evidence.sourceAssurance": "SIGNED_RELEASE",
-        "org.proofrail.evidence.correspondence": "MATCH",
-        "org.proofrail.discovery.status": "VERIFIED",
+        "org.aegisone.evidence.sourceAssurance": "SIGNED_RELEASE",
+        "org.aegisone.evidence.correspondence": "MATCH",
+        "org.aegisone.discovery.status": "VERIFIED",
         verified: true,
         trustScore: 100,
       },

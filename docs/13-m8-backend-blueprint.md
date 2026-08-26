@@ -5,9 +5,9 @@
 
 ## Product objective
 
-ProofRail M8 turns the existing M1–M7 verification engine into a trust-aware discovery backend for agent capabilities.
+AegisOne M8 turns the existing M1–M7 verification engine into a trust-aware discovery backend for agent capabilities.
 
-A human or agent should be able to ask for a capability, receive relevant resources, inspect what ProofRail actually knows about a selected resource, and apply a deterministic consumer policy before using it.
+A human or agent should be able to ask for a capability, receive relevant resources, inspect what AegisOne actually knows about a selected resource, and apply a deterministic consumer policy before using it.
 
 ```text
 intent
@@ -16,7 +16,7 @@ intent
   -> source assurance
   -> source/distribution evidence
   -> deterministic security findings
-  -> canonical ProofRail evidence
+  -> canonical AegisOne evidence
   -> consumer policy
   -> ALLOW | REVIEW | DENY
 ```
@@ -33,10 +33,10 @@ M8 reuses:
 - Agent Skill parsing, deterministic package construction, format validation and static audit;
 - 0G Sandbox independent execution;
 - proof-enabled 0G Storage round trip;
-- ProofRail registry commitments;
+- AegisOne registry commitments;
 - Supabase-backed mutable job index;
 - Railway `proofrail-app` + `proofrail-worker` topology;
-- M8.1 `@proofrail/capability-model` and deterministic trust-policy evaluator.
+- M8.1 `@aegisone/capability-model` and deterministic trust-policy evaluator.
 
 M8 must not move discovery-provider logic into `packages/core` or rewrite M7 Skill verification.
 
@@ -107,11 +107,11 @@ A database write cannot create `MATCH`, `MISMATCH`, `REPOSITORY_AUTHENTICATED`, 
 
 ### M8.2 — ARD adapter
 
-Implement ProofRail's local/pinned ARD interface first.
+Implement AegisOne's local/pinned ARD interface first.
 
 Package boundary:
 
-`@proofrail/discovery-ard`
+`@aegisone/discovery-ard`
 
 Responsibilities:
 
@@ -119,7 +119,7 @@ Responsibilities:
 - map provider-independent `CapabilityResource` objects into ARD catalog entries;
 - parse/validate ARD search requests;
 - deterministic local fixture search;
-- emit namespaced ProofRail evidence metadata only from validated M8.1 models;
+- emit namespaced AegisOne evidence metadata only from validated M8.1 models;
 - enforce request/result limits;
 - expose `/.well-known/ai-catalog.json` and `/search` through `proofrail-app`.
 
@@ -141,7 +141,7 @@ Initial providers:
 1. GitHub Agent Finder — primary public ARD provider.
 2. Hugging Face Discover — secondary/fallback provider.
 
-Provider responses normalize into `CapabilityResource` discovery state with **zero ProofRail trust escalation**.
+Provider responses normalize into `CapabilityResource` discovery state with **zero AegisOne trust escalation**.
 
 Recommended merge behavior:
 
@@ -161,7 +161,7 @@ Add Supabase schema described in `docs/16-m8-database-plan.md`.
 Persistence is primarily for:
 
 - cache/search continuity;
-- stable ProofRail resource IDs;
+- stable AegisOne resource IDs;
 - linking versions to source claims and canonical evidence;
 - incremental ingestion.
 
@@ -191,7 +191,7 @@ Two distinct modes:
 
 #### Source inspection
 
-ProofRail has exact source commit + subdirectory and can retrieve/parse/audit it, but there is no separate publisher/distribution package.
+AegisOne has exact source commit + subdirectory and can retrieve/parse/audit it, but there is no separate publisher/distribution package.
 
 Result must remain:
 
@@ -230,9 +230,9 @@ The policy endpoint wraps the deterministic M8.1 evaluator only. It must not cal
 Expose only three read/policy operations initially:
 
 ```text
-proofrail_search
-proofrail_inspect
-proofrail_evaluate
+aegisone_search
+aegisone_inspect
+aegisone_evaluate
 ```
 
 The MCP interface wraps the same services used by REST; it must not contain parallel trust logic.
@@ -286,7 +286,7 @@ packages/discovery-providers    # GitHub Agent Finder / HF adapters
 packages/source-auth-github     # GitHub App user flow + claim evidence parsing
 packages/catalog-store          # Supabase resource/catalog access
 packages/policy                 # use M8.1 evaluator; do not duplicate
-packages/mcp-proofrail          # M8.8 adapter only
+packages/mcp-aegisone          # M8.8 adapter only
 ```
 
 Avoid splitting into network microservices. They are workspace packages loaded by the existing two Railway applications.
@@ -313,7 +313,7 @@ Constraints recommended for MVP:
 
 ### Resource reads
 
-Return stable ProofRail resource/version/evidence structures rather than raw provider documents.
+Return stable AegisOne resource/version/evidence structures rather than raw provider documents.
 
 Every result should make these states independently available:
 
