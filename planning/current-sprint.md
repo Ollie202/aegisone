@@ -16,7 +16,7 @@ intent
 ```
 
 M8 master: Issue #18.  
-Current implementation gate: **M8.3 / Issue #22 / branch `agent/m8-federated-discovery`**.
+Current implementation gate: **M8.4 / Issue #23 / branch `agent/m8-supabase-catalog`**.
 
 ## Proven foundation — unchanged
 
@@ -92,34 +92,55 @@ Required:
 - [x] search relevance stays out of policy evaluation (unchanged `@proofrail/capability-model` policy engine; federated results only ever populate `discovery.relevanceScore`)
 - [x] `apps/web` `POST /search` wired: `federation` accepts local `"none"` (unchanged M8.2 behavior) or a non-empty array of registered provider ids, which federates in parallel under the shared deadline
 - [x] local root `pnpm check` and `pnpm test` green
-- [ ] pull request CI green and M8.3 merged
+- [x] pull request CI green and M8.3 merged (PR #35)
 
 Supabase catalog persistence, GitHub publisher/source authentication, Skill verification orchestration, MCP Registry ingestion, UI redesign, and any 0G write remain out of scope for M8.3.
 
-## Backend queue after M8.3
+M8.3 is merged to `main`. M8.3 is complete; do not redo it.
 
-1. **M8.4 / #23 — Supabase capability catalog**  
-   Existing ProofRail project only; RLS; mutable catalog/version/ingestion state.
+## Current gate — M8.4 Supabase capability catalog
 
-3. **M8.5 / #24 — GitHub source authentication**  
+Issue #23.
+
+Goal: persist normalized mutable discovery/catalog data (M8.1's `CapabilityResource` shape, as produced by M8.2/M8.3) in the existing ProofRail Supabase project, without moving proof authority into the database.
+
+Required:
+
+- [x] SQL migration `supabase/migrations/202608260001_m8_4_capability_catalog.sql` creating `agentic_resources`, `resource_discoveries`, `resource_versions`, `ingestion_sources`
+- [x] RLS enabled on all four new public tables, deny-by-default (no anon/authenticated policy), mirroring `proofrail_app_auth`
+- [x] token-gated Edge Function `supabase/functions/proofrail-catalog`, service-role credential held only inside the function, same `proofrail_app_auth` app-token gate `packages/job-store` uses
+- [x] `@proofrail/catalog-store` package: `computeCanonicalKeyFromResource` (deterministic dedup key), `buildResourceUpsertPlan` (pure DB-free field mapping), `catalogRecordToCapabilityResource` (always empty/unverified trust), `InMemoryCatalogStore`, `SupabaseCatalogStore`
+- [x] resource + provider-observation upsert tests, stable dedup-key tests
+- [x] regression: a DB-only inserted `INDEXED` resource remains unverified end-to-end
+- [x] regression: provider outage/staleness (`markProviderDiscoveriesStale`) mutates `discovery_status` only, never resource/version identity or trust evidence
+- [x] local root `pnpm check` and `pnpm test` green
+- [ ] pull request CI green and M8.4 merged
+- [ ] migration applied to the production Supabase project (requires repo-owner Supabase credentials, not available to this agent)
+- [ ] Supabase security/performance advisors reviewed after that application
+
+`source_claims` / `source_claim_authority_observations` / `capability_verifications` are deferred to M8.5/M8.6; no foreign-key skeleton for them was added in M8.4.
+
+## Backend queue after M8.4
+
+1. **M8.5 / #24 — GitHub source authentication**  
    Real GitHub App flow proving repository authority for exact source claims. `REPOSITORY_AUTHENTICATED` must not be inferred from discovery metadata.
 
-4. **M8.6 / #25 — Agent Skill verification enrichment**  
+2. **M8.6 / #25 — Agent Skill verification enrichment**  
    Connect resources/claims to existing M7 pipeline; source inspection remains separate from distribution correspondence.
 
-5. **M8.7 / #26 — stable read/evidence/policy API**  
+3. **M8.7 / #26 — stable read/evidence/policy API**  
    Freeze machine-readable backend JSON.
 
-6. **M8.8 / #27 — MCP agent interface**  
+4. **M8.8 / #27 — MCP agent interface**  
    Only `proofrail_search`, `proofrail_inspect`, `proofrail_evaluate`.
 
-7. **M8.9 / #28 — controlled substitution vertical slice**  
+5. **M8.9 / #28 — controlled substitution vertical slice**  
    Repository-authenticated genuine Skill -> `MATCH` -> policy ALLOW; same claimed identity/source with substituted bytes -> `MISMATCH` -> policy DENY; real 0G evidence.
 
-8. **M8.10 / #29 — MCP Registry indexing (stretch)**  
+6. **M8.10 / #29 — MCP Registry indexing (stretch)**  
    Read-only official Registry ingestion; remains INDEXED unless stronger evidence actually exists.
 
-9. **M8.11 / #30 — hardening/deploy/backend freeze**  
+7. **M8.11 / #30 — hardening/deploy/backend freeze**  
    Security regression, Supabase advisors, Railway health, CI/Gitleaks, contract freeze.
 
 ## Frontend
