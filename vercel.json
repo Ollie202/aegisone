@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [
+    {
+      "src": "apps/web/src/vercel-entry.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "apps/web/package.json",
+          "apps/web/public/**",
+          "apps/web/src/**",
+          "packages/*/package.json",
+          "packages/*/src/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/apps/web/src/vercel-entry.ts"
+    }
+  ]
+}
