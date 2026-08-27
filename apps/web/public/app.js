@@ -44,6 +44,10 @@ function initHubPage() {
   const federationToggle = document.getElementById("federation-toggle");
   if (!form || !input || !results) return;
 
+  // The server-rendered "no search yet" state is the single source of that copy; clearing the query
+  // restores it instead of leaving a blank strip (and never falls back to fixture rows).
+  const emptyStateHtml = results.innerHTML;
+
   document.querySelectorAll(".exampleChip").forEach((chip) => {
     chip.addEventListener("click", () => {
       input.value = chip.dataset.example ?? "";
@@ -54,7 +58,7 @@ function initHubPage() {
   async function runSearch(text) {
     const trimmed = text.trim();
     if (trimmed === "") {
-      results.innerHTML = "";
+      results.innerHTML = emptyStateHtml;
       return;
     }
     const body = { query: { text: trimmed } };

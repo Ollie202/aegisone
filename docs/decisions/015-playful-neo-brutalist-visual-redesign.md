@@ -194,3 +194,59 @@ Trade-offs:
   font request degrades to a correctly laid out page rather than a broken one;
 - tests that asserted specific ADR-013 colour tokens were updated to assert the ADR-015 tokens.
   Every test encoding a *product* rule was left unweakened; only visual-detail assertions moved.
+
+## Addendum (post-merge repo-owner correction)
+
+The repo owner reviewed the shipped result and gave two corrections: the site used an invented logo,
+and it was "too complicated and full of demo data". Both are handled inside this ADR because neither
+changes the visual system — they correct how restrainedly it was applied.
+
+### 1. Brand mark vs. verdict stamp are now strictly separated
+
+The redesign reused the stamp-ring/byte-grid SVG as the site's **logo**. That was wrong: AegisOne has
+a real logo (a black isometric cube with a pixelated white "A"), committed at
+`apps/web/public/brand/logo.jpg`.
+
+Decision: the brand identity — nav mark (desktop rail + mobile top bar) and favicon — is that exact
+file, served verbatim same-origin from the hardcoded static allowlist at `/static/brand/logo.jpg`
+(`apps/web/src/static-assets.ts`, now the one non-JavaScript entry). It is never regenerated,
+retraced, or reinterpreted as SVG. Because the artwork is black-on-white, it renders inside one
+outlined light rounded-square frame (the design language's `GraphicFrame`/`OutlinedCard` primitive)
+so its own ground reads as an intentional frame rather than a broken white box on the dotted paper.
+
+The stamp/byte-grid vocabulary (`#ic-stamp`, `#ic-bytegrid`, `#ic-arrow`) is unchanged and keeps its
+original job: **verdict illustration** for MATCH/MISMATCH and CLEAN/FLAGGED/BLACKLISTED, plus the
+hero comparison cluster. Brand mark and verdict stamp are now two distinct concepts, and the codebase
+comments say so at both definitions.
+
+This adds one same-origin image request. No image host, no CDN, no build step, no new service.
+
+### 2. Restraint pass: nothing looks like pre-populated demo data, and the verdict reads in 2 seconds
+
+- **Hub default state.** `/` already ran no search until asked, but its "hint" paragraph read as
+  filler and its four example queries sat below the fold in a second chip row. The examples are now
+  the hero's three category pills (Hero Formula), directly above the headline, and they are real
+  clickable queries against the real backend — option (a) of the two possible fixes: **no result rows
+  at all until a search actually runs**, rather than an "example results" shelf, so the local ARD
+  fixture catalog can never be mistaken for live output. The default `#search-empty-state` says so in
+  words. Clearing the query in the browser restores that same server-rendered copy rather than
+  blanking the strip. The deliberate `?demo=1` M8.9 judge path is untouched and still shows a full,
+  explicitly labelled demo-fixture record.
+- **Evidence Passport.** Seven always-expanded sections competed for attention. The page now opens
+  with `evidenceSummaryHtml` — the compact grammar `docs/18-m9-frontend-plan.md` "UX principle"
+  specifies verbatim (Discovery / Source / Inspection / Correspondence / Security / Evidence, plus a
+  Policy row that only ever says *not evaluated — apply your own policy*). The seven detailed
+  sections became native `<details>` disclosures, collapsed by default, zero new JavaScript, headings
+  and content unchanged and still fully present in the markup. The summary restates the same
+  `resource.trust.*` fields through the same badge renderers: it computes nothing, and it is still
+  six named dimensions plus your policy, never one score.
+- **General decluttering.** Removed: the five loose "escaping bytes" decorations from the hub and
+  scan illustrations, the duplicate `01/02/03` edge labels (the nav rail already numbers the pages),
+  the "7 independent dimensions" pill (the summary now *is* that list), and the standalone "Same
+  service, over MCP" panel on `/scan` (folded into one line of the verdicts panel). `/scan` and
+  `/source/claim` were already restrained and got only that light touch.
+
+Every trust invariant is unchanged: no SAFE/TRUSTED badge or numeric score anywhere including the new
+summary, colour never the only signal, `INDEXED`-only resources still visibly distinct from evidenced
+ones in both the summary and the collapsed states, all external text still escaped through
+`escape.mjs`, and backend fields still rendered verbatim with no client-side reinterpretation.

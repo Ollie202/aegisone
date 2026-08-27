@@ -33,10 +33,9 @@ export function renderResourcePageHtml(state: ResourcePageState): string {
       <div>
         <div class="pillRow">
           <span class="pill">${escapeHtml(resource.kind ?? "resource")}</span>
-          <span class="pill pill--peri">7 independent dimensions</span>
         </div>
         <h1 class="tight">${escapeHtml(resource.name)}</h1>
-        <p class="lede">Every dimension below is independent. No dimension implies another — a repository that authenticates its source has not thereby proven its bytes, and bytes that correspond have not thereby been proven safe.</p>
+        <p class="lede">Every dimension is independent. No dimension implies another — an authenticated repository has not thereby proven its bytes, and bytes that correspond have not thereby been proven safe.</p>
       </div>
       ${passportStampSvg(resource.trust?.correspondence?.status)}
     </header>

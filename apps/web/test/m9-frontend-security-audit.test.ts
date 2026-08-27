@@ -19,6 +19,12 @@ const SECRET_PATTERNS: RegExp[] = [
   /\bsk-[A-Za-z0-9]{20,}/, // OpenAI-shaped key, defense in depth even though no such dependency exists
 ];
 
+/** Only source-shaped (text) assets are scanned for secrets/vocabulary; the one binary asset the
+ * allowlist serves is the committed brand logo image, which carries no source text to audit and
+ * would only produce meaningless UTF-8 noise here. Its *reachability* is asserted separately in
+ * `hub-pages.test.ts` ("static asset allowlist serves exactly the declared files"). */
+const TEXT_EXTENSIONS = [".js", ".mjs", ".cjs", ".ts", ".json", ".css", ".html", ".map", ".txt"];
+
 async function collectFiles(dirUrl: URL): Promise<string[]> {
   const entries = await readdir(dirUrl, { withFileTypes: true });
   const files: string[] = [];
@@ -26,7 +32,7 @@ async function collectFiles(dirUrl: URL): Promise<string[]> {
     const childUrl = new URL(entry.name, dirUrl);
     if (entry.isDirectory()) {
       files.push(...(await collectFiles(new URL(`${entry.name}/`, dirUrl))));
-    } else {
+    } else if (TEXT_EXTENSIONS.some((extension) => entry.name.endsWith(extension))) {
       files.push(fileURLToPath(childUrl));
     }
   }

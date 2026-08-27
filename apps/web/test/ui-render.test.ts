@@ -6,7 +6,7 @@ import { escapeHtml, safeHttpUrl, shortHash } from "../src/ui/escape.mjs";
 import { discoveryBadge, sourceAssuranceBadge, correspondenceBadge, securityBadge, policyDecisionBadge } from "../src/ui/badges.mjs";
 import { resultListHtml, normalizeSearchResults, resultCardHtml } from "../src/ui/result-card.mjs";
 import { policyResultHtml, policyErrorHtml } from "../src/ui/policy-result.mjs";
-import { evidencePassportHtml } from "../src/ui/evidence-passport.mjs";
+import { evidencePassportHtml, evidenceSummaryHtml } from "../src/ui/evidence-passport.mjs";
 import { policyFromFormValues } from "../src/ui/policy-form.mjs";
 import { scanResultHtml, scanErrorHtml, advisoryFindingsHtml, deterministicFindingsHtml } from "../src/ui/scan-view.mjs";
 
@@ -188,6 +188,84 @@ test("evidencePassportHtml never shows MATCH unless the resource's own trust.cor
   assert.match(html, /NOT EVALUATED/);
   assert.doesNotMatch(html, />MATCH</);
   assert.match(html, /No source claim yet/);
+});
+
+test("the compact evidence summary names every dimension separately and never collapses them into one verdict", () => {
+  const proven = {
+    name: "Example",
+    kind: "agent-skill",
+    description: "",
+    discovery: { status: "INDEXED", source: "x" },
+    trust: {
+      sourceAssurance: { level: "REPOSITORY_AUTHENTICATED", evidenceRefs: [] },
+      sourceInspection: { status: "INSPECTED", exactCommitSha: "a".repeat(40), sourceSnapshotSha256: "b".repeat(64) },
+      correspondence: { status: "MATCH", publisherSha256: "c".repeat(64), reproducedSha256: "c".repeat(64) },
+      security: { status: "COMPLETED", analysisKind: "DETERMINISTIC_STATIC", highestSeverity: "HIGH", findingCount: 2 },
+      canonicalEvidence: { status: "AVAILABLE", sha256: "d".repeat(64), verifiedAt: new Date().toISOString(), storageRoot: null, registryRecordId: null },
+    },
+  };
+  const html = evidenceSummaryHtml(proven);
+  // Each dimension keeps its own label + the backend's own state string (docs/18 UX principle).
+  for (const [label, state] of [["Discovery", "INDEXED"], ["Source", "REPOSITORY AUTHENTICATED"], ["Inspection", "INSPECTED"], ["Correspondence", "MATCH"], ["Security", "HIGH"], ["Evidence", "AVAILABLE"]]) {
+    assert.match(html, new RegExp(`<span class="summaryLabel">${label}</span>`), `missing dimension ${label}`);
+    assert.match(html, new RegExp(state!), `missing state ${state}`);
+  }
+  assert.doesNotMatch(html, />SAFE</);
+  assert.doesNotMatch(html, />TRUSTED</);
+  assert.doesNotMatch(html, /badge__text">\d+%/);
+  // Policy is never asserted by the summary itself — only the real backend evaluation decides.
+  assert.doesNotMatch(html, /data-decision/);
+  assert.match(html, /Not evaluated/);
+});
+
+test("a discovery-only resource's summary stays visibly distinct from a proven one, with no dimension upgraded", () => {
+  const indexedOnly = {
+    name: "Indexed only",
+    kind: "agent-skill",
+    description: "",
+    discovery: { status: "INDEXED", source: "github-agent-finder" },
+    trust: {
+      sourceAssurance: { level: "NONE", evidenceRefs: [] },
+      sourceInspection: { status: "NOT_RUN", exactCommitSha: null, sourceSnapshotSha256: null },
+      correspondence: { status: "NOT_EVALUATED", publisherSha256: null, reproducedSha256: null },
+      security: { status: "NOT_RUN", analysisKind: null, highestSeverity: null, findingCount: null },
+      canonicalEvidence: { status: "NONE", sha256: null, verifiedAt: null, storageRoot: null, registryRecordId: null },
+    },
+  };
+  const html = evidenceSummaryHtml(indexedOnly);
+  assert.match(html, /INDEXED — discovery only/);
+  assert.match(html, /NO SOURCE CLAIM/);
+  assert.match(html, /INSPECTION NOT RUN/);
+  assert.match(html, /NOT EVALUATED/);
+  assert.match(html, /AUDIT NOT RUN/);
+  assert.match(html, /NO CANONICAL EVIDENCE/);
+  assert.doesNotMatch(html, />MATCH</);
+  assert.doesNotMatch(html, /REPOSITORY AUTHENTICATED/);
+});
+
+test("the passport's seven detail sections are collapsed disclosures whose content is still present in the markup", () => {
+  const resource = {
+    name: "Example",
+    kind: "agent-skill",
+    description: "",
+    discovery: { status: "INDEXED", source: "x" },
+    currentVersion: { versionLabel: "1.0.0" },
+    trust: {
+      sourceAssurance: { level: "NONE", evidenceRefs: [] },
+      sourceInspection: { status: "NOT_RUN", exactCommitSha: null, sourceSnapshotSha256: null },
+      correspondence: { status: "NOT_EVALUATED", publisherSha256: null, reproducedSha256: null },
+      security: { status: "NOT_RUN", analysisKind: null, highestSeverity: null, findingCount: null },
+      canonicalEvidence: { status: "NONE", sha256: null, verifiedAt: null, storageRoot: null, registryRecordId: null },
+    },
+  };
+  const html = evidencePassportHtml({ resource, sourceClaims: [], capabilityVerifications: [], integrity: null });
+  assert.equal((html.match(/<details class="passportSection"/g) ?? []).length, 7);
+  // Collapsed by default (no `open`) so the summary above carries the 2-second read...
+  assert.doesNotMatch(html, /<details class="passportSection"[^>]*\sopen/);
+  // ...but every disclaimer and field is still in the rendered markup, not stripped out.
+  assert.match(html, /No findings is not proof of safety/);
+  assert.match(html, /MATCH does not mean safe/);
+  assert.match(html, /<h2>Verification history<\/h2>/);
 });
 
 const SCAN_RESPONSE_FLAGGED = {

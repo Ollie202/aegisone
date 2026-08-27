@@ -34,8 +34,6 @@ function scanArtSvg(): string {
       <circle cx="236" cy="130" r="27" fill="#b79cff"/>
       <use href="#ic-bytegrid" x="219" y="113" width="34" height="34"/>
     </g>
-    <rect class="float--slow" x="272" y="26" width="20" height="20" rx="5" fill="#22dceb" stroke="#0a0a0a" stroke-width="3"/>
-    <rect class="float" x="6" y="20" width="16" height="16" rx="4" fill="#b79cff" stroke="#0a0a0a" stroke-width="3"/>
   </g>
 </svg>`;
 }
@@ -48,7 +46,6 @@ export function renderScanPageHtml(state: ScanPageState): string {
     : "Not configured on this deployment — requesting it returns an explicit “advisory unavailable” state rather than silently skipping. It never changes the deterministic verdict either way.";
 
   const body = `
-    <span class="edgeLabel">02 / Paste to scan</span>
     <section class="hero">
       <div class="heroCopy">
         <div class="pillRow">
@@ -93,12 +90,7 @@ export function renderScanPageHtml(state: ScanPageState): string {
       <div class="fieldRow"><span class="fieldLabel">FLAGGED</span><span class="fieldValue">Highest deterministic severity was MEDIUM or HIGH. The findings are listed so you can judge them yourself.</span></div>
       <div class="fieldRow"><span class="fieldLabel">BLACKLISTED</span><span class="fieldValue">A CRITICAL deterministic finding. The same bytes report BLACKLISTED on every future submission.</span></div>
       <p class="passportWarning">Screening a paste is not verification of a published capability. It produces no source assurance and no byte correspondence, because pasted content has no claimed publisher and no claimed source revision. To see those dimensions, <a href="/">search the catalog</a> and open an Evidence Passport.</p>
-    </section>
-
-    <section class="panel" style="margin-top:18px">
-      <span class="edgeLabel">For agents</span>
-      <h2>Same service, over MCP</h2>
-      <p class="passportNote">An AI agent can call the identical screening service through the <code>aegisone_scan</code> MCP tool at <code>/mcp</code>, or <code>POST /api/v1/scan</code> directly. Both run the same deterministic analysis this page runs — never a second, looser pipeline.</p>
+      <p class="passportNote">An AI agent can call this identical screening service through the <code>aegisone_scan</code> MCP tool at <code>/mcp</code>, or <code>POST /api/v1/scan</code> directly — never a second, looser pipeline.</p>
     </section>
   `;
 

@@ -51,6 +51,23 @@ export function sourceAssuranceBadge(level) {
   }
 }
 
+/** `resource.trust.sourceInspection.status` (M8.1 model) rendered verbatim. Source *inspection* is
+ * deliberately a separate dimension from source *assurance*: inspecting a source revision proves
+ * nothing about who authorized it, and vice versa. Unknown states are printed as-is, never
+ * upgraded. */
+export function sourceInspectionBadge(status) {
+  switch (status) {
+    case "INSPECTED":
+      return badge("info", "◍", "INSPECTED", "The exact claimed source revision was fetched and hashed. Inspection is not authority and is not correspondence.");
+    case "NOT_RUN":
+    case null:
+    case undefined:
+      return badge("neutral", "–", "INSPECTION NOT RUN");
+    default:
+      return badge("neutral", "?", String(status));
+  }
+}
+
 export function correspondenceBadge(status) {
   switch (status) {
     case "MATCH":

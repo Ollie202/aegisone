@@ -10,7 +10,6 @@ export function renderSourceClaimPageHtml(state: SourceClaimPageState): string {
     : "";
 
   const body = `
-    <span class="edgeLabel">03 / Source claim</span>
     <div class="pillRow">
       <span class="pill">GitHub authority</span>
       <span class="pill pill--peri">Exact commit SHA</span>
