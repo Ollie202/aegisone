@@ -24,6 +24,7 @@ import {
   type SourceClaim,
 } from "../../../packages/catalog-store/src/index.ts";
 import { computeSourceClaimDigest } from "../../../packages/source-auth-github/src/index.ts";
+import { performPastedSkillScan, ScanServiceError, type ScanApiResponse, type ScanServiceDependencies } from "./scan-service.ts";
 
 /**
  * M8.7: `GET /api/v1/resources/:resourceId`, `GET /api/v1/resources/:resourceId/versions/:versionId`,
@@ -553,10 +554,33 @@ async function handlePolicyEvaluate(store: CatalogStore, request: IncomingMessag
 const RESOURCE_PATH_RE = /^\/api\/v1\/resources\/([^/]+)$/;
 const VERSION_PATH_RE = /^\/api\/v1\/resources\/([^/]+)\/versions\/([^/]+)$/;
 const EVIDENCE_PATH_RE = /^\/api\/v1\/resources\/([^/]+)\/evidence$/;
+const MAX_SCAN_REQUEST_BODY_BYTES = 384 * 1024;
 
-export function createApiV1Router(store: CatalogStore) {
+/** Best-effort caller identity for the paste-to-scan rate limiters (docs/17-m8-security-
+ * boundaries.md Threat M8-005). `proofrail-app` is not behind a trusted reverse-proxy contract
+ * that guarantees `x-forwarded-for` is not caller-spoofable, so this intentionally prefers the
+ * raw socket address over any header — good enough for a coarse abuse bound on a single-process
+ * deployment, not a strong per-user identity. */
+function scanRateLimitKey(request: IncomingMessage): string {
+  return request.socket.remoteAddress ?? "unknown";
+}
+
+async function handlePostScan(deps: ScanServiceDependencies, request: IncomingMessage, response: ServerResponse): Promise<void> {
+  requireJsonContentType(request);
+  const raw = await readJsonBody(request, MAX_SCAN_REQUEST_BODY_BYTES);
+  const result: ScanApiResponse = await performPastedSkillScan(raw, deps, scanRateLimitKey(request));
+  sendJson(response, 200, result);
+}
+
+export function createApiV1Router(store: CatalogStore, scanDeps?: Omit<ScanServiceDependencies, "catalogStore">) {
   return async function handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> {
     try {
+      if (request.method === "POST" && url.pathname === "/api/v1/scan") {
+        if (!scanDeps) throw new ApiV1Error("scan_unavailable", "Paste-to-scan is not configured on this server", 503);
+        await handlePostScan({ catalogStore: store, ...scanDeps }, request, response);
+        return true;
+      }
+
       const versionMatch = url.pathname.match(VERSION_PATH_RE);
       if (request.method === "GET" && versionMatch) {
         await handleGetVersion(store, response, requiredPathSegment(versionMatch[1]), requiredPathSegment(versionMatch[2]));
@@ -582,7 +606,7 @@ export function createApiV1Router(store: CatalogStore) {
 
       return false;
     } catch (error) {
-      if (error instanceof ApiV1Error) {
+      if (error instanceof ApiV1Error || error instanceof ScanServiceError) {
         sendJson(response, error.status, {
           error: error.code,
           errorCode: error.code.toUpperCase(),

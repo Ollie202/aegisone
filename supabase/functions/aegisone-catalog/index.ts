@@ -69,6 +69,7 @@ const SOURCE_INSPECTION_STATUSES = new Set(["NOT_RUN", "INSPECTED"]);
 const CORRESPONDENCE_STATUSES = new Set(["NOT_EVALUATED", "INSUFFICIENT_EVIDENCE", "MATCH", "MISMATCH", "DIVERGED"]);
 const SECURITY_STATUSES = new Set(["NOT_RUN", "COMPLETED"]);
 const SECURITY_SEVERITIES = new Set(["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]);
+const PASTED_SKILL_VERDICTS = new Set(["CLEAN", "FLAGGED", "BLACKLISTED"]);
 
 // Mirrors packages/catalog-store/src/capability-verification-validation.ts. Deno cannot import
 // that module directly; keep both in sync if this logic changes (both sides are covered by
@@ -511,6 +512,70 @@ Deno.serve(async (request) => {
         .order("created_at", { ascending: false });
       if (error) return reply(400, { error: "database_error", message: error.message });
       return reply(200, { rows: data ?? [] });
+    }
+
+    // Paste-to-scan hash-based cache/blacklist (new feature). Read-only lookup by the canonical
+    // skill-package content digest; never invents/upgrades a verdict.
+    if (body.action === "getPastedSkillScanByContentHash") {
+      if (!isNonEmptyString(body.contentSha256) || !DIGEST_SHA256_RE.test(body.contentSha256)) {
+        return reply(400, { error: "invalid_input" });
+      }
+      const { data, error } = await admin
+        .from("pasted_skill_scans")
+        .select("*")
+        .eq("content_sha256", body.contentSha256)
+        .maybeSingle();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { pastedSkillScan: data ?? null });
+    }
+
+    // createOrTouchPastedSkillScan: finds-or-creates the cache row for content_sha256. If a row
+    // already exists, only last_scanned_at/scan_count are bumped and the *existing* stored
+    // verdict/findings are returned (cached: true) — this function never overwrites a prior
+    // verdict, matching the same "historical row, only specific bookkeeping fields mutate"
+    // discipline as markProviderDiscoveriesStale/source-claim transitions above.
+    if (body.action === "createOrTouchPastedSkillScan") {
+      if (
+        !isNonEmptyString(body.contentSha256) || !DIGEST_SHA256_RE.test(body.contentSha256)
+        || typeof body.verdict !== "string" || !PASTED_SKILL_VERDICTS.has(body.verdict)
+        || typeof body.highestSeverity !== "string" || !SECURITY_SEVERITIES.has(body.highestSeverity)
+        || typeof body.findingCount !== "number" || !Number.isInteger(body.findingCount) || body.findingCount < 0
+        || !Array.isArray(body.findings)
+      ) {
+        return reply(400, { error: "invalid_input" });
+      }
+
+      const { data: existing, error: existingError } = await admin
+        .from("pasted_skill_scans")
+        .select("*")
+        .eq("content_sha256", body.contentSha256)
+        .maybeSingle();
+      if (existingError) return reply(400, { error: "database_error", message: existingError.message });
+
+      if (existing) {
+        const { data, error } = await admin
+          .from("pasted_skill_scans")
+          .update({ last_scanned_at: new Date().toISOString(), scan_count: existing.scan_count + 1 })
+          .eq("content_sha256", body.contentSha256)
+          .select("*")
+          .single();
+        if (error) return reply(400, { error: "database_error", message: error.message });
+        return reply(200, { pastedSkillScan: data, cached: true });
+      }
+
+      const { data, error } = await admin
+        .from("pasted_skill_scans")
+        .insert({
+          content_sha256: body.contentSha256,
+          verdict: body.verdict,
+          highest_severity: body.highestSeverity,
+          finding_count: body.findingCount,
+          findings_json: body.findings,
+        })
+        .select("*")
+        .single();
+      if (error) return reply(400, { error: "database_error", message: error.message });
+      return reply(200, { pastedSkillScan: data, cached: false });
     }
 
     return reply(400, { error: "unknown_action" });

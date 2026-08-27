@@ -20,11 +20,14 @@ import type { ArtifactKind, JobStore, NewVerificationJob, VerificationJob } from
 import type { SkillVerificationResult } from "../../../packages/skill-audit/src/model.ts";
 import { InMemoryCatalogStore, type CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { createGithubSourceAuthConfigFromEnv, type GithubSourceAuthConfig } from "../../../packages/source-auth-github/src/index.ts";
+import { createZeroGComputeConfigFromEnv, type ZeroGComputeConfig } from "../../../packages/compute-0g/src/index.ts";
 import { createApiV1Router, buildEvidenceResponse, loadAssembledResource, toResourceApiResponse } from "./api-v1.ts";
 import { createSourceAuthRouter } from "./source-auth.ts";
 import { createMcpRequestHandler } from "./mcp.ts";
 import { ProductRequestError } from "./errors.ts";
+import { FixedWindowRateLimiter } from "./rate-limit.ts";
 import { performCapabilitySearch } from "./search-service.ts";
+import type { AdvisoryScanTransport } from "../../../packages/compute-0g/src/index.ts";
 import { renderSkillVerificationHtml } from "./render-skill.ts";
 import { renderVerificationHtml } from "./render.ts";
 import { isStaticAssetPath, serveStaticAsset } from "./static-assets.ts";
@@ -65,6 +68,20 @@ export interface ProductRequestHandlerOptions {
   secureSourceAuthCookies?: boolean;
   /** Overridable for tests; forwarded to the source-auth router's GitHub REST calls. */
   githubFetcher?: typeof fetch;
+  /** New paste-to-scan feature. `null`/omitted means no `ZEROG_COMPUTE_PRIVATE_KEY` is
+   * configured — `includeAdvisoryScan: true` then always returns an explicit
+   * `advisory_unavailable` state rather than silently skipping. */
+  zeroGComputeConfig?: ZeroGComputeConfig | null;
+  /** Test-only override for the real (untested-live) 0G Compute transport. */
+  advisoryTransport?: AdvisoryScanTransport;
+  /** Paste-to-scan Tier-1 (deterministic) rate limit: requests per IP per window
+   * (docs/17-m8-security-boundaries.md, new "Paste-to-scan limits" section). Overridable for
+   * tests only. */
+  scanRateLimiter?: FixedWindowRateLimiter;
+  /** Paste-to-scan Tier-2 (0G Compute advisory) rate limit — deliberately much stricter than the
+   * Tier-1 limiter since it can trigger real (if bounded) compute work. Overridable for tests
+   * only. */
+  advisoryRateLimiter?: FixedWindowRateLimiter;
 }
 
 function defaultDiscoveryProviders(): ReadonlyMap<string, DiscoveryProvider> {
@@ -269,13 +286,25 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
     secureCookies: options.secureSourceAuthCookies,
     fetcher: options.githubFetcher,
   });
-  const apiV1Router = createApiV1Router(catalogStore);
-  // M8.8: the MCP transport adapter is constructed with the exact same catalog store, local
-  // catalog, search source, and discovery providers this handler wires into `apiV1Router`/
-  // `POST /search` above — `aegisone_search`/`aegisone_inspect`/`aegisone_evaluate` call the
-  // same application services, never a second search engine, policy evaluator, or evidence
-  // interpretation (docs/17-m8-security-boundaries.md Threat M8-018).
-  const mcpRequestHandler = createMcpRequestHandler({ catalogStore, localCatalog, searchSource, discoveryProviders });
+  // Paste-to-scan (new feature): Tier-1 (deterministic) is far more permissive than Tier-2 (0G
+  // Compute advisory), which can trigger real (if bounded/opt-in) compute work — see
+  // docs/17-m8-security-boundaries.md's new "Paste-to-scan limits" section for the documented
+  // bounds and rationale. Single shared limiter instances per server process (docs/17 Threat
+  // M8-005 "verification spend abuse").
+  const zeroGComputeConfig = options.zeroGComputeConfig !== undefined ? options.zeroGComputeConfig : createZeroGComputeConfigFromEnv();
+  const scanDeps = {
+    zeroGComputeConfig,
+    advisoryTransport: options.advisoryTransport,
+    scanRateLimiter: options.scanRateLimiter ?? new FixedWindowRateLimiter(60, 10 * 60 * 1000),
+    advisoryRateLimiter: options.advisoryRateLimiter ?? new FixedWindowRateLimiter(5, 60 * 60 * 1000),
+  };
+  const apiV1Router = createApiV1Router(catalogStore, scanDeps);
+  // M8.8/paste-to-scan: the MCP transport adapter is constructed with the exact same catalog
+  // store, local catalog, search source, discovery providers, and scan dependencies this handler
+  // wires into `apiV1Router`/`POST /search`/`POST /api/v1/scan` above — every MCP tool calls the
+  // same application services, never a second search engine, policy evaluator, scan pipeline, or
+  // evidence interpretation (docs/17-m8-security-boundaries.md Threat M8-018).
+  const mcpRequestHandler = createMcpRequestHandler({ catalogStore, localCatalog, searchSource, discoveryProviders, scanDeps });
 
   // M9: a lazily-seeded, in-process demo-fixture resource (docs/18 "Judge demo mode",
   // apps/web/src/demo-seed.ts). Seeded on first access to `/?demo=1` or `/resources/:id?demo=1`

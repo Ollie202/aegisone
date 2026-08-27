@@ -7,6 +7,7 @@ import type { DiscoveryProvider } from "../../../packages/discovery-providers/sr
 import type { CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { ApiV1Error, buildEvidenceResponse, readJsonBody, requireJsonContentType, runPolicyEvaluation } from "./api-v1.ts";
 import { performCapabilitySearch, type SearchServiceDependencies } from "./search-service.ts";
+import { performPastedSkillScan, ScanServiceError, type ScanServiceDependencies } from "./scan-service.ts";
 import { ProductRequestError } from "./errors.ts";
 
 /**
@@ -25,8 +26,15 @@ import { ProductRequestError } from "./errors.ts";
  *
  * Threat M8-018's explicit denylist (`aegisone_install`, `aegisone_execute`, `aegisone_sign`,
  * `aegisone_run_arbitrary_build`, `aegisone_upload_secret`) has no code path here: there are
- * exactly three registered tools, all read/policy-only, and none of them can reach the worker,
- * a signer, or any install/execute primitive.
+ * exactly four registered tools, all read/analysis/policy-only, and none of them can reach the
+ * worker, a signer, or any install/execute primitive.
+ *
+ * `aegisone_scan` (new, paste-to-scan) is the fourth tool and a deliberate, justified addition to
+ * the M8.8/Threat M8-018 allowlist: it only analyzes content the caller supplies inline in the
+ * request — it never installs, executes, or fetches anything on the caller's behalf, never
+ * reaches the worker/a signer, and is bounded by the exact same Tier-1/Tier-2 rate limiters and
+ * size caps as `POST /api/v1/scan` (docs/17-m8-security-boundaries.md's new "Paste-to-scan
+ * limits" section, docs/21-m8-mcp-interface.md).
  *
  * Transport choice: Streamable HTTP (the current MCP SDK's recommended remote transport,
  * `@modelcontextprotocol/sdk` 1.30.0), mounted at `POST /mcp` on the existing `proofrail-app`
@@ -43,6 +51,7 @@ const MAX_MCP_REQUEST_BODY_BYTES = 256 * 1024;
 
 export interface McpServerDependencies extends SearchServiceDependencies {
   readonly catalogStore: CatalogStore;
+  readonly scanDeps: Omit<ScanServiceDependencies, "catalogStore">;
 }
 
 interface ToolTextResult {
@@ -71,6 +80,7 @@ function errorResult(code: string, message: string, details?: unknown): ToolText
  * silently-invented success. */
 function toToolErrorResult(error: unknown): ToolTextResult {
   if (error instanceof ApiV1Error) return errorResult(error.code, error.message, error.details);
+  if (error instanceof ScanServiceError) return errorResult(error.code, error.message, error.details);
   if (error instanceof ProductRequestError) return errorResult(error.code, error.message);
   if (error instanceof ArdAdapterError) return errorResult(error.code, error.message);
   return errorResult("internal_error", error instanceof Error ? error.message : String(error));
@@ -120,11 +130,31 @@ const EVALUATE_INPUT_SHAPE = {
     .describe("A stable catalog resource id to look up (with the same integrity re-check GET /api/v1/resources/:resourceId uses) and evaluate. Exactly one of resource/resourceId must be supplied."),
 };
 
+const SCAN_INPUT_SHAPE = {
+  content: z
+    .union([
+      z.string().min(1, "content must not be empty"),
+      z
+        .array(z.object({ path: z.string().min(1), content: z.string() }))
+        .min(1)
+        .max(50),
+    ])
+    .describe(
+      "Raw Agent Skill content to screen — either a single SKILL.md-style string, or a small multi-file package as an array of {path, content} objects. No GitHub repo, publisher claim, or discovery step required.",
+    ),
+  includeAdvisoryScan: z
+    .boolean()
+    .optional()
+    .describe(
+      "Opt-in only, defaults to false. When true, additionally requests a non-authoritative 0G Compute LLM advisory pass over the skill text for manipulation/social-engineering red flags, subject to a separate, stricter rate limit. Returns an explicit advisory_unavailable state if 0G Compute is not configured — never a fabricated result. The advisory finding can never set/override the deterministic verdict.",
+    ),
+};
+
 /**
- * Builds a fresh MCP server exposing exactly the three AegisOne M8.8 tools. Called once per
- * request in `createMcpRequestHandler` below (stateless mode).
+ * Builds a fresh MCP server exposing exactly the four AegisOne tools (M8.8 plus the new
+ * `aegisone_scan`). Called once per request in `createMcpRequestHandler` below (stateless mode).
  */
-export function createAegisOneMcpServer(deps: McpServerDependencies): McpServer {
+export function createAegisOneMcpServer(deps: McpServerDependencies, rateLimitKey: string): McpServer {
   const server = new McpServer({ name: "aegisone", version: "1" });
 
   server.registerTool(
@@ -187,6 +217,24 @@ export function createAegisOneMcpServer(deps: McpServerDependencies): McpServer 
     },
   );
 
+  server.registerTool(
+    "aegisone_scan",
+    {
+      title: "AegisOne paste-to-scan skill screening",
+      description:
+        "Screens raw, publisher-less Agent Skill content the caller supplies inline (no GitHub repo, no source claim, no discovery step) using the exact same deterministic @aegisone/skill-audit Tier-1 static analysis POST /api/v1/scan uses, plus an optional non-authoritative Tier-2 0G Compute LLM advisory pass. Read/analysis only: this tool never installs, executes, or fetches anything on the caller's behalf. sourceAssurance for a result from this tool is always NONE and correspondence is always NOT_EVALUATED — there is no source claim here, so this is never a MATCH/MISMATCH/REPOSITORY_AUTHENTICATED result. Repeated identical content hits a cache; content whose deterministic findings reach CRITICAL severity is reported as BLACKLISTED, including on future identical submissions, independent of any advisory opinion.",
+      inputSchema: SCAN_INPUT_SHAPE,
+    },
+    async (args) => {
+      try {
+        const result = await performPastedSkillScan(args, { catalogStore: deps.catalogStore, ...deps.scanDeps }, rateLimitKey);
+        return jsonResult(result);
+      } catch (error) {
+        return toToolErrorResult(error);
+      }
+    },
+  );
+
   return server;
 }
 
@@ -212,7 +260,11 @@ export function createMcpRequestHandler(deps: McpServerDependencies) {
       return;
     }
 
-    const server = createAegisOneMcpServer(deps);
+    // Same coarse per-connection rate-limit key `api-v1.ts`'s `POST /api/v1/scan` route uses for
+    // an equivalent caller, so `aegisone_scan` and the REST route share one effective bound per
+    // client rather than each getting an independent budget.
+    const rateLimitKey = request.socket.remoteAddress ?? "unknown";
+    const server = createAegisOneMcpServer(deps, rateLimitKey);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     response.on("close", () => {
       void transport.close();
