@@ -34,6 +34,7 @@ import { isStaticAssetPath, serveStaticAsset } from "./static-assets.ts";
 import { renderHubPageHtml } from "./pages/hub.ts";
 import { renderResourcePageHtml, renderResourceNotFoundHtml } from "./pages/resource.ts";
 import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
+import { renderScanPageHtml } from "./pages/scan.ts";
 import { seedDemoCatalog, type DemoSeedResult } from "./demo-seed.ts";
 
 const SOFTWARE_DIGEST = "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154";
@@ -423,6 +424,15 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
           evidenceApi: evidenceApi!,
           isDemo,
         }));
+        return;
+      }
+
+      // Paste-to-scan page: the human-facing surface for the same `POST /api/v1/scan` service the
+      // `aegisone_scan` MCP tool calls. Read-only SSR shell; the submit itself is a browser
+      // `fetch` to that route (see `apps/web/public/app.js`).
+      if (request.method === "GET" && url.pathname === "/scan") {
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderScanPageHtml({ advisoryConfigured: zeroGComputeConfig !== null }));
         return;
       }
 

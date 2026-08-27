@@ -46,17 +46,22 @@ async function stopServer(server: Server): Promise<void> {
   await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
 }
 
-test("GET / renders the light-themed Hub search page and is readable without JavaScript", async () => {
+test("GET / renders the Hub search page in the ADR-015 visual language and is readable without JavaScript", async () => {
   const running = await startServer();
   try {
     const response = await fetch(`${running.baseUrl}/`);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /What capability does your agent need\?/);
+    assert.match(html, /What capability does your/);
     assert.match(html, /search-form/);
-    // Light-theme, not the dark M1-M7 proof-first palette.
-    assert.match(html, /--bg:#ffffff/);
+    // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
+    assert.match(html, /--paper:#f7f5ef/);
     assert.doesNotMatch(html, /#070b12/); // the old dark hero background must not leak into the Hub
+    // The single shared illustration metaphor is inline SVG served from this same origin — never a
+    // remote image/asset request.
+    assert.match(html, /<symbol id="ic-stamp"/);
+    assert.match(html, /<symbol id="ic-bytegrid"/);
+    assert.doesNotMatch(html, /<img\s/);
     assert.match(html, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
   } finally {
     await stopServer(running.server);
@@ -150,6 +155,53 @@ test("GET /source/claim renders the real M8.5-backed flow and surfaces GitHub-Ap
   }
 });
 
+test("GET /scan renders the paste-to-scan page with the real verdict vocabulary and no fabricated verdict", async () => {
+  const running = await startServer();
+  try {
+    const response = await fetch(`${running.baseUrl}/scan`);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, /id="scan-form"/);
+    assert.match(html, /id="scan-content"/);
+    assert.match(html, /name="includeAdvisoryScan"/);
+    for (const verdict of ["CLEAN", "FLAGGED", "BLACKLISTED"]) {
+      assert.match(html, new RegExp(verdict), `missing verdict vocabulary: ${verdict}`);
+    }
+    // No scan has run, so the page must not present any verdict as this content's result.
+    assert.doesNotMatch(html, /data-verdict=/);
+    // The page must state the structural limits of a paste rather than implying source evidence.
+    assert.match(html, /not a safety guarantee/);
+    assert.match(html, /no claimed publisher/);
+    assert.match(html, /data-page="scan"/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("POST /api/v1/scan drives the /scan page's verdict rendering end-to-end through the real route", async () => {
+  const running = await startServer();
+  try {
+    const response = await fetch(`${running.baseUrl}/api/v1/scan`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ content: "# Harmless skill\n\nJust prose, no commands.\n" }),
+    });
+    assert.equal(response.status, 200);
+    const json = (await response.json()) as { verdict: string; contentSha256: string; advisoryFindings: unknown; scanCount: number };
+    assert.ok(["CLEAN", "FLAGGED", "BLACKLISTED"].includes(json.verdict));
+    // Not requested, so the advisory field must be explicitly null rather than an invented result.
+    assert.equal(json.advisoryFindings, null);
+    const { scanResultHtml } = await import("../src/ui/scan-view.mjs");
+    const html = scanResultHtml(json);
+    assert.match(html, new RegExp(`data-verdict="${json.verdict}"`));
+    // The paste path structurally has no source claim and no correspondence; both must be visible.
+    assert.match(html, /NO SOURCE CLAIM/);
+    assert.match(html, /NOT EVALUATED/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
 test("static asset allowlist serves exactly the declared files and nothing via path traversal", async () => {
   const running = await startServer();
   try {
@@ -171,7 +223,7 @@ test("no page response anywhere contains a bare \"verified\":true or generic SAF
   const running = await startServer();
   try {
     const seeded = await seedDemoCatalog(running.catalogStore);
-    const paths = ["/", "/proof", "/source/claim", `/resources/${seeded.resourceId}`];
+    const paths = ["/", "/proof", "/source/claim", "/scan", `/resources/${seeded.resourceId}`];
     for (const path of paths) {
       const response = await fetch(`${running.baseUrl}${path}`);
       const html = await response.text();

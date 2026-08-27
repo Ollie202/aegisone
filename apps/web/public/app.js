@@ -11,6 +11,7 @@ import { resultListHtml } from "/static/ui/result-card.mjs";
 import { policyResultHtml, policyErrorHtml } from "/static/ui/policy-result.mjs";
 import { policyFromFormValues } from "/static/ui/policy-form.mjs";
 import { repositoryListHtml, claimResultHtml, claimErrorHtml } from "/static/ui/source-claim-view.mjs";
+import { scanResultHtml, scanErrorHtml } from "/static/ui/scan-view.mjs";
 
 // `document.currentScript` is always null for `type="module"` scripts per the HTML spec
 // (module scripts don't set it), so it cannot be used here — query the script tag instead.
@@ -184,6 +185,40 @@ function initSourceClaimPage() {
   });
 }
 
+function initScanPage() {
+  const form = document.getElementById("scan-form");
+  const textarea = document.getElementById("scan-content");
+  const advisory = document.getElementById("scan-advisory");
+  const submit = document.getElementById("scan-submit");
+  const resultContainer = document.getElementById("scan-result");
+  if (!form || !textarea || !resultContainer) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const content = textarea.value;
+    if (content.trim() === "") {
+      resultContainer.innerHTML = scanErrorHtml({ message: "Paste some skill content first." });
+      return;
+    }
+    if (submit) submit.disabled = true;
+    try {
+      // The browser sends exactly the documented `POST /api/v1/scan` body and renders the response
+      // verbatim through the same isomorphic module the server uses. It never derives, caches or
+      // re-thresholds the verdict itself.
+      const { ok, json } = await postJson("/api/v1/scan", {
+        content,
+        includeAdvisoryScan: Boolean(advisory?.checked),
+      });
+      resultContainer.innerHTML = ok ? scanResultHtml(json) : scanErrorHtml(json);
+    } catch (error) {
+      resultContainer.innerHTML = scanErrorHtml({ message: error instanceof Error ? error.message : String(error) });
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+}
+
 if (page === "hub") initHubPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
+if (page === "scan") initScanPage();

@@ -56,10 +56,29 @@ test("no browser-reachable frontend file imports a 0G/worker/secret-bearing modu
   }
 });
 
-test("the layout stylesheet declares a light background token and a dark-mode override guarded correctly", async () => {
+test("the layout stylesheet declares the ADR-015 palette tokens, reduced-motion support and a mobile breakpoint", async () => {
   const layoutPath = fileURLToPath(new URL("../src/pages/layout.ts", import.meta.url));
   const contents = await readFile(layoutPath, "utf8");
-  assert.match(contents, /--bg:#ffffff/);
-  assert.match(contents, /prefers-color-scheme: dark/);
+  // ADR-015 "Playful Neo-Brutalist" palette, defined once as CSS custom properties.
+  assert.match(contents, /--ink:#0a0a0a/);
+  assert.match(contents, /--paper:#f7f5ef/);
+  assert.match(contents, /--yellow:#ffd91a/);
+  assert.match(contents, /--cyan:#22dceb/);
+  assert.match(contents, /--lavender:#b79cff/);
+  assert.match(contents, /prefers-reduced-motion: reduce/); // ambient motion is opt-out-able
   assert.match(contents, /@media \(max-width:640px\)/); // mobile breakpoint present
+});
+
+test("the trust-state accent tokens are distinct values, so INDEXED can never share a colour with MATCH", async () => {
+  const layoutPath = fileURLToPath(new URL("../src/pages/layout.ts", import.meta.url));
+  const contents = await readFile(layoutPath, "utf8");
+  // `badges.mjs` maps INDEXED -> badge--info and MATCH -> badge--positive. Those two classes must
+  // resolve to different tokens, or a bold restyle could silently make discovery-only results look
+  // as "official" as proven ones (AGENTS.md: "`INDEXED` discovery state never means
+  // AegisOne-verified"). The textual label/glyph distinction in badges.mjs is the primary
+  // guarantee; this asserts the visual reinforcement does not undo it.
+  assert.match(contents, /--tone-info:var\(--lavender\)/);
+  assert.match(contents, /--tone-positive:var\(--cyan\)/);
+  assert.match(contents, /--tone-negative:var\(--alarm\)/);
+  assert.match(contents, /--tone-caution:var\(--amber\)/);
 });
