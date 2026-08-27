@@ -12,7 +12,9 @@ import { policyResultHtml, policyErrorHtml } from "/static/ui/policy-result.mjs"
 import { policyFromFormValues } from "/static/ui/policy-form.mjs";
 import { repositoryListHtml, claimResultHtml, claimErrorHtml } from "/static/ui/source-claim-view.mjs";
 
-const page = document.currentScript?.dataset.page;
+// `document.currentScript` is always null for `type="module"` scripts per the HTML spec
+// (module scripts don't set it), so it cannot be used here — query the script tag instead.
+const page = document.querySelector('script[src="/static/app.js"]')?.dataset.page;
 
 function debounce(fn, ms) {
   let timer = null;
