@@ -75,6 +75,17 @@ export function providerStatusesHtml(providerStatuses) {
   return `<ul class="providerStatusList" aria-label="Discovery provider status">${items.join("")}</ul>`;
 }
 
+/** Purely decorative (aria-hidden) reuse of the product's single stamp metaphor (ADR-015): a
+ * pressed stamp for a resource AegisOne actually holds evidence for, and an unpressed, hatched,
+ * dashed outline for a discovery-only entry. This is *reinforcement* of the textual badges below
+ * it, never the signal itself — the badges carry glyph + full text labels in both cases. */
+function cardStampSvg(hasEvidence) {
+  if (!hasEvidence) {
+    return `<span class="cardStamp" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="none" stroke="#0a0a0a" stroke-width="4" stroke-dasharray="9 8"/></svg></span>`;
+  }
+  return `<span class="cardStamp" aria-hidden="true"><svg viewBox="0 0 100 100" color="#0a0a0a"><use href="#ic-stamp" x="0" y="4" width="100" height="100"/><circle cx="50" cy="56" r="22" fill="#22dceb"/><use href="#ic-bytegrid" x="35" y="41" width="30" height="30"/></svg></span>`;
+}
+
 export function resultCardHtml(item) {
   const kind = escapeHtml(item.kind ?? "resource");
   const name = escapeHtml(item.name || "(untitled resource)");
@@ -98,10 +109,14 @@ export function resultCardHtml(item) {
 
   const titleInner = href ? `<a href="${href}">${name}</a>` : name;
   const urlLine = item.resourceUrl ? `<div class="cardUrl"><a href="${safeHttpUrl(item.resourceUrl)}" rel="noopener noreferrer" target="_blank">${escapeHtml(item.resourceUrl)}</a></div>` : "";
+  const discoveryOnly = item.trust ? "" : " resultCard--discoveryOnly";
 
-  return `<article class="resultCard" data-kind="${kind}">
-    <div class="cardHead"><h3>${titleInner}</h3><span class="kindTag">${kind}</span></div>
-    <p class="cardDescription">${description}</p>
+  return `<article class="resultCard${discoveryOnly}" data-kind="${kind}">
+    <div>
+      <div class="cardHead"><h3>${titleInner}</h3><span class="kindTag">${kind}</span></div>
+      <p class="cardDescription">${description}</p>
+    </div>
+    ${cardStampSvg(Boolean(item.trust))}
     ${trustRow}
     <div class="cardMeta">${provider}${relevance}</div>
     ${urlLine}
@@ -114,5 +129,5 @@ export function resultListHtml(searchResponse) {
   if (items.length === 0) {
     return `${statuses}<p class="emptyState">No results. Try a different phrase, or broaden federation.</p>`;
   }
-  return `${statuses}<div class="resultGrid">${items.map(resultCardHtml).join("")}</div>`;
+  return `${statuses}<div class="resultList">${items.map(resultCardHtml).join("")}</div>`;
 }

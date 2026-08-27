@@ -1,5 +1,5 @@
 import { escapeHtml } from "../ui/escape.mjs";
-import { evidencePassportHtml } from "../ui/evidence-passport.mjs";
+import { evidencePassportHtml, passportStampSvg } from "../ui/evidence-passport.mjs";
 import { policyFormHtml } from "../ui/policy-form.mjs";
 import { policyResultHtml } from "../ui/policy-result.mjs";
 import type { EvidenceApiResponse, ResourceApiResponse } from "../api-v1.ts";
@@ -27,11 +27,22 @@ export function renderResourcePageHtml(state: ResourcePageState): string {
   const policyDataJson = JSON.stringify({ resourceId: state.resourceApi.resourceId }).replace(/</g, "\\u003c");
 
   const body = `
-    <h1>${escapeHtml(resource.name)}</h1>
-    <p>Evidence Passport — every dimension below is independent. No dimension implies another.</p>
+    <span class="edgeLabel">Evidence passport</span>
     ${demoBanner}
+    <header class="passportHead">
+      <div>
+        <div class="pillRow">
+          <span class="pill">${escapeHtml(resource.kind ?? "resource")}</span>
+          <span class="pill pill--peri">7 independent dimensions</span>
+        </div>
+        <h1 class="tight">${escapeHtml(resource.name)}</h1>
+        <p class="lede">Every dimension below is independent. No dimension implies another — a repository that authenticates its source has not thereby proven its bytes, and bytes that correspond have not thereby been proven safe.</p>
+      </div>
+      ${passportStampSvg(resource.trust?.correspondence?.status)}
+    </header>
     ${passport}
-    <section class="passportSection" id="policy-playground">
+    <section class="panel" id="policy-playground" style="margin-top:26px">
+      <span class="edgeLabel">08 / Your policy</span>
       <h2>Policy playground</h2>
       <p class="passportNote">Evaluated by the real deterministic backend (<code>POST /api/v1/policy/evaluate</code>). The browser never recomputes ALLOW/REVIEW/DENY itself.</p>
       ${policyFormHtml({ resourceId: state.resourceApi.resourceId })}
@@ -49,6 +60,9 @@ export function renderResourcePageHtml(state: ResourcePageState): string {
 }
 
 export function renderResourceNotFoundHtml(resourceId: string): string {
-  const body = `<h1>Resource not found</h1><p>No AegisOne catalog resource exists with id <code>${escapeHtml(resourceId)}</code>.</p>`;
+  const body = `<span class="edgeLabel">404</span>
+    <h1>Resource not found</h1>
+    <p class="lede">No AegisOne catalog resource exists with id <code class="hashValue">${escapeHtml(resourceId)}</code>.</p>
+    <div class="ctaRow" style="margin-top:22px"><a class="button button--primary" href="/">Back to search <span class="arrow" aria-hidden="true">→</span></a><a class="button" href="/scan">Paste a skill to scan</a></div>`;
   return renderLayoutHtml({ title: "Resource not found — AegisOne Hub", activeNav: "none", bodyHtml: body });
 }

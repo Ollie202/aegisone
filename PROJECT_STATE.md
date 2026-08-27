@@ -508,11 +508,29 @@ backend contract (`docs/24-m8-11-contract-freeze.md`).
   framework, no build step) — production still runs exactly
   `node --experimental-strip-types src/server.ts`, no new dependency, no new deploy step, one
   Railway `proofrail-app` service unchanged;
-- **Visual direction**: light/modern (white background, dark text, restrained accent color,
-  Vercel/Linear/Stripe-docs register), per explicit repo-owner instruction overriding
-  `docs/18-m9-frontend-plan.md`'s dark-theme default — recorded in ADR-013. The pre-existing M1-M7
-  dark "proof-first" landing page is preserved unchanged and moved to `/proof` (still real M5
-  mainnet + M7 live-evidence content, not deleted);
+- **Visual direction**: **superseded by ADR-015**
+  (`docs/decisions/015-playful-neo-brutalist-visual-redesign.md`). ADR-013's light/modern
+  Vercel/Linear register was replaced, per explicit repo-owner instruction naming their own reusable
+  design skill (`goat_cookbook/frontend_design/playful_neo_brutalist_web.md`), with a Playful
+  Neo-Brutalist language: heavy ink linework, oversized editorial typography, large flat colour
+  fields, a slim numbered nav rail, and one inline-SVG visual metaphor reused everywhere (an
+  outlined **stamp** pressed only when real evidence exists, over a **byte grid** of the bytes
+  AegisOne compares). Trust-state colour mapping is documented in ADR-015; brand yellow is reserved
+  for chrome and is never a trust state, `INDEXED` (lavender) and `MATCH` (cyan) are deliberately
+  different tokens, and colour is still never the only signal — every badge keeps its glyph and full
+  text label. ADR-013's **technology** decision (vanilla JS, no framework, no build step, isomorphic
+  SSR/client `.mjs` modules) is unchanged. The pre-existing M1-M7 dark "proof-first" landing page is
+  preserved unchanged at `/proof` (still real M5 mainnet + M7 live-evidence content, not deleted);
+- **`/scan` (paste-to-scan)**: the human surface for the merged paste-to-scan backend
+  (`POST /api/v1/scan` / `aegisone_scan` MCP tool / `apps/web/src/scan-service.ts`), added in the
+  same pass as ADR-015 and built on the identical SSR-page + isomorphic-`.mjs` pattern as the other
+  pages (`apps/web/src/pages/scan.ts` + `apps/web/src/ui/scan-view.mjs`). Renders `verdict`
+  (CLEAN/FLAGGED/BLACKLISTED) verbatim with a per-verdict stamp, `deterministicFindings` with
+  severity, `cached`/`scanCount`, and — when requested — `advisoryFindings` in a visually and
+  textually separate container always stamped "advisory only — not authoritative". Always shows the
+  structural facts that a paste has source assurance `NONE` and correspondence `NOT_EVALUATED`, so a
+  CLEAN screening can never read as AegisOne source/byte evidence. All pasted content echoed back in
+  findings is escaped (XSS regression test);
 - **`/` (Hub/Search)**: `docs/18` primary page #1. Server-renders real results for a `?q=` query
   (calling the exact `performCapabilitySearch` function `POST /search`/`aegisone_search` already
   use) and a debounced client-side re-search (`POST /search`, local or federated) via

