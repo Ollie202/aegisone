@@ -3,11 +3,14 @@ import { assertValidNewCapabilityVerification } from "./capability-verification-
 import type {
   AgenticResource,
   CapabilityVerification,
+  CreateOrTouchPastedSkillScanResult,
   CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
   NewCapabilityVerification,
+  NewPastedSkillScan,
   NewSourceClaim,
+  PastedSkillScan,
   ResourceDiscovery,
   ResourceVersion,
   SourceClaim,
@@ -142,6 +145,20 @@ interface CapabilityVerificationRow {
   created_at: string;
 }
 
+interface PastedSkillScanRow {
+  id: string;
+  content_sha256: string;
+  verdict: string;
+  highest_severity: string;
+  finding_count: number;
+  findings_json: unknown;
+  first_scanned_at: string;
+  last_scanned_at: string;
+  scan_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface EdgeResponse {
   resource?: AgenticResourceRow | null;
   discovery?: ResourceDiscoveryRow;
@@ -153,8 +170,26 @@ interface EdgeResponse {
   supersededClaimId?: string | null;
   conflict?: { type: "SOURCE_CLAIM_CONFLICT"; conflictingClaimId: string } | null;
   capabilityVerification?: CapabilityVerificationRow | null;
+  pastedSkillScan?: PastedSkillScanRow | null;
+  cached?: boolean;
   error?: string;
   message?: string;
+}
+
+function rowToPastedSkillScan(row: PastedSkillScanRow): PastedSkillScan {
+  return {
+    id: row.id,
+    contentSha256: row.content_sha256,
+    verdict: row.verdict as PastedSkillScan["verdict"],
+    highestSeverity: row.highest_severity as PastedSkillScan["highestSeverity"],
+    findingCount: row.finding_count,
+    findings: (row.findings_json ?? []) as PastedSkillScan["findings"],
+    firstScannedAt: row.first_scanned_at,
+    lastScannedAt: row.last_scanned_at,
+    scanCount: row.scan_count,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 function rowToCapabilityVerification(row: CapabilityVerificationRow): CapabilityVerification {
@@ -497,5 +532,24 @@ export class SupabaseCatalogStore implements CatalogStore {
   async listCapabilityVerificationsByResourceVersion(resourceVersionId: string): Promise<CapabilityVerification[]> {
     const result = await this.#invoke("listCapabilityVerificationsByResourceVersion", { resourceVersionId });
     return (result.rows ?? []).map((row) => rowToCapabilityVerification(row as CapabilityVerificationRow));
+  }
+
+  async getPastedSkillScanByContentHash(contentSha256: string): Promise<PastedSkillScan | null> {
+    const result = await this.#invoke("getPastedSkillScanByContentHash", { contentSha256 });
+    return result.pastedSkillScan ? rowToPastedSkillScan(result.pastedSkillScan) : null;
+  }
+
+  async createOrTouchPastedSkillScan(input: NewPastedSkillScan): Promise<CreateOrTouchPastedSkillScanResult> {
+    const result = await this.#invoke("createOrTouchPastedSkillScan", {
+      contentSha256: input.contentSha256,
+      verdict: input.verdict,
+      highestSeverity: input.highestSeverity,
+      findingCount: input.findingCount,
+      findings: input.findings,
+    });
+    if (!result.pastedSkillScan) {
+      throw new Error("Supabase catalog store did not return a pasted skill scan row");
+    }
+    return { scan: rowToPastedSkillScan(result.pastedSkillScan), cached: result.cached === true };
   }
 }

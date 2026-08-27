@@ -219,3 +219,54 @@ export interface CapabilityVerification extends NewCapabilityVerification {
   readonly id: string;
   readonly createdAt: string;
 }
+
+/**
+ * Paste-to-scan hash-based cache/blacklist memory (new feature, see PR description). A row here
+ * is a *cache* of a deterministic `@aegisone/skill-audit` static-audit outcome keyed by the
+ * canonical skill-package content digest — never itself a proof authority, and never able to
+ * carry a source-claim/correspondence value (no `sourceAssurance`/`correspondence` column exists
+ * on this table by design, matching "a pasted skill's sourceAssurance is always NONE" /
+ * "correspondence is always NOT_EVALUATED" for this path). `verdict` is derived deterministically
+ * from the Tier-1 `SkillAuditReport.highestSeverity` only (`pasted-skill-verdict.ts`); an
+ * optional Tier-2 LLM advisory finding is never persisted as part of this row (see PR
+ * description "keep it in its own nullable column if you store it at all" — this repository
+ * chooses not to store it at all, since it is per-request/rate-limited/opt-in and never
+ * authoritative; API responses compute it fresh on every request that asks for it).
+ */
+export type PastedSkillScanVerdict = "CLEAN" | "FLAGGED" | "BLACKLISTED";
+
+export interface PastedSkillDeterministicFinding {
+  readonly ruleId: string;
+  readonly title: string;
+  readonly severity: SecuritySeverity;
+  readonly path: string;
+  readonly line: number;
+  readonly evidence: string;
+}
+
+export interface NewPastedSkillScan {
+  readonly contentSha256: string;
+  readonly verdict: PastedSkillScanVerdict;
+  readonly highestSeverity: SecuritySeverity;
+  readonly findingCount: number;
+  /** Bounded/capped by the caller (see apps/web/src/scan-service.ts MAX_STORED_FINDINGS) before
+   * this is ever persisted — never unlimited raw findings. */
+  readonly findings: readonly PastedSkillDeterministicFinding[];
+}
+
+export interface PastedSkillScan extends NewPastedSkillScan {
+  readonly id: string;
+  readonly firstScannedAt: string;
+  readonly lastScannedAt: string;
+  readonly scanCount: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/** Result of `createOrTouchPastedSkillScan`: `cached: true` means an existing row for this exact
+ * content hash was found and only its `lastScannedAt`/`scanCount` bookkeeping changed — the
+ * caller must not re-derive `verdict`/`findings` from the (already-cached) input in that case. */
+export interface CreateOrTouchPastedSkillScanResult {
+  readonly scan: PastedSkillScan;
+  readonly cached: boolean;
+}

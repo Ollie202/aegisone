@@ -279,7 +279,16 @@ It may later represent independent builder/verifier identities/reputation, but i
 
 Not part of the core truth path.
 
-Potential later use remains advisory divergence diagnosis when independent builders disagree. LLM output cannot turn a mismatch/divergence into a match.
+**Paste-to-scan feature (new):** `@aegisone/compute-0g` uses `@0gfoundation/0g-compute-ts-sdk@0.9.0`
+(an OpenAI-compatible decentralized inference marketplace — distinct from OpenAI/Anthropic and from
+0G Sandbox) as an **optional, opt-in, non-authoritative Tier-2 advisory pass** over pasted Agent
+Skill text, looking for manipulation/social-engineering red flags a fixed regex cannot catch. This
+is exactly the kind of "advisory divergence diagnosis" use this document already anticipated: LLM
+output here can never turn anything into a deterministic verdict — see
+`docs/17-m8-security-boundaries.md`'s "Paste-to-scan limits" for the full rate-limit/availability
+rules. No `ZEROG_COMPUTE_PRIVATE_KEY` exists in this environment, so the live transport
+(`packages/compute-0g/src/live-transport.ts`) is built and isolated but not exercised against the
+real network; unit tests use an injected fake transport only.
 
 ## 0G DA
 

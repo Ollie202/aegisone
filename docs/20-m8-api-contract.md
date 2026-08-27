@@ -197,6 +197,52 @@ Errors:
   validation; `details` carries the structured issue list.
 - `404 resource_not_found` — `resourceId` does not resolve to a stored resource.
 
+### `POST /api/v1/scan` (new — paste-to-scan skill screening)
+
+Publicly reachable **without any GitHub/session auth** — that is the point of this route: paste
+raw Agent Skill content, get a screening verdict, no discovery step or claimed publisher required.
+Its own, separate rate limits apply (`docs/17-m8-security-boundaries.md` "Paste-to-scan limits");
+this is not part of the `POST /search`/`POST /api/v1/policy/evaluate` 32 KiB limit family.
+
+Request body (JSON, ≤384 KiB envelope / ≤256 KiB content):
+
+```ts
+interface ScanRequest {
+  content: string | { path: string; content: string }[]; // required
+  includeAdvisoryScan?: boolean;                            // optional, default false
+}
+```
+
+Response:
+
+```ts
+interface ScanApiResponse {
+  schemaVersion: "1";
+  contentSha256: string;                    // canonical skill-package content digest — the cache key
+  verdict: "CLEAN" | "FLAGGED" | "BLACKLISTED"; // derived only from Tier-1 highestSeverity
+  cached: boolean;                          // true if this content hash was already scanned before
+  deterministicFindings: PastedSkillDeterministicFinding[];
+  advisoryFindings: {
+    status: "completed" | "advisory_unavailable" | "rate_limited" | "error";
+    finding?: { summary: string; concernLevel: "none"|"low"|"medium"|"high"; modelProvider: string; ranAt: string };
+    reason?: string;
+    message?: string;
+  } | null; // null only when includeAdvisoryScan was not requested
+  scanCount: number;
+}
+```
+
+`sourceAssurance` is always `NONE` and `correspondence` is always `NOT_EVALUATED` for anything
+reachable through this route — there is no claimed publisher/source for pasted content, so this
+route can never produce `MATCH`/`MISMATCH`/`REPOSITORY_AUTHENTICATED`/`SIGNED_RELEASE`.
+`advisoryFindings` is purely informational and can never set/override `verdict`.
+
+Errors: `415 unsupported_media_type`, `413 request_too_large` (envelope or content over the
+documented caps), `400 invalid_request` (malformed JSON/content shape), `429 scan_rate_limited`
+(Tier-1 limiter exceeded — Tier-2 exceeding its own limiter instead returns `200` with
+`advisoryFindings.status: "rate_limited"`, since the deterministic Tier-1 result is still valid and
+returned), `503 scan_unavailable` (paste-to-scan not wired up on this server instance).
+
 ## Error taxonomy (all routes)
 
 Every error response has the shape:
@@ -211,7 +257,9 @@ interface ApiV1ErrorResponse {
 ```
 
 Known codes: `resource_not_found`, `version_not_found`, `invalid_request`, `invalid_policy`,
-`invalid_resource`, `unsupported_media_type` (415), `request_too_large` (413).
+`invalid_resource`, `unsupported_media_type` (415), `request_too_large` (413),
+`scan_rate_limited` (429, paste-to-scan Tier-1 limiter), `scan_unavailable` (503, paste-to-scan
+not wired up on this server instance).
 
 ## What this contract deliberately does not do
 

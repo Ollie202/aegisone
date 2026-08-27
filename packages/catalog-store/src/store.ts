@@ -2,11 +2,14 @@ import type { CapabilityResource } from "../../capability-model/src/model.ts";
 import type {
   AgenticResource,
   CapabilityVerification,
+  CreateOrTouchPastedSkillScanResult,
   CreateSourceClaimResult,
   IngestionSource,
   IngestionSourcePatch,
   NewCapabilityVerification,
+  NewPastedSkillScan,
   NewSourceClaim,
+  PastedSkillScan,
   ResourceDiscovery,
   ResourceVersion,
   SourceClaim,
@@ -65,4 +68,16 @@ export interface CatalogStore {
   createCapabilityVerification(input: NewCapabilityVerification): Promise<CapabilityVerification>;
   getLatestCapabilityVerification(resourceVersionId: string): Promise<CapabilityVerification | null>;
   listCapabilityVerificationsByResourceVersion(resourceVersionId: string): Promise<CapabilityVerification[]>;
+
+  /** Paste-to-scan hash-based cache/blacklist lookup, keyed by the canonical skill-package
+   * content SHA-256 digest (docs: new feature, PR description "Caching / hash-based memory /
+   * blacklist"). Never invents/upgrades a verdict — a `null` result means "never scanned",
+   * nothing else. */
+  getPastedSkillScanByContentHash(contentSha256: string): Promise<PastedSkillScan | null>;
+  /** Finds-or-creates the cache row for `input.contentSha256`. If a row already exists, this
+   * only bumps `lastScannedAt`/`scanCount` and returns `cached: true` with the *existing* stored
+   * verdict/findings (never overwritten by whatever the caller just recomputed) — Tier-1 static
+   * analysis is deterministic, so a repeated submission of byte-identical content always yields
+   * the same verdict by construction. */
+  createOrTouchPastedSkillScan(input: NewPastedSkillScan): Promise<CreateOrTouchPastedSkillScanResult>;
 }

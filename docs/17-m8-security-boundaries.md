@@ -260,15 +260,16 @@ If using `gh` in the worker:
 
 M8 MCP server is a read/policy convenience only.
 
-Allowed initial tools:
+Allowed tools:
 
 ```text
 aegisone_search
 aegisone_inspect
 aegisone_evaluate
+aegisone_scan
 ```
 
-Not allowed initially:
+Not allowed:
 
 ```text
 aegisone_install
@@ -279,6 +280,12 @@ aegisone_upload_secret
 ```
 
 MCP tool handlers call the same validated application services as REST.
+
+**`aegisone_scan` (paste-to-scan feature) allowlist justification:** it only analyzes content the
+caller supplies inline in the request — it never installs, executes, fetches, or signs anything on
+the caller's behalf, never reaches `proofrail-worker` or a signer, and is bounded by the same
+Tier-1/Tier-2 rate limiters and size caps as `POST /api/v1/scan` below. Treat it the same as
+`aegisone_inspect` — read/analysis only, just over caller-supplied content instead of a catalog id.
 
 ## Threat M8-019 — security audit overclaim
 
@@ -330,6 +337,42 @@ verification concurrency:            1–2 on current budget
 ```
 
 If existing repository limits are stricter, keep the stricter value unless the issue explicitly requires expansion.
+
+## Paste-to-scan limits (new feature)
+
+`POST /api/v1/scan` / `aegisone_scan` is a genuinely new **public, unauthenticated** entry point
+that accepts arbitrary caller-supplied content and can (opt-in only) trigger real compute work
+through 0G Compute — Threat M8-005's "verification spend abuse" discipline applies doubly here.
+
+```text
+max scan request body:                                 384 KiB (JSON envelope; content itself capped at 256 KiB)
+max scan content files:                                 50
+Tier 1 (deterministic static audit) scans per client per 10 min:  60
+Tier 2 (0G Compute advisory) scans per client per hour:            5
+```
+
+Rules, non-negotiable:
+
+- Tier 1 (`@aegisone/skill-audit`, unmodified) always runs — free, instant, deterministic, no
+  external network call, no funded work of any kind.
+- Tier 2 is opt-in per request (`includeAdvisoryScan: true`), never automatic, and independently
+  rate-limited far more strictly than Tier 1 because it is the only part of this feature that can
+  trigger real (bounded) compute spend.
+- If `ZEROG_COMPUTE_PRIVATE_KEY` is not configured, `includeAdvisoryScan: true` always returns an
+  explicit `advisory_unavailable` state — never silently skipped, never a fabricated result.
+- The Tier-2 advisory finding can never set/override `verdict`, `correspondence`, or
+  `sourceAssurance` — it is a separate, clearly labeled, non-authoritative field
+  (`advisoryFindings`).
+- A pasted skill's `sourceAssurance` is always `NONE` and `correspondence` is always
+  `NOT_EVALUATED`: there is no claimed publisher/source for this path, so
+  `MATCH`/`MISMATCH`/`REPOSITORY_AUTHENTICATED`/`SIGNED_RELEASE` are structurally unreachable here.
+- Repeated byte-identical content hits the `pasted_skill_scans` cache (keyed by the canonical
+  skill-package content SHA-256) instead of being treated as a fresh unbounded submission; content
+  whose deterministic Tier-1 findings reach `CRITICAL` severity is recorded as `BLACKLISTED` and
+  every future identical submission returns that verdict immediately, independent of Tier 2.
+- Rate limiting is currently a single-process in-memory fixed-window limiter keyed by remote IP
+  (`apps/web/src/rate-limit.ts`) — a known, documented limitation if `proofrail-app` ever runs more
+  than one instance; not a distributed limiter.
 
 ## Security test matrix
 

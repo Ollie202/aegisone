@@ -1,8 +1,12 @@
-# M8.8 — MCP interface (`aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`)
+# M8.8 — MCP interface (`aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`, `aegisone_scan`)
 
 Status: implemented on `agent/m8-mcp-interface` (Issue #27). Wraps the M8.7 frozen contract
 (`docs/20-m8-api-contract.md`) and the M8.2/M8.3 search surface through MCP
 (`docs/17-m8-security-boundaries.md` Threat M8-018 "MCP becomes a privileged backdoor").
+
+**Update (paste-to-scan feature):** a fourth tool, `aegisone_scan`, was added alongside the
+original three. See "Tool surface" and "`aegisone_scan`" below for the tool itself and its
+allowlist justification.
 
 ## What this is
 
@@ -56,10 +60,10 @@ correct follow-up is to relocate that assembly logic into a package first, then 
 
 ## Tool surface
 
-Exactly three tools, matching Threat M8-018's allowlist. None of the explicitly banned tools
-(`aegisone_install`, `aegisone_execute`, `aegisone_sign`, `aegisone_run_arbitrary_build`,
-`aegisone_upload_secret`) exist in this codebase; a regression test in `apps/web/test/mcp.test.ts`
-asserts the connected tool list is exactly the three allowed names.
+Exactly four tools. None of the explicitly banned tools (`aegisone_install`, `aegisone_execute`,
+`aegisone_sign`, `aegisone_run_arbitrary_build`, `aegisone_upload_secret`) exist in this codebase;
+a regression test in `apps/web/test/mcp.test.ts` asserts the connected tool list is exactly the
+four allowed names.
 
 ### `aegisone_search`
 
@@ -112,15 +116,44 @@ Purely deterministic; a search-relevance score can never enter this evaluation b
 `aegisone_search`'s output is never fed into `aegisone_evaluate` as evidence — only an already
 catalogued/verified resource (by id) or a caller-validated inline resource is.
 
+### `aegisone_scan` (new — paste-to-scan)
+
+**Justification for the fourth allowlisted tool** (Threat M8-018): `aegisone_scan` only analyzes
+content the caller supplies inline in the request body. It never installs, executes, fetches, or
+signs anything on the caller's behalf, never reaches `proofrail-worker` or a signer, and is bounded
+by the exact same Tier-1/Tier-2 rate limiters and size caps as `POST /api/v1/scan`
+(docs/17-m8-security-boundaries.md's "Paste-to-scan limits" section). It is a read/analysis tool in
+the same spirit as `aegisone_inspect`, just over caller-supplied content instead of a catalog id.
+
+Input:
+
+```ts
+{
+  content: string | { path: string; content: string }[]; // required
+  includeAdvisoryScan?: boolean;                           // optional, default false
+}
+```
+
+Output: the same `ScanApiResponse` shape `POST /api/v1/scan` returns —
+`{ schemaVersion, contentSha256, verdict: "CLEAN"|"FLAGGED"|"BLACKLISTED", cached, deterministicFindings, advisoryFindings, scanCount }`.
+
+A pasted skill has no claimed publisher and no claimed source: `sourceAssurance` is always `NONE`
+and `correspondence` is always `NOT_EVALUATED` for anything produced through this tool — there is
+no source-claim row this path could ever attach evidence to (see the structural test in
+`apps/web/test/scan-service.test.ts`). `verdict` is derived only from the deterministic Tier-1
+`@aegisone/skill-audit` static analysis; `advisoryFindings` (only populated when
+`includeAdvisoryScan: true`) is a separate, non-authoritative, clearly labeled field and can never
+set/override `verdict`.
+
 ## Malformed input / error taxonomy
 
-All three tools validate their arguments against a published JSON Schema (via Zod, converted by
+All four tools validate their arguments against a published JSON Schema (via Zod, converted by
 the MCP SDK) before the handler body runs. Structurally invalid arguments (empty search text,
 missing `resourceId`, both/neither of `resource`/`resourceId`, an unknown federation provider id,
-a malformed policy) come back as an MCP `CallToolResult` with `isError: true` and the same
-`error`/`errorCode`/`message` shape the REST API uses — never a stack trace, never a silently
-invented success. See `apps/web/test/mcp.test.ts` for the full set of malformed-input and
-missing-evidence regression cases.
+a malformed policy, oversized/malformed scan content) come back as an MCP `CallToolResult` with
+`isError: true` and the same `error`/`errorCode`/`message` shape the REST API uses — never a stack
+trace, never a silently invented success. See `apps/web/test/mcp.test.ts` for the full set of
+malformed-input and missing-evidence regression cases.
 
 ## Transport choice and why
 
