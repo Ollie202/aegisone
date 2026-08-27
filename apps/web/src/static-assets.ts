@@ -12,11 +12,17 @@ import type { ServerResponse } from "node:http";
 
 const APP_JS_URL = new URL("../public/app.js", import.meta.url);
 const UI_DIR_URL = new URL("../src/ui/", import.meta.url);
+/** The repo owner's real AegisOne logo file, committed verbatim at `apps/web/public/brand/logo.jpg`
+ * and served from this same origin (no image host, no external request — ADR-015). It is the site's
+ * brand mark and favicon only; the stamp/byte-grid SVG illustration vocabulary is a *different*
+ * thing and stays inline SVG. */
+const BRAND_LOGO_URL = new URL("../public/brand/logo.jpg", import.meta.url);
 
 const UI_MODULES = ["escape.mjs", "badges.mjs", "result-card.mjs", "policy-result.mjs", "policy-form.mjs", "evidence-passport.mjs", "source-claim-view.mjs", "scan-view.mjs"];
 
 const ASSETS = new Map<string, { fileUrl: URL; contentType: string }>([
   ["/static/app.js", { fileUrl: APP_JS_URL, contentType: "application/javascript; charset=utf-8" }],
+  ["/static/brand/logo.jpg", { fileUrl: BRAND_LOGO_URL, contentType: "image/jpeg" }],
   ...UI_MODULES.map((name): [string, { fileUrl: URL; contentType: string }] => [
     `/static/ui/${name}`,
     { fileUrl: new URL(name, UI_DIR_URL), contentType: "application/javascript; charset=utf-8" },

@@ -11,7 +11,14 @@ export interface HubPageState {
   demoResourceId: string | null;
 }
 
-const EXAMPLES = ["Review a pull request", "Audit a Solidity contract", "Deploy a Next.js app", "Analyze a repository"];
+/**
+ * Example *queries* (docs/18-m9-frontend-plan.md "Hub / Search"), rendered as the hero's three
+ * category pills. Deliberately three, per the design language's Hero Formula and its Design
+ * Restraint Rules — and deliberately queries rather than results: the Hub renders **no** result
+ * rows until a real search has run, so a first-time visitor never sees the local ARD fixture
+ * catalog presented as live search output.
+ */
+const EXAMPLES = ["Review a pull request", "Audit a Solidity contract", "Deploy a Next.js app"];
 
 /**
  * The hero illustration cluster — the product's single visual metaphor (ADR-015): the publisher's
@@ -46,38 +53,29 @@ function heroArtSvg(): string {
       <circle cx="212" cy="72" r="30" fill="#ffd91a"/>
       <path d="M198 72l10 11 20-22" fill="none" stroke="#0a0a0a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <!-- decorative loose bytes escaping the cluster -->
-    <rect class="float--slow" x="8" y="86" width="20" height="20" rx="5" fill="#b79cff" stroke="#0a0a0a" stroke-width="3"/>
-    <rect class="float" x="392" y="112" width="16" height="16" rx="4" fill="#ffd91a" stroke="#0a0a0a" stroke-width="3"/>
-    <rect class="float--slow" x="360" y="40" width="24" height="24" rx="6" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3"/>
   </g>
 </svg>`;
 }
 
 export function renderHubPageHtml(state: HubPageState): string {
   const examples = EXAMPLES.map(
-    (example) => `<button type="button" class="button exampleChip" data-example="${escapeHtml(example)}">${escapeHtml(example)}</button>`,
+    (example) => `<button type="button" class="pill exampleChip" data-example="${escapeHtml(example)}">${escapeHtml(example)}</button>`,
   ).join("");
 
   const resultsHtml = state.searchError
     ? `<p class="errorText">Search failed: ${escapeHtml(state.searchError)}</p>`
     : state.searchResponse
       ? resultListHtml(state.searchResponse)
-      : `<p class="searchHint">Search calls the real AegisOne discovery backend (local catalog and, when selected, federated providers). Results always separate discovery and relevance from AegisOne-verified evidence.</p>`;
+      : `<p class="emptyState" id="search-empty-state">No search yet — nothing is shown here until you run one. Type a capability above or pick one of the three examples; results come from the real AegisOne discovery backend (local catalog, plus federated providers when selected) and always separate discovery and relevance from AegisOne-verified evidence.</p>`;
 
   const demoBanner = state.demoAvailable && state.demoResourceId
     ? `<div class="demoBanner">Demo mode available: <a href="/resources/${encodeURIComponent(state.demoResourceId)}?demo=1">open the labeled M8.9 demo-fixture Evidence Passport</a> (genuine MATCH vs. controlled MISMATCH), reusing M8.9's real tested fixture identity/content — not live production evidence.</div>`
     : "";
 
   const body = `
-    <span class="edgeLabel">01 / Search</span>
     <section class="hero">
       <div class="heroCopy">
-        <div class="pillRow">
-          <span class="pill pill--yellow">Agent skills</span>
-          <span class="pill">Source assurance</span>
-          <span class="pill pill--peri">Byte correspondence</span>
-        </div>
+        <div class="pillRow">${examples}</div>
         <h1>What capability does your <span class="mark">agent</span> need?</h1>
         <p class="lede">Discovery finds candidates. It does not authenticate a publisher, and it does not prove that the bytes you would install were built from the source anyone claims.</p>
         <form class="searchForm" id="search-form" method="GET" action="/">
@@ -91,10 +89,6 @@ export function renderHubPageHtml(state: HubPageState): string {
       <div class="heroArt">${heroArtSvg()}</div>
     </section>
     ${demoBanner}
-    <div class="federationRow">
-      <span class="eyebrow">Try</span>
-      ${examples}
-    </div>
     <div class="federationRow">
       <label><input type="checkbox" id="federation-toggle"> Include federated providers (GitHub Agent Finder, Hugging Face Discover, MCP Registry)</label>
     </div>

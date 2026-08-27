@@ -4,11 +4,15 @@
 // section only — ADR-013's technology decision, vanilla JS + no framework + no build step +
 // isomorphic SSR/client `.mjs` render modules, is unchanged and still in force).
 //
-// The single visual metaphor for the whole product is the **stamp**: a heavy-outlined, off-axis
-// seal that gets pressed onto something once evidence exists, plus the "byte grid" of small
+// The single *illustration* metaphor for the whole product is the **stamp**: a heavy-outlined,
+// off-axis seal that gets pressed onto something once evidence exists, plus the "byte grid" of small
 // outlined squares that stands for the bytes AegisOne actually compares. Every illustration on
 // every page is built from that one shape family (stamp ring + byte grid + a comparison arrow),
 // per the design skill's Design Restraint Rules ("pick one metaphor, reuse it").
+//
+// The **brand mark is a separate thing** and is NOT drawn here: it is the repo owner's real logo
+// file, `apps/web/public/brand/logo.jpg`, served at `/static/brand/logo.jpg` (see `brandLogoImg`
+// below and ADR-015's addendum). Verdict illustration must never be mistaken for brand identity.
 //
 // Trust-state colour mapping (documented in ADR-015). Colour NEVER carries a verdict on its own —
 // `badges.mjs` always pairs a glyph AND a text label with every state; this palette only makes the
@@ -63,7 +67,11 @@ a:hover{text-decoration:underline}
 /* ---------- page shell: slim vertical rail + one big outlined frame ---------- */
 .page{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;min-height:100vh;padding:18px 20px 0}
 .rail{position:sticky;top:18px;align-self:start;height:calc(100vh - 36px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:0 8px 18px 0}
-.railMark{display:block;width:56px;height:56px}
+/* The real logo file sits in one outlined light frame so its own white ground reads as an
+   intentional graphic frame rather than a broken image box on the dotted paper background. */
+.brandMark{display:inline-grid;place-items:center;width:var(--brand-size,56px);height:var(--brand-size,56px);border:var(--border);border-radius:14px;background:#fff;overflow:hidden;flex:none;transition:transform 180ms ease, box-shadow 180ms ease}
+.brandMark img{display:block;width:100%;height:100%;object-fit:contain}
+a:hover .brandMark{transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-sm)}
 .railNav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;align-items:center}
 .railNav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
 .railNum{display:grid;place-items:center;width:34px;height:34px;border:var(--border);border-radius:10px;background:var(--card);font-size:12px;font-weight:900}
@@ -128,7 +136,11 @@ p{color:var(--ink-soft);max-width:62ch}
 .searchForm input[type="search"]{flex:1;min-width:0;padding:15px 20px;border:var(--border);border-radius:999px;font-size:16px;font-family:inherit;background:var(--paper);color:var(--ink);font-weight:600}
 .searchForm input[type="search"]::placeholder{color:var(--ink-soft);font-weight:500}
 .searchHint{font-size:14px;max-width:60ch}
-.exampleChip{padding:7px 14px;font-size:12px;font-weight:800;border-radius:999px}
+/* Example *queries*, not example results: clicking one runs a real search against the real
+   backend. They are the hero's category pills, so the page never ships pre-populated fixture rows
+   that could read as live output. */
+.exampleChip{font-family:inherit;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;transition:transform 160ms ease, box-shadow 160ms ease}
+.exampleChip:hover{transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-sm)}
 .federationRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);margin-bottom:16px}
 .federationRow label{display:inline-flex;gap:8px;align-items:center;font-weight:600}
 .federationRow input[type="checkbox"]{width:17px;height:17px;accent-color:var(--ink)}
@@ -160,13 +172,32 @@ p{color:var(--ink-soft);max-width:62ch}
 .passportHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start;margin-bottom:30px}
 .passportStamp{width:clamp(96px,13vw,150px);height:auto;flex:none;transform:rotate(-7deg)}
 .passportStamp svg{width:100%;height:auto;display:block}
+/* The verdict summary: the whole record in one 2-second read. Every row is a real dimension label
+   plus the backend's own state — never a single collapsed trust score. */
+.evidenceSummary{border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);background:var(--card);padding:20px clamp(16px,2.2vw,26px);margin-bottom:22px}
+.summaryRows{display:grid;gap:0;margin:0}
+.summaryRow{display:grid;grid-template-columns:190px minmax(0,1fr);gap:14px;align-items:center;padding:9px 0;border-bottom:1px dotted rgba(10,10,10,.18)}
+.summaryRow:last-child{border-bottom:0}
+.summaryLabel{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.summaryValue{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px;font-weight:700}
+.summaryNote{font-size:12.5px;margin:14px 0 0;font-weight:600}
+
 .passportRun{display:grid;gap:0;border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);overflow:visible;background:var(--card)}
-.passportSection{position:relative;padding:26px clamp(16px,2.4vw,30px);border-bottom:var(--line) solid var(--ink)}
+/* Detail is genuinely secondary: each dimension is a native <details> disclosure, collapsed by
+   default, so the summary above is what competes for attention. No JavaScript is involved. */
+.passportSection{position:relative;border-bottom:var(--line) solid var(--ink)}
 .passportSection:last-child{border-bottom:0}
 .passportSection:nth-child(even){background:var(--paper)}
-.passportSection h2{font-size:clamp(19px,2vw,26px);margin:0 0 4px}
-.sectionMark{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.passportSection > *:not(summary){margin-left:clamp(16px,2.4vw,30px);margin-right:clamp(16px,2.4vw,30px)}
+.passportSection > *:last-child{margin-bottom:22px}
+.passportSection h2{font-size:clamp(17px,1.7vw,21px);margin:0}
+.sectionMark{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,2.4vw,30px);cursor:pointer;list-style:none;user-select:none}
+.sectionMark::-webkit-details-marker{display:none}
+.sectionMark:hover{background:var(--periwinkle)}
 .sectionMark .idx{width:30px;height:30px;flex:none;border:var(--border);border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:900;background:var(--card)}
+.sectionMark .disclose{margin-left:auto;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
+.passportSection[open] .sectionMark .disclose::after{content:"– hide"}
+.passportSection:not([open]) .sectionMark .disclose::after{content:"+ detail"}
 .fieldRow{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px;padding:7px 0;font-size:14px;align-items:baseline;border-bottom:1px dotted rgba(10,10,10,.18)}
 .fieldRow:last-of-type{border-bottom:0}
 .fieldLabel{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
@@ -272,13 +303,13 @@ p{color:var(--ink-soft);max-width:62ch}
   .rail{display:none}
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:var(--border);border-radius:var(--radius-md);background:var(--card);padding:10px 14px;margin-bottom:14px}
   .topbarMark{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:900;letter-spacing:-.03em}
-  .topbarMark svg{width:30px;height:30px}
+  .topbarMark .brandMark{border-radius:9px}
   .topbarNav{display:flex;gap:7px;flex-wrap:wrap}
   .topbarNav a{border:var(--border);border-radius:999px;padding:5px 11px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;background:var(--paper)}
   .topbarNav a.active{background:var(--yellow)}
   .frame{padding:20px 16px;border-radius:var(--radius-md);border-width:var(--line)}
   h1{font-size:clamp(34px,10vw,48px);max-width:none}
-  .fieldRow,.hashRow{grid-template-columns:1fr;gap:3px;padding:9px 0}
+  .fieldRow,.hashRow,.summaryRow{grid-template-columns:1fr;gap:5px;padding:9px 0}
   .searchForm{flex-direction:column}
   .searchForm input[type="search"]{width:100%}
   .searchForm .button{width:100%}
@@ -317,13 +348,22 @@ const SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false"><defs>
 </symbol>
 </defs></svg>`;
 
-/** The brand mark: the stamp ring with a byte grid pressed inside it. */
-export function brandMarkSvg(size = 56): string {
-  return `<svg class="railMark" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="AegisOne">
-  <use href="#ic-stamp" x="0" y="0" width="100" height="100" color="#0a0a0a"/>
-  <circle cx="50" cy="52" r="24" fill="#ffd91a"/>
-  <use href="#ic-bytegrid" x="32" y="34" width="36" height="36" color="#0a0a0a"/>
-</svg>`;
+/**
+ * The **brand mark** — the repo owner's real AegisOne logo file, served verbatim from this origin at
+ * `/static/brand/logo.jpg` (`apps/web/src/static-assets.ts`). This is deliberately *not* generated
+ * or reinterpreted here: the previous redesign invented an SVG "stamp ring + byte grid" mark and
+ * used it as the logo, which was wrong.
+ *
+ * Note the distinction, which the rest of the codebase depends on: the brand mark identifies the
+ * product (nav + favicon, this function), while the stamp/byte-grid SVG vocabulary (`#ic-stamp`,
+ * `#ic-bytegrid`) is *verdict illustration* for MATCH/MISMATCH/CLEAN/FLAGGED and is unchanged.
+ *
+ * The logo art is black-on-white, so it sits inside a single outlined light frame (the design
+ * language's `GraphicFrame` primitive) rather than floating on the paper background as a stray
+ * white box.
+ */
+export function brandLogoImg(size = 56): string {
+  return `<span class="brandMark" style="--brand-size:${size}px"><img src="/static/brand/logo.jpg" width="${size}" height="${size}" alt="AegisOne" decoding="async"></span>`;
 }
 
 const NAV_ITEMS: ReadonlyArray<{ href: string; num: string; label: string; key: LayoutOptions["activeNav"] }> = [
@@ -356,6 +396,8 @@ export function renderLayoutHtml(options: LayoutOptions): string {
 <meta name="theme-color" content="#f7f5ef">
 <meta name="color-scheme" content="light">
 <title>${options.title}</title>
+<link rel="icon" type="image/jpeg" href="/static/brand/logo.jpg">
+<link rel="apple-touch-icon" href="/static/brand/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&display=swap">
@@ -366,13 +408,13 @@ ${SPRITE}
 <a class="skiplink" href="#main">Skip to content</a>
 <div class="page">
   <nav class="rail" aria-label="Primary">
-    <a href="/" aria-label="AegisOne home">${brandMarkSvg(56)}</a>
+    <a href="/" aria-label="AegisOne home">${brandLogoImg(56)}</a>
     <ul class="railNav">${railNav(options.activeNav)}</ul>
     <span class="railEdge" aria-hidden="true">Evidence, not adjectives</span>
   </nav>
   <div>
     <nav class="topbar" aria-label="Primary (compact)">
-      <a class="topbarMark" href="/">${brandMarkSvg(30)} AegisOne</a>
+      <a class="topbarMark" href="/">${brandLogoImg(30)} AegisOne</a>
       <div class="topbarNav">${topbarNav(options.activeNav)}</div>
     </nav>
     <main class="frame" id="main">

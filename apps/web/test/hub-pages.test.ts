@@ -57,12 +57,57 @@ test("GET / renders the Hub search page in the ADR-015 visual language and is re
     // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
     assert.match(html, /--paper:#f7f5ef/);
     assert.doesNotMatch(html, /#070b12/); // the old dark hero background must not leak into the Hub
-    // The single shared illustration metaphor is inline SVG served from this same origin — never a
-    // remote image/asset request.
+    // The shared *verdict illustration* metaphor is inline SVG served from this same origin.
     assert.match(html, /<symbol id="ic-stamp"/);
     assert.match(html, /<symbol id="ic-bytegrid"/);
-    assert.doesNotMatch(html, /<img\s/);
+    // The only raster asset anywhere is the real brand logo file, and it is same-origin: no image
+    // host, no remote asset request (the original intent of this assertion).
+    for (const tag of html.match(/<img\s[^>]*>/g) ?? []) {
+      assert.match(tag, /src="\/static\//, `unexpected non-same-origin image: ${tag}`);
+    }
     assert.match(html, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("the nav brand mark and favicon are the real committed logo file, served same-origin", async () => {
+  const running = await startServer();
+  try {
+    const response = await fetch(`${running.baseUrl}/`);
+    const html = await response.text();
+    // Brand mark in both the desktop rail and the compact mobile top bar, plus the favicon.
+    assert.match(html, /<link rel="icon" type="image\/jpeg" href="\/static\/brand\/logo\.jpg">/);
+    assert.match(html, /<img src="\/static\/brand\/logo\.jpg"[^>]*alt="AegisOne"/);
+    // The invented SVG "stamp ring + byte grid" brand mark must no longer act as the logo.
+    assert.doesNotMatch(html, /class="railMark"/);
+
+    const asset = await fetch(`${running.baseUrl}/static/brand/logo.jpg`);
+    assert.equal(asset.status, 200);
+    assert.equal(asset.headers.get("content-type"), "image/jpeg");
+    const bytes = new Uint8Array(await asset.arrayBuffer());
+    assert.ok(bytes.length > 1000, "expected the real logo file, not a stub");
+    assert.equal(bytes[0], 0xff); // JPEG SOI marker — the actual file, not a regenerated SVG
+    assert.equal(bytes[1], 0xd8);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("GET / shows no result rows at all until a search has actually run", async () => {
+  const running = await startServer();
+  try {
+    const seeded = await seedDemoCatalog(running.catalogStore);
+    assert.ok(seeded.resourceId);
+    const response = await fetch(`${running.baseUrl}/`);
+    const html = await response.text();
+    // No fixture/demo rows may be presented as live search output on first load.
+    assert.doesNotMatch(html, /class="resultCard/);
+    assert.doesNotMatch(html, /Pull Request Reviewer/);
+    assert.match(html, /id="search-empty-state"/);
+    assert.match(html, /No search yet/);
+    // Example *queries* are offered instead, and they are clickable queries, not results.
+    assert.match(html, /class="pill exampleChip" data-example="Review a pull request"/);
   } finally {
     await stopServer(running.server);
   }
@@ -114,6 +159,13 @@ test("GET /resources/:id renders every independent Evidence Passport dimension f
     for (const section of ["Capability", "Source assurance", "Distribution correspondence", "Security audit", "Independent execution", "Canonical evidence", "Verification history"]) {
       assert.match(html, new RegExp(`<h2>${section}</h2>`), `missing section: ${section}`);
     }
+    // The seven detailed dimensions are now progressively disclosed (native <details>), with the
+    // compact docs/18 summary carrying the scannable state. All content is still in the document.
+    assert.match(html, /id="evidence-summary"/);
+    for (const dimension of ["Discovery", "Source", "Inspection", "Correspondence", "Security", "Evidence", "Policy"]) {
+      assert.match(html, new RegExp(`<span class="summaryLabel">${dimension}</span>`), `missing summary dimension: ${dimension}`);
+    }
+    assert.equal((html.match(/<details class="passportSection"/g) ?? []).length, 7);
     assert.match(html, /REPOSITORY AUTHENTICATED/);
     // Most recent history row is MISMATCH; earlier MATCH row still present, neither collapsed away.
     assert.match(html, />MISMATCH</);
@@ -208,8 +260,15 @@ test("static asset allowlist serves exactly the declared files and nothing via p
     for (const path of listStaticAssetPaths()) {
       const response = await fetch(`${running.baseUrl}${path}`);
       assert.equal(response.status, 200, `expected ${path} to serve`);
-      assert.match(response.headers.get("content-type") ?? "", /javascript/);
+      // The allowlist serves exactly two kinds of thing: the isomorphic render modules/app script,
+      // and the one committed brand image. Nothing else may be reachable under /static.
+      const expected = path.endsWith(".jpg") ? /image\/jpeg/ : /javascript/;
+      assert.match(response.headers.get("content-type") ?? "", expected, path);
     }
+    assert.deepEqual(
+      listStaticAssetPaths().filter((path) => !path.endsWith(".js") && !path.endsWith(".mjs")),
+      ["/static/brand/logo.jpg"],
+    );
     const traversal = await fetch(`${running.baseUrl}/static/../../package.json`);
     assert.notEqual(traversal.status, 200);
     const unknown = await fetch(`${running.baseUrl}/static/ui/does-not-exist.mjs`);
