@@ -11,7 +11,9 @@
           "apps/web/public/**",
           "apps/web/src/**",
           "packages/*/package.json",
-          "packages/*/src/**"
+          "packages/*/src/**",
+          "apps/web/fixtures/**",
+          "examples/agent-skills/**"
         ]
       }
     }
