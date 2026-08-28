@@ -177,10 +177,13 @@ const COMMIT_SHA_RE = /^[0-9a-f]{40}$/i;
  * neither is rejected here — and then rejected AGAIN by `assertRepositoryUrl` inside the
  * acquisition module, which is the enforcement that actually matters.
  */
-function repositoryUrlFromCatalog(stored: string): string | null {
+function repositoryUrlFromCatalog(stored: string, allowLocalFixtureRepository: boolean): string | null {
   const trimmed = stored.trim();
   if (GITHUB_HTTPS_RE.test(trimmed)) return trimmed.replace(/\.git$/, "");
   if (GITHUB_FULL_NAME_RE.test(trimmed)) return `https://github.com/${trimmed}`;
+  // Test-only, and only ever reachable when the caller ALSO passes the same flag down to
+  // `inspectSourceOnly`, which is where the production GitHub-only rule is actually enforced.
+  if (allowLocalFixtureRepository && trimmed.length > 0) return trimmed;
   return null;
 }
 
@@ -208,7 +211,11 @@ export interface VerificationTarget {
  * source pin, or a stored repository/commit that is not a usable exact GitHub reference). The
  * caller turns `null` into a refusal — there is deliberately no fallback that fetches anyway.
  */
-export async function resolveVerificationTarget(store: CatalogStore, resourceId: string): Promise<VerificationTarget | null> {
+export async function resolveVerificationTarget(
+  store: CatalogStore,
+  resourceId: string,
+  options: { readonly allowLocalFixtureRepository?: boolean } = {},
+): Promise<VerificationTarget | null> {
   const resource = await store.getResourceById(resourceId);
   if (!resource) return null;
 
@@ -224,7 +231,7 @@ export async function resolveVerificationTarget(store: CatalogStore, resourceId:
   const storedSubdirectory = claim?.sourceSubdirectory ?? version.sourceSubdirectory ?? null;
   if (storedRepository === null || storedCommit === null) return null;
 
-  const repositoryUrl = repositoryUrlFromCatalog(storedRepository);
+  const repositoryUrl = repositoryUrlFromCatalog(storedRepository, options.allowLocalFixtureRepository ?? false);
   if (repositoryUrl === null) return null;
   // AGENTS.md: immutable source revisions use exact commit SHAs, not mutable branches. A stored
   // ref that is not a full 40-hex commit is not verifiable, and is never resolved to a branch tip.
@@ -264,12 +271,13 @@ export interface VerificationTargetSummary {
 export async function listVerificationTargets(
   store: CatalogStore,
   resourceIds: readonly string[],
+  options: { readonly allowLocalFixtureRepository?: boolean } = {},
 ): Promise<VerificationTargetSummary[]> {
   const summaries: VerificationTargetSummary[] = [];
   for (const resourceId of resourceIds) {
     let target: VerificationTarget | null = null;
     try {
-      target = await resolveVerificationTarget(store, resourceId);
+      target = await resolveVerificationTarget(store, resourceId, options);
     } catch {
       target = null;
     }
@@ -383,7 +391,9 @@ export async function runVerifyTrigger(
 
   // 3. Catalog membership. A target that is not in the catalog is refused here, before any
   //    network or filesystem work — there is no branch below that fetches it anyway.
-  const target = await resolveVerificationTarget(store, request.resourceId);
+  const target = await resolveVerificationTarget(store, request.resourceId, {
+    allowLocalFixtureRepository: dependencies.allowLocalFixtureRepository,
+  });
   if (target === null) {
     throw new VerifyTriggerError(
       "no_verifiable_target",

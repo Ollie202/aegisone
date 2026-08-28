@@ -664,6 +664,7 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         const verificationTargets = await listVerificationTargets(
           catalogStore,
           library.entries.map((entry) => entry.resourceId),
+          { allowLocalFixtureRepository: options.verifyTestOverrides?.allowLocalFixtureRepository },
         );
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
         response.end(renderScanPageHtml({
