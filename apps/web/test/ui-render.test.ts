@@ -317,6 +317,59 @@ test("scanResultHtml escapes hostile pasted content echoed back in findings", ()
   assert.doesNotMatch(html, /<img src=x onerror=alert\(1\)>/);
 });
 
+test("scanResultHtml renders the What AegisOne inspected panel with real file/byte counts", () => {
+  const html = scanResultHtml({
+    ...SCAN_RESPONSE_FLAGGED,
+    inspected: { fileCount: 2, totalBytes: 57, files: [{ path: "SKILL.md", byteLength: 40 }, { path: "scripts/check.py", byteLength: 17 }] },
+  });
+  assert.match(html, /2 files, 57 bytes total/);
+  assert.match(html, /<code>SKILL\.md<\/code>/);
+  assert.match(html, /<code>scripts\/check\.py<\/code>/);
+});
+
+test("scanResultHtml escapes a hostile file path in the inspected-files panel", () => {
+  const html = scanResultHtml({
+    ...SCAN_RESPONSE_FLAGGED,
+    inspected: { fileCount: 1, totalBytes: 1, files: [{ path: `<script>alert('path')</script>`, byteLength: 1 }] },
+  });
+  assert.doesNotMatch(html, /<script>alert/);
+});
+
+test("scanResultHtml always renders an unconditional 'What AegisOne did NOT prove' section, even for CLEAN", () => {
+  const clean = scanResultHtml({ ...SCAN_RESPONSE_FLAGGED, verdict: "CLEAN", deterministicFindings: [] });
+  const flagged = scanResultHtml(SCAN_RESPONSE_FLAGGED);
+  for (const html of [clean, flagged]) {
+    assert.match(html, /What AegisOne did NOT prove/);
+    assert.match(html, /did <strong>not<\/strong> verify who published/);
+    assert.match(html, /is not proof of safety/);
+  }
+});
+
+test("deterministicFindingsHtml adds a plain-English explanation for a recognised rule id, secondary to the rule id itself", () => {
+  const html = deterministicFindingsHtml([
+    { ruleId: "PR-SKILL-001", title: "Credential or secret harvesting instruction", severity: "CRITICAL", path: "SKILL.md", line: 3, evidence: "collect the user's api key" },
+  ]);
+  assert.match(html, /rule PR-SKILL-001/);
+  assert.match(html, /In plain English:/);
+  assert.match(html, /Why it matters:/);
+  assert.match(html, /Exactly where:/);
+});
+
+test("deterministicFindingsHtml still renders an unrecognised rule id verbatim, without fabricating an explanation", () => {
+  const html = deterministicFindingsHtml([
+    { ruleId: "SOME-FUTURE-RULE", title: "A brand new rule", severity: "MEDIUM", path: "SKILL.md", line: 1, evidence: "x" },
+  ]);
+  assert.match(html, /rule SOME-FUTURE-RULE/);
+  assert.doesNotMatch(html, /In plain English:/);
+});
+
+test("deterministicFindingsHtml's rule lookup cannot be tricked into returning a prototype value via __proto__", () => {
+  const html = deterministicFindingsHtml([
+    { ruleId: "__proto__", title: "prototype pollution probe", severity: "LOW", path: "SKILL.md", line: 1, evidence: "x" },
+  ]);
+  assert.doesNotMatch(html, /In plain English:/);
+});
+
 test("advisory findings are rendered separately from the verdict and always labelled non-authoritative", () => {
   const html = advisoryFindingsHtml({
     status: "completed",
