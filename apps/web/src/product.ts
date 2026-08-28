@@ -517,7 +517,7 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         return;
       }
       if (request.method === "GET" && url.pathname === "/agents") {
-        // ADR-018: the connection instructions address the origin that actually served the page,
+        // ADR-019: the connection instructions address the origin that actually served the page,
         // so a local, preview, Railway or Vercel deployment each render themselves and never send
         // an agent to a host that is not this one. `resolveConnectOrigin` validates the
         // caller-controlled Host header and falls back to the configured public base URL when it

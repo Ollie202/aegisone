@@ -9,7 +9,7 @@ import { createProductRequestHandler } from "../src/product.ts";
 import { ADVERTISED_MCP_TOOLS, PRODUCTION_ORIGIN, renderAgentsPageHtml, resolveConnectOrigin } from "../src/pages/agents.ts";
 
 /**
- * PR 4/4 (ADR-018) regression suite for the FOR AGENTS page.
+ * PR 4/4 (ADR-019) regression suite for the FOR AGENTS page.
  *
  * The governing rule for this page is that it may never advertise a capability the running server
  * does not have. Three separate tests enforce that mechanically rather than by review:

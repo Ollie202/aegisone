@@ -225,7 +225,7 @@ test("the library state vocabulary never collapses the four facts into one verdi
 });
 
 /**
- * PR 4/4 (ADR-018) additions: the FOR AGENTS page is the one surface that tells a *machine* what
+ * PR 4/4 (ADR-019) additions: the FOR AGENTS page is the one surface that tells a *machine* what
  * AegisOne offers, so a wrong claim there is acted on rather than read. These assertions cover the
  * vocabulary and the script; `apps/web/test/agents-page.test.ts` covers set-equality with the live
  * server's registered tools.

@@ -1,4 +1,9 @@
-# ADR-017 — Audit Lab, plain-English reports, and deferring a public Package/Artifact Verification trigger
+# ADR-018 — Audit Lab, plain-English reports, and deferring a public Package/Artifact Verification trigger
+
+> **Renumbered from ADR-017 during PR 4/4's final reconciliation.** This document and
+> `docs/decisions/017-0g-evidence-publication-and-verified-library.md` were both accidentally
+> numbered 017 by the PR 2 and PR 3 agents. This file is the one that moved; its content and PR 2
+> decisions are unchanged.
 
 ## Status
 

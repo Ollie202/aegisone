@@ -2,7 +2,7 @@ import { escapeHtml } from "../ui/escape.mjs";
 import { renderLayoutHtml } from "./layout.ts";
 
 /**
- * FOR AGENTS — section 4 of the four-section IA (ADR-016), now the real thing (ADR-018, PR 4/4).
+ * FOR AGENTS — section 4 of the four-section IA (ADR-016), now the real thing (ADR-019, PR 4/4).
  *
  * ==========================================================================================
  * EVERYTHING ON THIS PAGE IS REAL, AND EVERY PAYLOAD IS VERBATIM

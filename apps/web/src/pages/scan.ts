@@ -43,7 +43,7 @@ const PLACEHOLDER = "Paste the contents of a SKILL.md (or any single skill file)
 /**
  * The four audit types AUDIT LAB presents (PR 2/4). Exactly one is live; the rest are explicitly
  * labelled upcoming rather than hidden or wired to a dead/fake result (AGENTS.md: never claim a
- * capability that cannot be proven). See `docs/decisions/017-audit-lab-and-package-verification-deferral.md`
+ * capability that cannot be proven). See `docs/decisions/018-audit-lab-and-package-verification-deferral.md`
  * for why Package/Artifact Verification — which IS fully built in `packages/skill-verification-link`
  * — has no public HTTP trigger in this PR.
  */
