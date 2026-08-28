@@ -17,10 +17,9 @@ Two more things needed resolving before this restructure could be called finishe
 
 1. **The project's own truth-tracking documents had drifted.** `PROJECT_STATE.md` and
    `planning/current-sprint.md` still described PR 2 as "open, not merged" and PR 1 as the only
-   completed step, when PR 1, 2, and 3 had each already been merged (as their own GitHub PRs) into
-   the next feature branch in the chain — `feature/skills-library-ia` → `feature/audit-lab` →
-   `feature/0g-publish-verified-library` → `feature/for-agents`. None of that work had reached
-   `main` yet, because each PR's *target* was the next branch in the chain, not `main` directly.
+   completed step, when PR 1, 2, and 3 (#51, #52, #53) had each already been merged into `main` as
+   their own GitHub PRs — every one of them targeting `main` directly. Verified with
+   `gh pr view <n> --json baseRefName,state` and `git log origin/main --merges`.
 2. **Two unrelated architecture decisions had both claimed ADR number 017.** The PR 2 agent wrote
    `docs/decisions/017-audit-lab-and-package-verification-deferral.md`; the PR 3 agent, working from
    a stale view of the decisions directory, independently wrote
