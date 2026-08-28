@@ -108,7 +108,17 @@ test("every HTTP endpoint printed on the page answers a real request", async () 
         path: printed.pathname.replace(":resourceId", resourceId).replace(":versionId", versionId),
       };
     });
-    assert.equal(advertised.length, 8, "expected the page to advertise all eight live endpoints");
+    assert.equal(advertised.length, 9, "expected the page to advertise all nine live endpoints");
+
+    /**
+     * `POST /api/v1/verify` is advertised and genuinely live, but calling it performs a real
+     * bounded `git clone` of a real repository. A unit test must not do that, and a fabricated
+     * request would only prove the 409 refusal path. It has its own dedicated end-to-end coverage
+     * over real HTTP — including real MATCH and MISMATCH outcomes — in
+     * `apps/web/test/package-verification.test.ts`, so it is exercised there rather than here.
+     * Its *presence* on the page is still asserted by the count above and by the route existing.
+     */
+    const EXERCISED_ELSEWHERE = new Set(["/api/v1/verify"]);
 
     const bodies: Record<string, unknown> = {
       "/mcp": { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
@@ -118,6 +128,7 @@ test("every HTTP endpoint printed on the page answers a real request", async () 
     };
 
     for (const endpoint of advertised) {
+      if (EXERCISED_ELSEWHERE.has(endpoint.path)) continue;
       const init: RequestInit = { method: endpoint.method };
       if (endpoint.method === "POST") {
         const body = bodies[endpoint.path];
