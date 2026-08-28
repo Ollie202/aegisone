@@ -115,8 +115,21 @@ export function canonicalEvidenceBadge(status, verifiedAt) {
  * stored — it says nothing about correspondence, safety, or the publisher.
  */
 export function zeroGStorageBadge(storageRoot) {
-  if (typeof storageRoot === "string" && storageRoot.trim() !== "") {
-    return badge("info", "◆", "ON 0G STORAGE", "Canonical evidence for this resource has a recorded 0G Storage root. This locates the evidence; it is not itself a verdict.");
+  // Two independent guards, because this module is isomorphic and is also served to the browser:
+  //
+  //  1. Server-side, `assembleTrustEvidence` has ALREADY nulled `canonicalEvidence.storageRoot`
+  //     unless `checkStoragePublicationIntegrity` passed, so a root reaching here has been
+  //     re-checked against the canonical evidence manifest it is bound into.
+  //  2. Defence in depth for any other caller: a truthy string is not enough. The value must be a
+  //     structurally valid, non-zero 32-byte root. An arbitrary string like "yes" or "true" can
+  //     never render this badge.
+  //
+  // Neither guard can prove the root exists on 0G — only 0G can. That is why the Evidence Passport
+  // renders the root itself alongside its public pointer rather than asking anyone to trust a badge.
+  const isStructurallyValidRoot =
+    typeof storageRoot === "string" && /^0x[0-9a-fA-F]{64}$/.test(storageRoot.trim()) && !/^0x0+$/.test(storageRoot.trim());
+  if (isStructurallyValidRoot) {
+    return badge("info", "◆", "ON 0G STORAGE", "Canonical evidence for this resource has a recorded, integrity-checked 0G Storage root. This locates the evidence; it is not itself a verdict.");
   }
   return badge("neutral", "–", "NOT STORED ON 0G", "No 0G Storage root is recorded. That is missing evidence, not a finding against this resource.");
 }

@@ -17,6 +17,7 @@ import {
   correspondenceBadge,
   securityBadge,
   canonicalEvidenceBadge,
+  zeroGStorageBadge,
   freshnessLabel,
 } from "./badges.mjs";
 
@@ -147,8 +148,14 @@ export function canonicalEvidenceSectionHtml(resource) {
     ${hashCell("Canonical evidence SHA-256", evidence.sha256)}
     ${fieldRow("Verified at", escapeHtml(evidence.verifiedAt ?? "unavailable"))}
     ${fresh ? fieldRow("Freshness", escapeHtml(fresh)) : ""}
+    ${fieldRow("0G Storage", zeroGStorageBadge(evidence.storageRoot))}
     ${hashCell("0G Storage root", evidence.storageRoot)}
     ${fieldRow("Registry record", evidence.registryRecordId ? `<code class="hashValue" title="${escapeHtml(evidence.registryRecordId)}">${escapeHtml(shortHash(evidence.registryRecordId))}</code>` : "unavailable")}
+    <p class="passportNote">${
+      evidence.storageRoot
+        ? "This root passed AegisOne's publication integrity re-check: the canonical evidence digest above recomputes from this resource&rsquo;s own evidence with this exact root bound into it. That proves the pair is coherent — it does not prove the root exists on 0G, which only 0G can answer. Check it against the network rather than against this page."
+        : "No 0G Storage root is recorded for this resource. That is missing evidence about where evidence lives, not a finding against the resource."
+    }</p>
   </details>`;
 }
 

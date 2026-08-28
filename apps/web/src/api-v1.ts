@@ -466,6 +466,20 @@ export async function buildEvidenceResponse(store: CatalogStore, resourceId: str
   const capabilityVerifications = verifications.map((verification) => {
     const issues = validateNewCapabilityVerification(verification);
     const integrityCheckPassed = issues.length === 0;
+    /**
+     * The publication pointers get their OWN gate, separately from structural validity.
+     *
+     * Structural validation cannot detect a fabricated publication: a row can be perfectly
+     * well-formed and still carry a storage root for an upload that never happened. Only
+     * `checkStoragePublicationIntegrity` — which recomputes the canonical evidence manifest that
+     * the root is bound into — can. Without this, the evidence-history endpoint would serve a
+     * forged root that `GET /api/v1/resources/:id` correctly refuses, and the two surfaces would
+     * disagree about the same row (regression: `zerog-publication-hostile.test.ts`).
+     */
+    const publication = integrityCheckPassed
+      ? checkStoragePublicationIntegrity(verification, PUBLICATION_NETWORK)
+      : ({ ok: false, reason: "NO_PUBLICATION_RECORDED" } as const);
+    const publicationOk = publication.ok;
     return {
       id: verification.id,
       artifactKind: verification.artifactKind,
@@ -478,14 +492,19 @@ export async function buildEvidenceResponse(store: CatalogStore, resourceId: str
       securityHighestSeverity: integrityCheckPassed ? verification.securityHighestSeverity : null,
       securityFindingCount: integrityCheckPassed ? verification.securityFindingCount : null,
       canonicalEvidenceSha256: integrityCheckPassed ? verification.canonicalEvidenceSha256 : null,
-      storageRoot: integrityCheckPassed ? verification.storageRoot : null,
-      storageTransaction: integrityCheckPassed ? verification.storageTransaction : null,
-      registryContract: integrityCheckPassed ? verification.registryContract : null,
-      registryRecordId: integrityCheckPassed ? verification.registryRecordId : null,
-      registryTransaction: integrityCheckPassed ? verification.registryTransaction : null,
+      // Every 0G pointer below is gated on the publication check, not merely on structural
+      // validity. A row that fails it reports its pointers as absent — the honest statement that
+      // AegisOne holds no publication it is willing to stand behind for this row.
+      storageRoot: publicationOk ? verification.storageRoot : null,
+      storageTransaction: publicationOk ? verification.storageTransaction : null,
+      registryContract: publicationOk ? verification.registryContract : null,
+      registryRecordId: publicationOk ? verification.registryRecordId : null,
+      registryTransaction: publicationOk ? verification.registryTransaction : null,
       verifiedAt: integrityCheckPassed ? verification.verifiedAt : null,
       createdAt: verification.createdAt,
       integrityCheckPassed,
+      /** Explicit, so a consumer can tell "never published" from "published but unverifiable". */
+      publicationIntegrityCheckPassed: publicationOk,
     };
   });
 
