@@ -112,6 +112,9 @@ Reuse existing M7 package protections wherever possible.
 - source claim creation/authentication alone does not automatically spend 0G;
 - verification jobs require server-side authorization and explicit supported artifact family;
 - rate limit by authenticated claim/user/session plus global concurrency caps;
+- for the public ADR-020 verification trigger specifically: the caller cannot name a target at all
+  (catalog `resourceId` only), plus a dedicated strict rate limit and a concurrency cap of one —
+  see "Package verification limits (ADR-020)" below;
 - hard per-job budget/deposit caps;
 - queue jobs, don't spawn unlimited concurrent sandboxes;
 - no generic public `/verify-any-url` endpoint.
@@ -337,6 +340,50 @@ verification concurrency:            1–2 on current budget
 ```
 
 If existing repository limits are stricter, keep the stricter value unless the issue explicitly requires expansion.
+
+## Package verification limits (ADR-020)
+
+`POST /api/v1/verify` is a public, unauthenticated entry point that performs real bounded work: an
+exact-commit `git clone` plus (where a distinct distributed artifact is recorded) a bounded HTTPS
+download. Threat M8-005 applies directly, and the mitigation is structural before it is numeric.
+
+**The structural control.** The request body carries a catalog `resourceId` and nothing else. No
+repository, no commit, no URL, no subdirectory. Every network target is read back out of the named
+resource's own recorded source claim or version source pin, and must normalize to
+`https://github.com/<owner>/<repo>` at a full 40-hex commit SHA. A `resourceId` that is not in the
+catalog is refused before any network or filesystem work. The reachable surface is therefore the
+curated catalog, not the open internet.
+
+```text
+max verify request body:                        4 KiB
+verifications per client per hour:              3
+concurrent verifications per process:           1
+clone timeout:                                  60 s   (unchanged, packages/skill-verification-link)
+distribution download timeout:                  10 s   (unchanged)
+max distribution artifact:                      20 MiB (unchanged)
+max distribution redirects:                     3      (unchanged)
+```
+
+Rules, non-negotiable:
+
+- the rate limiter is a dedicated instance shared with no other route — a real clone must never
+  draw on the Tier-1 paste-to-scan cheap-read budget (60 per 10 minutes);
+- the M8.6 `VerificationConcurrencyLimiter` caps in-flight work at one; a second simultaneous
+  request is refused (`429 verification_in_progress`), never queued unboundedly;
+- the M8.6 brand-gated `VerificationAuthorization` still runs for real: the app mints one from a
+  per-process random token whose digest it holds. The gate is not bypassed or weakened;
+- every SSRF / private-address / size / timeout / redirect / archive protection in
+  `distribution-fetch.ts` and `source-acquisition.ts` is in force unmodified;
+- a deployment may additionally require an operator bearer token
+  (`AEGISONE_VERIFY_OPERATOR_TOKEN_SHA256`), checked constant-time BEFORE the rate limiter and
+  before any store read;
+- the route spends no 0G and never contacts the worker or the signer. Publication stays the
+  separate operator-gated `POST /api/v1/publish`;
+- nothing discovered or fetched is ever installed or executed.
+
+**Known limitation.** The limiter and the concurrency cap are per-process and in-memory, exactly
+like the paste-to-scan limiter. Behind multiple instances they bound each instance, not the fleet.
+The catalog scoping, not the limiter, is the load-bearing control.
 
 ## Paste-to-scan limits (new feature)
 

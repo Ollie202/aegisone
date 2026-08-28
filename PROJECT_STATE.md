@@ -715,7 +715,8 @@ section rendered on every result regardless of verdict (Threat M8-019: no findin
 safety, CLEAN included).
 
 **Package/Artifact Verification (M8.6's `packages/skill-verification-link`, fully built) was
-deliberately left without a public HTTP trigger in this PR.** After inspecting
+deliberately left without a public HTTP trigger in this PR — a deferral since resolved; see
+"Package / Artifact Verification — LIVE (ADR-020)" below.** After inspecting
 `authorization.ts`/`enrichment.ts`, its brand-gated `VerificationAuthorization` only has a
 worker/admin-token authorization path today — nothing provisions an end-user-facing catalog-only
 selection flow, an independently-stricter rate limiter, or a real (non-fixture-local)
@@ -734,18 +735,95 @@ The library also grew with two real, well-formed Agent Skill fixtures
 (`apps/web/src/library-seed-fixtures.ts`, seeded alongside the PR 1 cookbook entry):
 
 - **`clean-review`** (`examples/agent-skills/clean-review/`) — real canonical package SHA-256
-  `e1b8847a0fff87cf3a4d69c22fa6c758603d1b7b913a74a5f2ad3e5326165454`, format-valid, genuine
+  `5bf754ab6273fadfb7fe358d9b41a8ef15160dbe7e7efb0df4c63cf780db0434`, format-valid, genuine
   `INFO`/0-finding audit.
 - **`malicious-sync`** (`examples/agent-skills/malicious-sync/`) — real canonical package SHA-256
-  `b921d9660586cd195da069d882a761d105c819eac18aad197d73012a392fbc31`, format-valid, genuine
+  `1b7100fbe4b58bedcc00f83067e60fffd124fce506703cea1a72aaafbc430799`, format-valid, genuine
   `CRITICAL`/8-finding audit spanning all seven deterministic rule ids (PR-SKILL-001..007).
 
+(Both digests are the values `apps/web/test/library-seed-fixtures.test.ts` pins and that an
+independent clone of the pinned commit reproduces; the two literals previously recorded here were
+stale and have been corrected.)
+
 Both are labelled `aegisone-repository-fixture` in discovery metadata (never a third-party
-discovery) and carry `sourceAssurance: NONE` / `sourceInspection: NOT_RUN` /
-`correspondence: NOT_EVALUATED` — they are inline files in this repository, not a claimed external
-repository/commit, so only `security` carries real evidence for either.
+discovery). As of ADR-020 each now also carries a **`DECLARED`** source claim pinning the exact
+immutable commit its bytes live at in this repository, so package verification has a real target;
+`sourceInspection` still starts `NOT_RUN` and `correspondence` stays `NOT_EVALUATED` (there is no
+distinct *distributed* artifact for either, only the source files), so only `security` carries real
+evidence at seed time.
 
 PR 2/4 (Audit Lab, ADR-016 sections 2/4) is merged (PR #52).
+
+
+## Package / Artifact Verification — LIVE (ADR-020)
+
+Branch `feature/package-verification`. ADR
+`docs/decisions/020-package-artifact-verification-public-trigger.md`, which supersedes section 3
+of ADR-018.
+
+The Audit Lab's second audit type is now genuinely live. `POST /api/v1/verify` reaches the
+unmodified M8.6 engine (`packages/skill-verification-link`) for the first time.
+
+**The gating design, and why it is defensible.** The route is public and unauthenticated by
+default, because the caller cannot name a target: the body carries a catalog `resourceId` and
+nothing else — no repository, no commit, no URL, no subdirectory. Every network target is read back
+out of that resource's own recorded source claim (or its recorded version source pin), must
+normalize to `https://github.com/<owner>/<repo>`, and must be a full 40-hex commit SHA. A
+`resourceId` that is not in the catalog is refused (`409 no_verifiable_target`) before any network
+or filesystem work. The reachable surface is the curated catalog, not the open internet.
+
+Four gates, all of which must pass: an optional operator-token lock
+(`AEGISONE_VERIFY_OPERATOR_TOKEN_SHA256`, checked constant-time before the rate limiter and before
+any store read); a dedicated strict rate limit of 3 runs per client per hour shared with no other
+route; the existing `VerificationConcurrencyLimiter` capped at one; and the existing brand-gated
+`VerificationAuthorization`, minted from a per-process `randomBytes(32)` token whose digest the app
+holds — so the gate genuinely runs rather than being short-circuited. Every M8.6 SSRF / size /
+timeout / redirect / archive protection stays in force unmodified.
+
+**What is proven, with real material.** `apps/web/test/package-verification.test.ts` drives the
+real dispatcher over real HTTP against a throwaway local Git repository and a `127.0.0.1`
+distribution server (no network egress, no 0G call, no secret — the same bounded shape
+`packages/skill-verification-link/test/integration-fixture.test.ts` established) and asserts: a real
+`MATCH` from a distributed artifact that genuinely equals the exact-commit reproduction; a real
+`MISMATCH` from a substituted one, with two genuinely different digests; source-only staying
+`INSPECTED`/`NOT_EVALUATED` with both digests `null`; caller-supplied repository/commit/URL fields
+being inert; the rate limit and the concurrency cap; the operator lock; and the explicit
+`503 source_acquisition_unavailable` refusal where the runtime has no `git`.
+`apps/web/scripts/verify-demo.ts` prints the same four outcomes as raw JSON for inspection.
+
+A **live** run against the real public repository was also performed locally against
+`github.com/Ollie202/aegisone` at the pinned commit `eeac27076bbd98f99a147f51004d8ce07afad331`:
+`clean-review` reproduced `5bf754ab6273fadfb7fe358d9b41a8ef15160dbe7e7efb0df4c63cf780db0434` and
+`malicious-sync` reproduced `1b7100fbe4b58bedcc00f83067e60fffd124fce506703cea1a72aaafbc430799` —
+byte-for-byte the digests this repository has pinned since PR 2, from an independent clone. Both
+recorded `INSPECTED` / `NOT_EVALUATED` (no distinct distributed artifact exists for a repository
+fixture) with real `INFO`/0 and `CRITICAL`/8 audit results respectively. The 4th request in an hour
+returned `429 rate_limited`, as designed.
+
+**Invariants, unchanged and re-pinned.** Source-only still cannot emit `MATCH`/`MISMATCH` — that is
+structural in `enrichment.ts` (no `publisherEntries` in scope, no reference to
+`verifySkillPackages` in that branch) and the trigger additionally refuses
+(`500 correspondence_without_distribution`) if it ever saw such a result;
+`apps/web/test/m8-11-hostile-full-stack.test.ts` now drives a deliberately compromised engine to
+prove that refusal writes nothing. `MATCH` always rests on two genuinely distinct acquisitions.
+Every run appends a new `capability_verifications` row and never revises a prior verdict. No 0G
+pointer is produced — publication remains the separate funded operator-gated act.
+
+**Honest limits.**
+
+- Exact-commit acquisition needs a `git` binary. Where the runtime has none the route answers
+  `503 source_acquisition_unavailable` and the Audit Lab says so up front; it never substitutes a
+  different acquisition mechanism. Railway `proofrail-app` and local runs have `git`; whether a
+  given Vercel deployment does is answered at runtime by the probe, not asserted here.
+- The rate limiter and concurrency cap are per-process and in-memory, like the paste-to-scan
+  limiter. Behind multiple instances they bound each instance, not the fleet. Catalog scoping, not
+  the limiter, is the load-bearing control.
+- A poisoned catalog row could direct a clone at a repository AegisOne did not intend. Catalog
+  writes are not a public surface and the target must still be a GitHub repository at an exact
+  commit, but the scoping argument is only as strong as the catalog.
+- Smart Contract Audit and MCP / Agent Capability Audit remain unimplemented and honestly labelled.
+
+No 0G spend, no worker change, and no mainnet transaction were part of this work.
 
 ### PR 3/4 — 0G publish path + Verified Library — merged (PR #53); LIVE RUN STILL PENDING
 
