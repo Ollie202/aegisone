@@ -95,9 +95,11 @@ export function renderScanPageHtml(state: ScanPageState): string {
   `;
 
   return renderLayoutHtml({
-    title: "Paste-to-scan — AegisOne Hub",
-    activeNav: "scan",
+    title: "Audit a skill — AegisOne",
+    // AUDIT is section 2 of the four-section IA (ADR-016). This one page is served at both
+    // `/audit` (its nav home) and the original `/scan` URL, which keeps working unchanged.
+    activeNav: "audit",
     bodyHtml: body,
-    scriptTag: `<script type="module" src="/static/app.js" data-page="scan"></script>`,
+    scriptTag: `<script type="module" src="/static/app.js" data-page="audit"></script>`,
   });
 }

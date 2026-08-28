@@ -31,26 +31,31 @@ import type { AdvisoryScanTransport } from "../../../packages/compute-0g/src/ind
 import { renderSkillVerificationHtml } from "./render-skill.ts";
 import { renderVerificationHtml } from "./render.ts";
 import { isStaticAssetPath, serveStaticAsset } from "./static-assets.ts";
-import { renderHubPageHtml } from "./pages/hub.ts";
+import { renderSkillsPageHtml } from "./pages/skills.ts";
+import { renderVerifiedPageHtml } from "./pages/verified.ts";
+import { renderAgentsPageHtml } from "./pages/agents.ts";
 import { renderResourcePageHtml, renderResourceNotFoundHtml } from "./pages/resource.ts";
 import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
 import { renderScanPageHtml } from "./pages/scan.ts";
 import { seedDemoCatalog, type DemoSeedResult } from "./demo-seed.ts";
+import { SkillLibraryLoader, type SkillLibrary } from "./library.ts";
+import {
+  M5_MAINNET_RECORD,
+  M5_MAINNET_REGISTRY,
+  M5_MAINNET_TX,
+  M5_STORAGE_ROOT,
+  M5_STORAGE_TX,
+  M7_GALILEO_RECORD,
+  M7_GALILEO_TX,
+  M7_SKILL_DIGEST,
+  M7_SKILL_TAMPER_DIGEST,
+  M7_SOURCE_COMMIT,
+  M7_STORAGE_ROOT,
+  M7_STORAGE_TX,
+  SOFTWARE_DIGEST,
+  SOFTWARE_TAMPER_DIGEST,
+} from "./live-evidence.ts";
 
-const SOFTWARE_DIGEST = "9978d500ee45216cb6c93b886857100ce95b63f6135dd339ace7ff533d9aa154";
-const SOFTWARE_TAMPER_DIGEST = "d5318963f53126b4c4bd448bffca222a8e08f068764e379516fc0ad3bd1f8889";
-const M5_STORAGE_ROOT = "0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181";
-const M5_STORAGE_TX = "0x3441077c159edec59e7af7e73a9fb74e8bca9d17a7b5f536d67712fdc7b4cdf6";
-const M5_MAINNET_REGISTRY = "0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4";
-const M5_MAINNET_RECORD = "0xef2c77f9c39b77ce12328a404afcde9e935761a2d4fc9dfedff1f3b873f3ce4e";
-const M5_MAINNET_TX = "0xeffe42c509522cbdb4c434022d5e2fbf58eaf42981ae491570af6373391826ac";
-const M7_SOURCE_COMMIT = "2f193aad92d2f807c2e25f67eb28c5090fa945cf";
-const M7_SKILL_DIGEST = "fb33d14404f6b4b88666af027b9a22484d0df468e3c8343a1169358c2b78e878";
-const M7_SKILL_TAMPER_DIGEST = "da2f61f4da0662b6f05964834a95b7cfe0dbccb5eb69a3794e0e332ee12e54eb";
-const M7_STORAGE_ROOT = "0x8253719512604d9de7421d59ccba3a3a6a7501cd688f2615f0c3a62a16c4fe66";
-const M7_STORAGE_TX = "0x59a63ddf1d2d985b947e7829ec6a47c19760870ed066558123cf817d19fe063d";
-const M7_GALILEO_RECORD = "0x7d69de55eee666bb1d3f63ab2f7e3cc07c9097297f24b77281b958cf14d6ea7a";
-const M7_GALILEO_TX = "0xd274b52a05ca026b85836cefd28277fe7b87f3e0924f806d45f866671bb158db";
 const DEFAULT_PUBLIC_BASE_URL = "https://proofrail-app-production.up.railway.app";
 
 export interface ProductRequestHandlerOptions {
@@ -322,6 +327,19 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
     return demoSeedPromise;
   }
 
+  // ADR-016 SKILLS section: the human skill library, lazily seeded on first access exactly like
+  // the demo fixture above, and reading its evidence back through the same `loadAssembledResource`
+  // path `/api/v1/resources/:id` uses. A seeding/loading failure degrades to an empty library —
+  // never to fabricated rows.
+  const libraryLoader = new SkillLibraryLoader(catalogStore);
+  async function loadLibrarySafely(): Promise<SkillLibrary> {
+    try {
+      return await libraryLoader.load();
+    } catch {
+      return { entries: [], counts: {}, categories: [] };
+    }
+  }
+
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
       const base = `http://${request.headers.host ?? "localhost"}`;
@@ -390,13 +408,33 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
           }
         }
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        response.end(renderHubPageHtml({
+        response.end(renderSkillsPageHtml({
           query,
           searchResponse,
           searchError,
+          library: await loadLibrarySafely(),
           demoAvailable: wantsDemo && demoResourceId !== null,
           demoResourceId,
         }));
+        return;
+      }
+
+      // ADR-016 sections 3 and 4. Both are real, working pages today — see their module headers
+      // for exactly which parts are live and which are explicitly still to come.
+      if (request.method === "GET" && url.pathname === "/verified") {
+        let demoResourceId: string | null = null;
+        try {
+          demoResourceId = (await ensureDemoSeeded()).resourceId;
+        } catch {
+          demoResourceId = null;
+        }
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderVerifiedPageHtml({ demoResourceId }));
+        return;
+      }
+      if (request.method === "GET" && url.pathname === "/agents") {
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(renderAgentsPageHtml({ publicBaseUrl, advisoryConfigured: zeroGComputeConfig !== null }));
         return;
       }
 
@@ -430,7 +468,9 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
       // Paste-to-scan page: the human-facing surface for the same `POST /api/v1/scan` service the
       // `aegisone_scan` MCP tool calls. Read-only SSR shell; the submit itself is a browser
       // `fetch` to that route (see `apps/web/public/app.js`).
-      if (request.method === "GET" && url.pathname === "/scan") {
+      // ADR-016 section 2 (AUDIT). `/audit` is its nav home; `/scan` is the original URL and keeps
+      // working byte-identically so nothing that already links to it breaks.
+      if (request.method === "GET" && (url.pathname === "/audit" || url.pathname === "/scan")) {
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
         response.end(renderScanPageHtml({ advisoryConfigured: zeroGComputeConfig !== null }));
         return;

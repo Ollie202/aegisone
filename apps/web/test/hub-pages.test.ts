@@ -46,13 +46,13 @@ async function stopServer(server: Server): Promise<void> {
   await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
 }
 
-test("GET / renders the Hub search page in the ADR-015 visual language and is readable without JavaScript", async () => {
+test("GET / renders the SKILLS page in the ADR-015 visual language and is readable without JavaScript", async () => {
   const running = await startServer();
   try {
     const response = await fetch(`${running.baseUrl}/`);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /What capability does your/);
+    assert.match(html, /Browse skills\. See what/);
     assert.match(html, /search-form/);
     // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
     assert.match(html, /--paper:#f7f5ef/);
@@ -94,20 +94,157 @@ test("the nav brand mark and favicon are the real committed logo file, served sa
   }
 });
 
-test("GET / shows no result rows at all until a search has actually run", async () => {
+test("GET / shows the real catalog library but no search result rows until a search has run", async () => {
   const running = await startServer();
   try {
     const seeded = await seedDemoCatalog(running.catalogStore);
     assert.ok(seeded.resourceId);
     const response = await fetch(`${running.baseUrl}/`);
     const html = await response.text();
-    // No fixture/demo rows may be presented as live search output on first load.
+    // The library renders real catalog rows...
+    assert.match(html, /id="library-region"/);
+    assert.match(html, /class="libRow/);
+    assert.match(html, /Playful Neo-Brutalist Web Design/);
+    // ...but nothing is presented as live *search* output before a search has actually run.
     assert.doesNotMatch(html, /class="resultCard/);
-    assert.doesNotMatch(html, /Pull Request Reviewer/);
-    assert.match(html, /id="search-empty-state"/);
-    assert.match(html, /No search yet/);
-    // Example *queries* are offered instead, and they are clickable queries, not results.
+    assert.match(html, /<div id="search-results"><\/div>/);
+    // Example *queries* are offered, and they are clickable queries, not results.
     assert.match(html, /class="pill exampleChip" data-example="Review a pull request"/);
+    // The live federated strip must not be pre-populated by the server either.
+    assert.match(html, /Not loaded yet\. Nothing is shown here until a real federated query/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("the ARD protocol fixtures back /search but can never appear in the human library", async () => {
+  const running = await startServer();
+  try {
+    const html = await (await fetch(`${running.baseUrl}/`)).text();
+    // The four pinned ARD fixtures are protocol-conformance data, not library content. This is the
+    // exact "full of demo data" failure mode the four-section restructure exists to remove.
+    for (const fixture of [
+      "Pull Request Reviewer",
+      "Weather Observer MCP Server",
+      "Travel Planning A2A Agent",
+      "Invoice Extraction API",
+    ]) {
+      assert.doesNotMatch(html, new RegExp(fixture), `ARD fixture leaked into the human library: ${fixture}`);
+    }
+
+    // ...while still backing the ARD protocol surface completely unchanged.
+    const search = await fetch(`${running.baseUrl}/search`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: { text: "review my pull request" } }),
+    });
+    assert.equal(search.status, 200);
+    const json = (await search.json()) as { results: Array<{ displayName: string }> };
+    assert.ok(
+      json.results.some((result) => result.displayName === "Pull Request Reviewer Skill"),
+      "the pinned ARD fixture catalog must still back POST /search",
+    );
+
+    const manifest = await fetch(`${running.baseUrl}/.well-known/ai-catalog.json`);
+    assert.equal(manifest.status, 200);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("every library entry shows its real independent dimensions, with unknowns rendered as unknown", async () => {
+  const running = await startServer();
+  try {
+    const html = await (await fetch(`${running.baseUrl}/`)).text();
+    // The seeded cookbook skill's genuine state, each dimension rendered separately.
+    assert.match(html, /INDEXED — discovery only/);
+    assert.match(html, /NOT A VALID SKILL PACKAGE \(missing_skill_md\)/); // real failing validation
+    assert.match(html, /INFO · 0 findings/); // real audit result
+    assert.match(html, /NOT EVALUATED/); // correspondence: no distinct distributed artifact
+    assert.match(html, /DECLARED/); // never REPOSITORY_AUTHENTICATED
+    assert.match(html, /NO CANONICAL EVIDENCE/);
+    assert.match(html, /NOT STORED ON 0G/);
+    // The genuinely-known facts are shown as real values (see skill-card.test.ts for the
+    // unknown-renders-as-"unknown" rule, which needs an entry with a missing field).
+    assert.match(html, /1471116222dfe959f091f3d5818993edd968d57c/); // exact source commit
+    assert.match(html, /Ollie202/); // author, from the declared repository owner
+    // No collapsed verdict badge anywhere: never a generic SAFE/TRUSTED chip.
+    assert.doesNotMatch(html, /badge[^>]*>\s*(SAFE|TRUSTED)\b/i);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("all four primary nav sections resolve, and Claim/proof stay reachable without being in nav", async () => {
+  const running = await startServer();
+  try {
+    for (const path of ["/", "/audit", "/verified", "/agents"]) {
+      const response = await fetch(`${running.baseUrl}${path}`);
+      assert.equal(response.status, 200, `primary nav route ${path} must not 404`);
+      const html = await response.text();
+      // Every page carries the same four-item primary nav and nothing else.
+      assert.match(html, /href="\/audit"/);
+      assert.match(html, /href="\/verified"/);
+      assert.match(html, /href="\/agents"/);
+      // Claim is deliberately NOT in primary nav any more. Check the nav block itself, since
+      // `/source/claim` still legitimately appears later in the document (footer).
+      const railNav = html.match(/<ul class="railNav">([\s\S]*?)<\/ul>/)?.[1] ?? "";
+      assert.ok(railNav.length > 0, "expected a primary nav rail");
+      assert.doesNotMatch(railNav, /\/source\/claim/);
+      assert.doesNotMatch(railNav, /\/proof/);
+      assert.equal((railNav.match(/<li>/g) ?? []).length, 4, "primary nav must be exactly four items");
+      // ...but both removed destinations stay reachable from the footer.
+      assert.match(html, /class="footerLinks"[\s\S]*?href="\/proof"/);
+      assert.match(html, /class="footerLinks"[\s\S]*?href="\/source\/claim"/);
+    }
+
+    // The routes themselves still work by direct URL — no M8.5 code was removed.
+    for (const path of ["/source/claim", "/proof", "/scan"]) {
+      assert.equal((await fetch(`${running.baseUrl}${path}`)).status, 200, `${path} must still work`);
+    }
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("GET /verified states the limits of MATCH and links only to things that actually work", async () => {
+  const running = await startServer();
+  try {
+    const html = await (await fetch(`${running.baseUrl}/verified`)).text();
+    assert.match(html, /MATCH does not mean safe/);
+    assert.match(html, /requires a distinct distributed artifact/);
+    assert.match(html, /Indexed is not verified/i);
+    // Real recorded 0G anchors, not placeholders.
+    assert.match(html, /0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181/);
+    assert.match(html, /0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4/);
+    // The unbuilt part is stated plainly rather than mocked up.
+    assert.match(html, /Not built yet/);
+    assert.match(html, /will not fake it with an empty grid/);
+    // The TEE boundary is never overstated.
+    assert.match(html, /does not claim TEE output binding/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("GET /agents lists the real live endpoints and the tools that deliberately do not exist", async () => {
+  const running = await startServer();
+  try {
+    const html = await (await fetch(`${running.baseUrl}/agents`)).text();
+    for (const tool of ["aegisone_search", "aegisone_inspect", "aegisone_evaluate", "aegisone_scan"]) {
+      assert.match(html, new RegExp(tool), `missing real MCP tool: ${tool}`);
+    }
+    for (const denied of ["aegisone_install", "aegisone_execute", "aegisone_sign"]) {
+      assert.match(html, new RegExp(denied), `missing denied-tool disclosure: ${denied}`);
+    }
+    // Endpoints are addressed against this deployment's own base URL.
+    assert.match(html, /POST https:\/\/aegisone\.example\/mcp/);
+    assert.match(html, /POST https:\/\/aegisone\.example\/api\/v1\/policy\/evaluate/);
+    assert.match(html, /No public route installs, executes or signs anything/);
+
+    // And the endpoint it advertises really is live.
+    const mcp = await fetch(`${running.baseUrl}/mcp`, { method: "GET" });
+    assert.equal(mcp.status, 405, "GET /mcp is a documented 405; the POST transport is the live one");
   } finally {
     await stopServer(running.server);
   }
@@ -224,7 +361,20 @@ test("GET /scan renders the paste-to-scan page with the real verdict vocabulary 
     // The page must state the structural limits of a paste rather than implying source evidence.
     assert.match(html, /not a safety guarantee/);
     assert.match(html, /no claimed publisher/);
-    assert.match(html, /data-page="scan"/);
+    assert.match(html, /data-page="audit"/);
+  } finally {
+    await stopServer(running.server);
+  }
+});
+
+test("/audit and /scan serve the identical page, so no existing link to /scan breaks", async () => {
+  const running = await startServer();
+  try {
+    const audit = await (await fetch(`${running.baseUrl}/audit`)).text();
+    const scan = await (await fetch(`${running.baseUrl}/scan`)).text();
+    assert.equal(audit, scan);
+    // AUDIT is the highlighted primary-nav section for both URLs.
+    assert.match(audit, /href="\/audit" class="active" aria-current="page"/);
   } finally {
     await stopServer(running.server);
   }
@@ -282,11 +432,27 @@ test("no page response anywhere contains a bare \"verified\":true or generic SAF
   const running = await startServer();
   try {
     const seeded = await seedDemoCatalog(running.catalogStore);
-    const paths = ["/", "/proof", "/source/claim", "/scan", `/resources/${seeded.resourceId}`];
+    const paths = [
+      "/",
+      "/audit",
+      "/verified",
+      "/agents",
+      "/proof",
+      "/source/claim",
+      "/scan",
+      `/resources/${seeded.resourceId}`,
+    ];
     for (const path of paths) {
       const response = await fetch(`${running.baseUrl}${path}`);
       const html = await response.text();
       assert.doesNotMatch(html, /"verified"\s*:\s*true/i, path);
+      assert.doesNotMatch(html, /"safe"\s*:\s*true/i, path);
+      // No generic SAFE/TRUSTED badge and no invented numeric trust score, on any page.
+      // (The phrase "trust score" is allowed in prose that *denies* having one — e.g. the footer's
+      // "never collapsed into one trust score" — so this targets the rendered badge/value shapes.)
+      assert.doesNotMatch(html, /badge[^>]*>\s*(SAFE|TRUSTED)\b/i, path);
+      assert.doesNotMatch(html, /"(trustScore|safetyScore|overallScore)"/i, path);
+      assert.doesNotMatch(html, /(trust|safety|overall)\s+score\s*[:=]\s*\d/i, path);
     }
   } finally {
     await stopServer(running.server);
