@@ -487,6 +487,10 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
             response.end(JSON.stringify({ error: "invalid_request", message: "resourceId is required" }));
             return;
           }
+          // Ensure the library's resources actually exist in the catalog before looking one up.
+          // Seeding is lazy (first `/` or `/verified` hit), so without this a publish issued
+          // before any page view would report "resource not found" for a resource that does exist.
+          await loadLibrarySafely();
           const header = request.headers.authorization;
           const operatorToken = typeof header === "string" ? /^Bearer\s+(.+)$/i.exec(header.trim())?.[1]?.trim() ?? null : null;
           const result = await runPublishTrigger(catalogStore, {
