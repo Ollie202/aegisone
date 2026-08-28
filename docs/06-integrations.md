@@ -194,6 +194,29 @@ AegisOne has already live-proven upload, proof-enabled retrieval and exact byte 
 
 M8 reuses this path for selected verification jobs; it does not upload every discovery result.
 
+### Evidence publication path (ADR-017)
+
+`packages/evidence-publish` wires this proven transport to a real trigger for the first time. The
+publication is two-phase and the order is load-bearing:
+
+1. the evidence bundle (exact artifact package bytes + canonical audit report + evidence facts) is
+   canonically serialized and uploaded through `performStorageRoundTrip`, which already re-downloads
+   with `proof: true` and asserts exact-byte equality — no root is returned unless the exact bytes
+   were proven retrievable;
+2. the canonical evidence manifest is built over those facts **plus the returned root** and hashed;
+   that digest is what `capability_verifications.canonical_evidence_sha256` stores and what the
+   registry commits to.
+
+Because the root is inside the hashed manifest, the storage root is cryptographically bound into the
+evidence digest, and `checkStoragePublicationIntegrity` can recompute the pair from a stored row
+alone. This is what makes the Verified Library's `STORED ON 0G` state unfakeable from the database.
+It proves internal coherence only — existence on the network is verified by the reader against 0G,
+which is why every rendered root carries its public pointer.
+
+The upload is performed exclusively by `aegisone-worker`, the only holder of
+`ZEROG_STORAGE_PRIVATE_KEY`. Transports are injected, so the whole path is exercised in CI against
+deterministic fakes with no funded run.
+
 ## 0G Sandbox / Tapp
 
 **Purpose:** independent reproduction outside the publisher build path.
@@ -275,6 +298,12 @@ Not load-bearing for the M8 backend MVP.
 
 It may later represent independent builder/verifier identities/reputation, but identity/reputation never proves build output correctness. Reproduction evidence remains authoritative for correspondence.
 
+**Explicitly excluded by ADR-017.** AegisOne deliberately makes no identity claim about agents or
+publishers: source assurance is a separate, explicit ladder (`NONE` / `DECLARED` /
+`REPOSITORY_AUTHENTICATED` / `SIGNED_RELEASE`) anchored in GitHub repository authority (ADR-012).
+Grafting a second, weaker identity notion on top would blur the exact distinction that ladder
+exists to protect.
+
 ## 0G Compute
 
 Not part of the core truth path.
@@ -293,6 +322,12 @@ real network; unit tests use an injected fake transport only.
 ## 0G DA
 
 Not currently load-bearing. Do not integrate decoratively.
+
+**Explicitly excluded by ADR-017.** DA makes large data availability provable to a rollup/consensus
+layer. AegisOne's evidence bundles are kilobytes, already stored with a proof-verified round trip on
+0G Storage and already committed compactly on chain. Adding DA would move no guarantee — it would
+add a dependency and an attack surface, and let us name a third 0G product without strengthening a
+single claim. A shallow integration would make the 0G story weaker, not stronger.
 
 ## Future source/auth adapters
 

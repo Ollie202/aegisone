@@ -741,11 +741,55 @@ discovery) and carry `sourceAssurance: NONE` / `sourceInspection: NOT_RUN` /
 `correspondence: NOT_EVALUATED` — they are inline files in this repository, not a claimed external
 repository/commit, so only `security` carries real evidence for either.
 
-PRs 2–4 remain to be done and have not been started.
+PR 2/4 (Audit Lab, ADR-016 sections 2/4) is merged (PR #52).
+
+### PR 3/4 — 0G publish path + Verified Library — CODE COMPLETE / LIVE RUN PENDING
+
+Branch `feature/0g-publish-verified-library`. ADR-017
+(`docs/decisions/017-0g-evidence-publication-and-verified-library.md`).
+
+**What is real and merged-ready:**
+
+- `packages/evidence-publish` — provider-independent canonical evidence manifest, the two-phase
+  publication orchestrator, and `checkStoragePublicationIntegrity`. The manifest binds the 0G
+  Storage root into the canonical evidence digest, so a stored root and a stored digest cannot be
+  mixed and matched and no row mutation survives the re-check.
+- `apps/worker` — `POST /internal/publish-evidence`, the only route in AegisOne that can spend 0G.
+  Absent unless `AEGISONE_WORKER_INTERNAL_TOKEN` is set; constant-time bearer auth before any body
+  read; a closed request key set with no bytes-to-sign/calldata/destination/command field. `/health`
+  behaviour otherwise unchanged. Signer construction confined to one module and asserted by
+  `apps/worker/test/signer-boundary.test.ts` across the whole `apps/web` tree.
+- `apps/web` — `assembleTrustEvidence` now nulls `canonicalEvidence.storageRoot`/`registryRecordId`
+  unless the publication gate passes, so no surface (REST, MCP, Passport, library) can render an
+  unverified root. The evidence-history endpoint applies the same gate (a real gap this work found
+  and closed). `POST /api/v1/publish` is operator-token-only, strictly rate limited, concurrency
+  capped at one, and absent entirely unless fully configured.
+- `/verified` is now the real Verified Library: four independent states (`INDEXED`, `AUDITED`,
+  `VERIFIED`, `STORED ON 0G`) with absent reasons printed rather than hidden.
+
+**What is NOT yet true, stated plainly:** no funded 0G publication has been performed. Every
+resource in the library therefore shows `STORED ON 0G` as **not established**, and the library's
+"stored on 0G" tally reads `0`. The path is proven end to end in CI against injected fake
+transports only. The recorded M5/M7 anchors shown on `/verified` are genuine, but they are labelled
+as the completed M5/M7 live runs and are never presented as output of a publication made by a
+library entry.
+
+**What the follow-up live run will produce:** for one seeded Agent Skill, a real 0G Galileo storage
+root + transaction from a proof-verified round trip, a canonical evidence digest bound to that root,
+and (if a registry contract is configured) a real record id + transaction. That requires explicit
+approval for testnet spend, the worker deployed with the new env vars, and the operator token set —
+none of which this environment may do.
 
 ## Current next action
 
-Open/review the **M9 / Issue #31** pull request (`agent/m9-hub-frontend`) — the human-facing Hub
+Review and merge **PR 3/4** (`feature/0g-publish-verified-library`) with green CI. Do not perform a
+live 0G run as part of that merge — the live publication is a separate, explicitly approved step
+requiring the repo owner to deploy the worker with `AEGISONE_WORKER_INTERNAL_TOKEN` (and optionally
+`AEGISONE_REGISTRY_CONTRACT`), set `AEGISONE_WORKER_URL` +
+`AEGISONE_PUBLISH_OPERATOR_TOKEN_SHA256` on the app, and approve Galileo testnet spend. Env var
+details are in `docs/15-m8-api-inventory.md` section 11.
+
+Previously recorded, still accurate: open/review the **M9 / Issue #31** pull request (`agent/m9-hub-frontend`) — the human-facing Hub
 built on the now-merged M8.11-frozen backend contract — require green CI, merge.
 
 Repo-owner actions remain outstanding and do not block M9 **code** from starting, but are required
