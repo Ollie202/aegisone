@@ -84,10 +84,10 @@ test("publishing uploads the bundle, binds the root into the manifest digest, an
     storage,
     network: NETWORK,
     registry: {
-      async register(manifestDigest, provenanceRoot) {
-        registered.push({ manifestDigest, provenanceRoot });
+      async register(commitments) {
+        registered.push({ manifestDigest: commitments.manifestDigest, provenanceRoot: commitments.provenanceRoot });
         return {
-          recordId: `0x${createHash("sha256").update(manifestDigest).update(provenanceRoot).digest("hex")}`,
+          recordId: `0x${createHash("sha256").update(commitments.manifestDigest).update(commitments.provenanceRoot).digest("hex")}`,
           transactionHash: `0x${"1".repeat(64)}`,
           contractAddress: "0x227Fcc243f25c395C93Df789EC72Bc75bf096017",
         };
@@ -104,7 +104,7 @@ test("publishing uploads the bundle, binds the root into the manifest digest, an
   assert.equal(result.canonicalEvidenceSha256, expected.sha256);
 
   // The chain commitment carries exactly the two digests, nothing else.
-  assert.deepEqual(registered, [{ manifestDigest: expected.sha256, provenanceRoot: result.storage.root }]);
+  assert.deepEqual(registered, [{ manifestDigest: `0x${expected.sha256}`, provenanceRoot: result.storage.root }]);
   assert.equal(result.registryError, null);
   assert.equal(result.registry?.contract, "0x227Fcc243f25c395C93Df789EC72Bc75bf096017");
 });
@@ -168,9 +168,9 @@ async function genuinePublication() {
     storage: new FakeStorageTransport(),
     network: NETWORK,
     registry: {
-      async register(manifestDigest, provenanceRoot) {
+      async register(commitments) {
         return {
-          recordId: `0x${createHash("sha256").update(manifestDigest).update(provenanceRoot).digest("hex")}`,
+          recordId: `0x${createHash("sha256").update(commitments.manifestDigest).update(commitments.provenanceRoot).digest("hex")}`,
           transactionHash: `0x${"1".repeat(64)}`,
           contractAddress: "0x227Fcc243f25c395C93Df789EC72Bc75bf096017",
         };
@@ -281,8 +281,10 @@ test("the chain commitment is a separate fact and a forged record id is rejected
   assert.equal(storage.ok, true);
   if (!storage.ok) return;
 
+  // Mirrors the fake registry's record-id derivation, including the `0x` prefix the real
+  // commitments carry.
   const recompute = (provenanceRoot: string, manifestDigest: string) =>
-    `0x${createHash("sha256").update(manifestDigest).update(provenanceRoot).digest("hex")}`;
+    `0x${createHash("sha256").update(`0x${manifestDigest}`).update(provenanceRoot).digest("hex")}`;
 
   assert.equal(checkChainCommitment(row, storage, recompute).ok, true);
 

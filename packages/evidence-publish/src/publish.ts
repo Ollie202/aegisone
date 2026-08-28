@@ -27,10 +27,43 @@ import type {
  * saying otherwise would discard real evidence. The caller persists what actually happened.
  */
 
+/**
+ * The five commitments the on-chain registry records. Every one is a value AegisOne genuinely
+ * holds — none is padded, duplicated to fill a slot, or zeroed. When the publication does not have
+ * all five (for example a resource whose correspondence was never evaluated, so there is no
+ * publisher/reproduced digest pair), the chain write is **skipped entirely** rather than committing
+ * a filler value: a commitment that says something AegisOne cannot back is worse than no
+ * commitment (AGENTS.md: missing evidence never upgrades assurance).
+ */
+export interface PublicationCommitments {
+  readonly manifestDigest: string;
+  readonly sourceClaimDigest: string;
+  readonly publisherArtifactDigest: string;
+  readonly reproducedArtifactDigest: string;
+  readonly provenanceRoot: string;
+}
+
 export interface RegistryWriter {
   /** Writes the compact commitment and returns the mined receipt. Supplied by `apps/worker`,
    * backed by `packages/registry-0g`'s `registerEvidence`. */
-  register(manifestDigest: string, provenanceRoot: string): Promise<{ recordId: string; transactionHash: string; contractAddress: string }>;
+  register(commitments: PublicationCommitments): Promise<{ recordId: string; transactionHash: string; contractAddress: string }>;
+}
+
+/** Derives the five commitments, or `null` when the publication genuinely lacks one of them. */
+export function derivePublicationCommitments(
+  facts: EvidenceBundle["facts"],
+  manifestSha256: string,
+  provenanceRoot: string,
+): PublicationCommitments | null {
+  const { sourceSnapshotSha256, publisherSha256, reproducedSha256 } = facts;
+  if (sourceSnapshotSha256 === null || publisherSha256 === null || reproducedSha256 === null) return null;
+  return {
+    manifestDigest: `0x${manifestSha256}`,
+    sourceClaimDigest: `0x${sourceSnapshotSha256}`,
+    publisherArtifactDigest: `0x${publisherSha256}`,
+    reproducedArtifactDigest: `0x${reproducedSha256}`,
+    provenanceRoot,
+  };
 }
 
 export interface PublishEvidenceOptions {
@@ -79,15 +112,21 @@ export async function publishEvidenceBundle(
   let registry: PublicationRegistryCommitment | null = null;
   let registryError: string | null = null;
   if (options.registry) {
-    try {
-      const receipt = await options.registry.register(manifest.sha256, storage.root);
-      registry = {
-        contract: receipt.contractAddress,
-        recordId: receipt.recordId,
-        transaction: receipt.transactionHash,
-      };
-    } catch (error) {
-      registryError = error instanceof Error ? error.message : String(error);
+    const commitments = derivePublicationCommitments(bundle.facts, manifest.sha256, storage.root);
+    if (commitments === null) {
+      registryError =
+        "chain commitment skipped: this publication does not hold all five real commitments (source snapshot, publisher and reproduced digests are required)";
+    } else {
+      try {
+        const receipt = await options.registry.register(commitments);
+        registry = {
+          contract: receipt.contractAddress,
+          recordId: receipt.recordId,
+          transaction: receipt.transactionHash,
+        };
+      } catch (error) {
+        registryError = error instanceof Error ? error.message : String(error);
+      }
     }
   }
 
