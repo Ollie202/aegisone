@@ -21,6 +21,7 @@
 
 import { escapeHtml, shortHash } from "./escape.mjs";
 import { sourceAssuranceBadge, correspondenceBadge } from "./badges.mjs";
+import { explainRule } from "./rule-explanations.mjs";
 
 /** Deterministic-severity → badge tone. Mirrors the tone mapping `badges.mjs` already uses; the
  * severity text itself is always rendered alongside, so colour is never the only signal. */
@@ -63,17 +64,23 @@ function metaPill(label) {
 function findingRowHtml(finding) {
   const severity = String(finding?.severity ?? "INFO");
   const tone = SEVERITY_TONE[severity] ?? "badge--neutral";
-  const where = finding?.path ? `${finding.path}${typeof finding.line === "number" && finding.line > 0 ? `:${finding.line}` : ""}` : "";
+  const path = typeof finding?.path === "string" ? finding.path : "";
+  const line = typeof finding?.line === "number" && finding.line > 0 ? finding.line : null;
+  const where = path ? `${path}${line ? `:${line}` : ""}` : "";
   const evidence = typeof finding?.evidence === "string" && finding.evidence !== ""
     ? `<pre class="findingEvidence">${escapeHtml(finding.evidence)}</pre>`
     : "";
+  const explanation = explainRule(finding?.ruleId);
   return `<li class="findingRow">
     <span class="badge ${tone}"><span class="badge__glyph" aria-hidden="true">▲</span><span class="badge__text">${escapeHtml(severity)}</span></span>
     <div>
       <strong>${escapeHtml(finding?.title ?? finding?.ruleId ?? "finding")}</strong>
-      <div class="findingRule">${escapeHtml(finding?.ruleId ?? "")}</div>
-      ${where ? `<div class="findingWhere">${escapeHtml(where)}</div>` : ""}
-      ${evidence}
+      <div class="findingRule">rule ${escapeHtml(finding?.ruleId ?? "")}</div>
+      ${where ? `<div class="findingWhere">Exactly where: <code>${escapeHtml(where)}</code></div>` : ""}
+      ${evidence ? `<div class="findingWhere">The offending line:</div>${evidence}` : ""}
+      ${explanation ? `<p class="findingPlainEnglish"><strong>In plain English:</strong> ${escapeHtml(explanation.plainEnglish)}</p>
+      <p class="findingPlainEnglish findingConsequence"><strong>Why it matters:</strong> ${escapeHtml(explanation.consequence)}</p>` : ""}
+      <p class="findingEvidenceNote">Evidence: this rule matched deterministically (<code>DETERMINISTIC_STATIC</code>) against the exact bytes shown above — no language model was involved in producing this finding.</p>
     </div>
   </li>`;
 }
@@ -150,8 +157,15 @@ export function scanResultHtml(result) {
     </section>
 
     <div class="panel" style="margin-top:18px">
+      <span class="edgeLabel">What AegisOne inspected</span>
+      <h3>Exactly what was read</h3>
+      ${inspectedSummaryHtml(result.inspected)}
+      <div class="hashRow" style="margin-top:12px"><span class="hashLabel">Canonical content SHA-256</span><code class="hashValue" title="${escapeHtml(result.contentSha256 ?? "")}">${escapeHtml(shortHash(result.contentSha256 ?? ""))}</code></div>
+      <p class="passportNote">This is the SHA-256 of the canonical package built from exactly the bytes above — the same digest that keys the cache/blacklist memory, so identical content always reports the same verdict.</p>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
       <span class="edgeLabel">Content identity</span>
-      <div class="hashRow"><span class="hashLabel">Canonical content SHA-256</span><code class="hashValue" title="${escapeHtml(result.contentSha256 ?? "")}">${escapeHtml(shortHash(result.contentSha256 ?? ""))}</code></div>
       <div class="fieldRow"><span class="fieldLabel">Source assurance</span><span class="fieldValue">${sourceAssuranceBadge("NONE")}</span></div>
       <div class="fieldRow"><span class="fieldLabel">Distribution correspondence</span><span class="fieldValue">${correspondenceBadge("NOT_EVALUATED")}</span></div>
       <p class="passportNote">Pasted content has no publisher and no claimed source revision, so this path structurally cannot produce a source-assurance level above NONE or any correspondence result. Screening a paste is a different thing from AegisOne verifying a published capability.</p>
@@ -159,13 +173,47 @@ export function scanResultHtml(result) {
 
     <div class="panel" style="margin-top:18px">
       <span class="edgeLabel">Deterministic findings</span>
-      <h3>What the static rules matched</h3>
+      <h3>What the static rules matched, and where</h3>
       <p class="passportNote">Produced by the same deterministic <code>@aegisone/skill-audit</code> Tier-1 analysis the verification pipeline uses. No language model participates in this list or in the verdict.</p>
       ${deterministicFindingsHtml(result.deterministicFindings)}
     </div>
 
     ${advisoryFindingsHtml(result.advisoryFindings)}
+
+    ${notProvenHtml(verdict)}
   </div>`;
+}
+
+function inspectedSummaryHtml(inspected) {
+  if (!inspected || typeof inspected !== "object" || !Array.isArray(inspected.files)) {
+    return `<p class="passportNote">File-level inspection summary unavailable for this result.</p>`;
+  }
+  const fileCount = typeof inspected.fileCount === "number" ? inspected.fileCount : inspected.files.length;
+  const totalBytes = typeof inspected.totalBytes === "number" ? inspected.totalBytes : null;
+  const rows = inspected.files
+    .map((file) => `<li><code>${escapeHtml(String(file?.path ?? ""))}</code> — ${Number.isFinite(file?.byteLength) ? `${file.byteLength} bytes` : "size unknown"}</li>`)
+    .join("");
+  return `<p class="passportNote">${fileCount} file${fileCount === 1 ? "" : "s"}${totalBytes !== null ? `, ${totalBytes} bytes total` : ""}, read exactly as submitted — nothing was fetched, installed or executed.</p>
+    <ul class="fileList">${rows}</ul>`;
+}
+
+/**
+ * Threat M8-019 "security audit overclaim": this section is unconditional and rendered on every
+ * result regardless of verdict — CLEAN included — so a screening result can never be mistaken for
+ * a broader safety or authenticity claim.
+ */
+function notProvenHtml(verdict) {
+  return `<section class="panel panel--flat notProven" style="margin-top:18px">
+    <span class="edgeLabel">What AegisOne did NOT prove</span>
+    <h3>Read this before trusting a ${escapeHtml(verdict ?? "screening")} result</h3>
+    <ul class="notProvenList">
+      <li>AegisOne did <strong>not</strong> verify who published this content, or that any claimed author actually wrote it — there is no publisher identity attached to a paste at all.</li>
+      <li>AegisOne did <strong>not</strong> compare these bytes against anything a publisher actually distributes — there is no distributed artifact here to compare against.</li>
+      <li>A ${escapeHtml(verdict ?? "screening")} result is not proof of safety. It means these specific deterministic rules did, or did not, match these specific bytes — nothing more.</li>
+      <li>The deterministic rules are static pattern matches. They do not run the code, do not understand intent, and can both miss real problems and flag harmless code.</li>
+      <li>If an advisory (0G Compute) opinion is shown above, it is a non-deterministic language-model read of the text. It is informational only and can never change the verdict above.</li>
+    </ul>
+  </section>`;
 }
 
 /** Renders a backend error (`{ error, errorCode, message }`) without inventing a verdict — a

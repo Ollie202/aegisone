@@ -227,7 +227,7 @@ Branch `feature/skills-library-ia`. Decision record:
 Primary navigation becomes exactly **SKILLS** (`/`) · **AUDIT** (`/audit`) · **VERIFIED**
 (`/verified`) · **FOR AGENTS** (`/agents`).
 
-### PR 1 — nav shell + SKILLS section — IN REVIEW, NOT MERGED
+### PR 1 — nav shell + SKILLS section — MERGED (PR #51)
 
 - [x] Four-section primary nav; no nav route 404s or renders a dead control.
 - [x] SKILLS complete: real catalog-backed library, nine deterministic categories, per-category
@@ -245,13 +245,48 @@ Primary navigation becomes exactly **SKILLS** (`/`) · **AUDIT** (`/audit`) · *
       audit values, escaping, no-SAFE-badge on every new page.
 - [x] Both entrypoints (`server.ts`, `vercel-entry.ts`) verified serving every route.
 
-### PRs 2–4 — NOT STARTED
+### PR 2 — AUDIT section build-out ("Audit Lab") — IN REVIEW, NOT MERGED
 
-- [ ] PR 2 — AUDIT section build-out.
+Branch `feature/audit-lab`. Decision record:
+`docs/decisions/017-audit-lab-and-package-verification-deferral.md`.
+
+- [x] `/audit` (alias `/scan`) opens with a four-card audit-type selector: **Agent Skill Audit**
+      (LIVE — the existing deterministic paste-to-scan tool), **Package / Artifact Verification**,
+      **Smart Contract Audit**, **MCP / Agent Capability Audit** (all three explicitly UPCOMING,
+      each stating plainly why, none linking to a dead route or fake result).
+- [x] Report upgraded to plain English: a new "What AegisOne inspected" panel (real file list +
+      byte counts, additive `inspected` field on `ScanApiResponse`), a plain-English "why this
+      matters" paragraph per finding keyed by rule id (`ui/rule-explanations.mjs`, secondary to the
+      still-visible rule id), and an unconditional "What AegisOne did NOT prove" section rendered
+      on every result regardless of verdict (Threat M8-019).
+- [x] Package/Artifact Verification (`packages/skill-verification-link`, fully built in M8.6) is
+      **deliberately deferred**, not wired to a public route, in this PR — see ADR-017 for the full
+      reasoning (its `VerificationAuthorization` brand-gate has no provisioned end-user-facing
+      trigger design yet, and rushing one around a real-compute/real-clone security boundary was
+      judged worse than an honest "upcoming"). Existing verification evidence already in the
+      catalog remains fully readable through the unchanged Evidence Passport / `/api/v1` routes.
+- [x] Smart Contract Audit and MCP/Agent Capability Audit remain honestly NOT implemented — no
+      shallow scanner was built for either.
+- [x] Library grew with two real, well-formed Agent Skill fixtures
+      (`apps/web/src/library-seed-fixtures.ts`): `clean-review` (genuine CLEAN / 0 findings) and
+      `malicious-sync` (genuine CRITICAL, 8 real deterministic findings across all 7 rule ids),
+      both packaged/audited through the unmodified production functions and labelled as repository
+      fixtures, never a third-party discovery.
+- [x] Regression tests: Audit Lab card markup (exactly one LIVE, three UPCOMING, no embedded
+      links), inspected-panel rendering and escaping, plain-English mapping (including an
+      unrecognised-rule-id fallback and a `__proto__` lookup-safety test), the unconditional
+      not-proven section on every verdict, and pinned real digests/audit results for both new
+      fixtures.
+- [x] No existing trust semantic, verdict threshold, rate limit, or advisory non-override behaviour
+      changed; the full pre-existing `apps/web` test suite (191 tests before this PR) still passes
+      unchanged, plus this PR's new tests.
+
+### PRs 3–4 — NOT STARTED
+
 - [ ] PR 3 — VERIFIED section: browsable index of resources carrying a real correspondence verdict.
 - [ ] PR 4 — FOR AGENTS: guided onboarding, per-agent credentials, worked client examples.
 
-Do not begin PR 2 until PR 1 is merged.
+Do not begin PR 3 until PR 2 is merged.
 
 ### Standing invariants for every PR in this restructure
 

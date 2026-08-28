@@ -653,11 +653,13 @@ The previous technical submission packet remains complete. Final user-authentica
 
 M8 engineering improves the judgeable product without invalidating the already-proven M1–M7 evidence.
 
-## Product restructure — four-section IA (PR 1 of 4, in review)
+## Product restructure — four-section IA (PR 1 of 4, merged; PR 2 of 4, in review)
 
-The M9 Hub's information architecture is being restructured on branch
-`feature/skills-library-ia`. See `docs/decisions/016-four-section-product-ia-and-skill-library.md`
-for the full decision record. **PR 1 is open and not merged.**
+The M9 Hub's information architecture is being restructured across four PRs. **PR 1
+(`feature/skills-library-ia`) merged to `main` as PR #51**; see
+`docs/decisions/016-four-section-product-ia-and-skill-library.md` for its decision record.
+**PR 2 (`feature/audit-lab`) is open and not merged**; see
+`docs/decisions/017-audit-lab-and-package-verification-deferral.md`.
 
 Primary navigation is now exactly **SKILLS** (`/`), **AUDIT** (`/audit`), **VERIFIED**
 (`/verified`), **FOR AGENTS** (`/agents`).
@@ -692,6 +694,52 @@ package digest of `5ae591eac9078b26f243675f721456485f85ecf3737ac36ffa565eca87df6
 manufacture a pass. Its correspondence is honestly `NOT_EVALUATED` (there is no distinct distributed
 artifact), its source assurance is `DECLARED` (authority was never proven), and it has no canonical
 evidence and no 0G storage root because nothing was written to 0G for it.
+
+### PR 2 — Audit Lab (AUDIT section build-out) — open, not merged
+
+`/audit` (alias `/scan`) now opens with a four-card audit-type selector: **Agent Skill Audit**
+(LIVE — the existing deterministic paste-to-scan tool, unchanged in its core verdict logic),
+**Package / Artifact Verification**, **Smart Contract Audit**, and **MCP / Agent Capability Audit**
+(all three explicitly **UPCOMING**, each card stating plainly why — no dead links, no fabricated
+results).
+
+The scan report was extended with three plain-English additions: a "What AegisOne inspected" panel
+(real file list + byte counts, an additive `inspected` field on `ScanApiResponse`), a "why this
+matters" plain-English paragraph per finding keyed by rule id (secondary to the still-visible rule
+id — `apps/web/src/ui/rule-explanations.mjs`), and an unconditional "What AegisOne did NOT prove"
+section rendered on every result regardless of verdict (Threat M8-019: no findings is not proof of
+safety, CLEAN included).
+
+**Package/Artifact Verification (M8.6's `packages/skill-verification-link`, fully built) was
+deliberately left without a public HTTP trigger in this PR.** After inspecting
+`authorization.ts`/`enrichment.ts`, its brand-gated `VerificationAuthorization` only has a
+worker/admin-token authorization path today — nothing provisions an end-user-facing catalog-only
+selection flow, an independently-stricter rate limiter, or a real (non-fixture-local)
+end-to-end proof, and the underlying operation is a genuine bounded `git clone` plus artifact
+fetch, not a cheap read. Rather than rush a trigger route around that security boundary, this PR
+marks it UPCOMING in the UI and records the full reasoning in ADR-017 — the issue's own explicitly
+authorized "honest deferral beats an unsafe endpoint" option. Existing verification evidence
+already persisted in the catalog remains fully visible through the unchanged `/api/v1/resources/:id/evidence`
+route and Evidence Passport; only *anonymously triggering a new one* is deferred.
+
+Smart Contract Audit and MCP/Agent Capability Audit remain honestly not implemented — no shallow
+scanner was built for either, per the issue's explicit instruction that a half-working auditor is
+worse than an honest "not yet".
+
+The library also grew with two real, well-formed Agent Skill fixtures
+(`apps/web/src/library-seed-fixtures.ts`, seeded alongside the PR 1 cookbook entry):
+
+- **`clean-review`** (`examples/agent-skills/clean-review/`) — real canonical package SHA-256
+  `e1b8847a0fff87cf3a4d69c22fa6c758603d1b7b913a74a5f2ad3e5326165454`, format-valid, genuine
+  `INFO`/0-finding audit.
+- **`malicious-sync`** (`examples/agent-skills/malicious-sync/`) — real canonical package SHA-256
+  `b921d9660586cd195da069d882a761d105c819eac18aad197d73012a392fbc31`, format-valid, genuine
+  `CRITICAL`/8-finding audit spanning all seven deterministic rule ids (PR-SKILL-001..007).
+
+Both are labelled `aegisone-repository-fixture` in discovery metadata (never a third-party
+discovery) and carry `sourceAssurance: NONE` / `sourceInspection: NOT_RUN` /
+`correspondence: NOT_EVALUATED` — they are inline files in this repository, not a claimed external
+repository/commit, so only `security` carries real evidence for either.
 
 PRs 2–4 remain to be done and have not been started.
 

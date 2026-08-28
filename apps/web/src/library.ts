@@ -1,5 +1,6 @@
 import { loadAssembledResource } from "./api-v1.ts";
 import { seedCookbookSkill, type CookbookSeedResult } from "./library-seed.ts";
+import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "./library-seed-fixtures.ts";
 import { classifySkillCategory, browsableCategories } from "./ui/skill-category.mjs";
 import type { CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import type { CapabilityTrustEvidence } from "../../../packages/capability-model/src/index.ts";
@@ -119,6 +120,22 @@ export class SkillLibraryLoader {
       contentSha256: cookbook.packageSha256,
       formatValidation: cookbook.formatValidation,
     });
+
+    // Two real, well-formed Agent Skill fixtures (PR 2/4): a genuine CLEAN example and a genuine
+    // CRITICAL detection example, both packaged/audited through the same unmodified production
+    // functions and labelled as repository fixtures, never as a third-party discovery.
+    const cleanReview = await seedCleanReviewSkill(this.#store);
+    facts.set(cleanReview.resourceId, {
+      contentSha256: cleanReview.packageSha256,
+      formatValidation: cleanReview.formatValidation,
+    });
+
+    const maliciousSync = await seedMaliciousSyncSkill(this.#store);
+    facts.set(maliciousSync.resourceId, {
+      contentSha256: maliciousSync.packageSha256,
+      formatValidation: maliciousSync.formatValidation,
+    });
+
     return facts;
   }
 

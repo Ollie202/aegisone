@@ -3,3 +3,9 @@
 # digest would differ between a Windows checkout and Linux CI and the displayed evidence would be
 # wrong on one of them. Treat everything under apps/web/fixtures/ as binary-exact.
 apps/web/fixtures/** -text
+
+# Same reasoning for the two seeded Agent Skill fixtures (PR 2/4, ADR-017): their canonical
+# package SHA-256 is real evidence rendered in the UI and pinned in
+# apps/web/test/library-seed-fixtures.test.ts. The committed blobs are LF; without this, Git
+# hands a Windows checkout CRLF and the digest silently differs from Linux CI and production.
+examples/agent-skills/** -text

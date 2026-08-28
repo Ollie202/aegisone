@@ -40,6 +40,59 @@ function scanArtSvg(): string {
 
 const PLACEHOLDER = "Paste the contents of a SKILL.md (or any single skill file) here.";
 
+/**
+ * The four audit types AUDIT LAB presents (PR 2/4). Exactly one is live; the rest are explicitly
+ * labelled upcoming rather than hidden or wired to a dead/fake result (AGENTS.md: never claim a
+ * capability that cannot be proven). See `docs/decisions/017-audit-lab-and-package-verification-deferral.md`
+ * for why Package/Artifact Verification — which IS fully built in `packages/skill-verification-link`
+ * — has no public HTTP trigger in this PR.
+ */
+function auditTypeCardHtml(opts: { label: string; status: "live" | "upcoming"; description: string; note: string }): string {
+  const statusPill = opts.status === "live"
+    ? `<span class="pill pill--peri" style="background:var(--cyan)">LIVE</span>`
+    : `<span class="pill" style="opacity:.75">UPCOMING</span>`;
+  return `<div class="auditTypeCard auditTypeCard--${opts.status}">
+    ${statusPill}
+    <h3>${opts.label}</h3>
+    <p>${opts.description}</p>
+    <p class="passportNote">${opts.note}</p>
+  </div>`;
+}
+
+function auditLabSelectorHtml(): string {
+  return `<section class="panel panel--flat auditLabSelector" style="margin-top:8px">
+    <span class="edgeLabel">Audit Lab — one place to check anything before you use it</span>
+    <h2>Four audit types, honestly labelled</h2>
+    <p class="passportNote">Paste, upload, or select an item → AegisOne analyses it → you get a result → a detailed plain-English report → optional deeper evidence. Only the first of these four is live today; the rest are genuinely not built yet, and say so.</p>
+    <div class="auditTypeGrid">
+      ${auditTypeCardHtml({
+        label: "Agent Skill Audit",
+        status: "live",
+        description: "Paste raw Agent Skill content below. AegisOne runs the same deterministic static-analysis rules the verification pipeline uses and reports CLEAN / FLAGGED / BLACKLISTED.",
+        note: "This is the tool on this page right now.",
+      })}
+      ${auditTypeCardHtml({
+        label: "Package / Artifact Verification",
+        status: "upcoming",
+        description: "Compare a publisher's distributed bytes against an independent reproduction from the exact claimed source commit — real MATCH / MISMATCH evidence, not a screening.",
+        note: "The verification engine is fully built (packages/skill-verification-link). It has no public trigger yet — exposing it safely to anonymous callers needs a catalog-only gate this PR deliberately did not rush. See the Evidence Passport on a catalog resource for existing verification results, and the ADR linked above for why.",
+      })}
+      ${auditTypeCardHtml({
+        label: "Smart Contract Audit",
+        status: "upcoming",
+        description: "Static analysis of Solidity/EVM bytecode for known vulnerability classes.",
+        note: "Not implemented. A shallow scanner that misses real vulnerabilities would be worse than this honest “not yet.”",
+      })}
+      ${auditTypeCardHtml({
+        label: "MCP / Agent Capability Audit",
+        status: "upcoming",
+        description: "Assessment of an MCP server's or agent's declared tool surface and behaviour.",
+        note: "Not implemented as a distinct analysis. MCP servers are discoverable (see the Hub) but not yet independently audited.",
+      })}
+    </div>
+  </section>`;
+}
+
 export function renderScanPageHtml(state: ScanPageState): string {
   const advisoryNote = state.advisoryConfigured
     ? "Optional, slower and strictly rate-limited. It never changes the deterministic verdict."
@@ -58,6 +111,8 @@ export function renderScanPageHtml(state: ScanPageState): string {
       </div>
       <div class="heroArt">${scanArtSvg()}</div>
     </section>
+
+    ${auditLabSelectorHtml()}
 
     <div class="scanGrid" style="margin-top:8px">
       <section class="panel">
@@ -95,7 +150,7 @@ export function renderScanPageHtml(state: ScanPageState): string {
   `;
 
   return renderLayoutHtml({
-    title: "Audit a skill — AegisOne",
+    title: "Audit Lab — AegisOne",
     // AUDIT is section 2 of the four-section IA (ADR-016). This one page is served at both
     // `/audit` (its nav home) and the original `/scan` URL, which keeps working unchanged.
     activeNav: "audit",
