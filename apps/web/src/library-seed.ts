@@ -213,7 +213,18 @@ export async function seedCookbookSkill(store: CatalogStore): Promise<CookbookSe
     authenticatedAt: null,
     authorityObservations: [],
   };
-  const claimResult = await store.createSourceClaim(newClaim);
+  // This seed runs on every cold start, so it MUST be idempotent. The canonical claim is
+  // deterministic, therefore so is its digest — and `source_claims.claim_digest_sha256` is UNIQUE.
+  // Creating unconditionally succeeded exactly once and then threw
+  // `duplicate key value violates unique constraint "source_claims_digest_idx"` on every
+  // subsequent boot. Because the cookbook is seeded first, that one failure emptied the entire
+  // library in production while every local test (which starts from a clean store) passed.
+  // Reuse the existing claim instead; re-seeding must never mint a second claim for identical
+  // evidence, and must never mutate the stored one.
+  const claimDigest = newClaim.claimDigestSha256;
+  const existingClaims = await store.listActiveSourceClaimsByResourceVersion(version.id);
+  const existingClaim = existingClaims.find((candidate) => candidate.claimDigestSha256 === claimDigest);
+  const claimResult = existingClaim ? { claim: existingClaim } : await store.createSourceClaim(newClaim);
 
   const verification: NewCapabilityVerification = {
     resourceVersionId: version.id,
@@ -241,7 +252,20 @@ export async function seedCookbookSkill(store: CatalogStore): Promise<CookbookSe
     registryTransaction: null,
     verifiedAt: null,
   };
-  await store.createCapabilityVerification(verification);
+  // Same idempotency requirement. `capability_verifications` has no unique constraint, so an
+  // unconditional insert would not fail loudly — it would quietly append an identical evidence row
+  // on every cold start forever. Only record one when the latest row does not already describe
+  // exactly this evidence. A genuinely new result (different snapshot digest or audit outcome)
+  // still appends a new row and never mutates the previous verdict.
+  const latestVerification = await store.getLatestCapabilityVerification(version.id);
+  const alreadyRecorded =
+    latestVerification !== null &&
+    latestVerification.sourceClaimId === claimResult.claim.id &&
+    latestVerification.sourceSnapshotSha256 === verification.sourceSnapshotSha256 &&
+    latestVerification.correspondenceStatus === verification.correspondenceStatus &&
+    latestVerification.securityHighestSeverity === verification.securityHighestSeverity &&
+    latestVerification.securityFindingCount === verification.securityFindingCount;
+  if (!alreadyRecorded) await store.createCapabilityVerification(verification);
 
   return {
     resourceId: resource.id,
