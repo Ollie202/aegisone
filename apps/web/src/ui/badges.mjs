@@ -105,6 +105,38 @@ export function canonicalEvidenceBadge(status, verifiedAt) {
   return badge("info", "◈", `AVAILABLE${age ? ` · ${age}` : ""}`);
 }
 
+/**
+ * Whether AegisOne's canonical evidence for this resource was actually persisted to 0G Storage,
+ * read verbatim from `trust.canonicalEvidence.storageRoot`.
+ *
+ * Absence is stated explicitly and neutrally: "no 0G Storage root is recorded" is missing
+ * evidence, NOT a negative finding about the resource (AGENTS.md: "Missing evidence is
+ * unavailable/insufficient; never infer it"). Presence proves only that evidence bytes were
+ * stored — it says nothing about correspondence, safety, or the publisher.
+ */
+export function zeroGStorageBadge(storageRoot) {
+  if (typeof storageRoot === "string" && storageRoot.trim() !== "") {
+    return badge("info", "◆", "ON 0G STORAGE", "Canonical evidence for this resource has a recorded 0G Storage root. This locates the evidence; it is not itself a verdict.");
+  }
+  return badge("neutral", "–", "NOT STORED ON 0G", "No 0G Storage root is recorded. That is missing evidence, not a finding against this resource.");
+}
+
+/**
+ * Deterministic Agent Skill *format* validation (`packages/skill-audit` `validateSkillPackage`),
+ * rendered verbatim. This is a fourth, separate dimension: a file can be perfectly well-formed and
+ * still be dangerous, and a file that is not an Agent Skill package at all (no `SKILL.md`) is a
+ * plain statement of fact, not a security finding and not a quality judgement.
+ */
+export function skillFormatBadge(validation) {
+  if (!validation) return badge("neutral", "–", "FORMAT NOT CHECKED");
+  if (validation.valid === true) {
+    return badge("info", "◍", "VALID SKILL PACKAGE", "This package parsed as a well-formed Agent Skill. Well-formed is not safe and is not verified.");
+  }
+  const firstIssue = Array.isArray(validation.issues) && validation.issues.length > 0 ? validation.issues[0]?.code : null;
+  const detail = firstIssue ? ` (${String(firstIssue)})` : "";
+  return badge("caution", "▲", `NOT A VALID SKILL PACKAGE${detail}`, "Agent Skill format validation failed. This is a factual statement about the file's structure — not a security finding, and not a claim that the content is bad.");
+}
+
 export function policyDecisionBadge(decision) {
   switch (decision) {
     case "ALLOW":
