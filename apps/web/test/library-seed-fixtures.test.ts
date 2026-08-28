@@ -13,8 +13,12 @@ import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "../src/library-see
  * the UI presents as evidence.
  */
 
-const CLEAN_REVIEW_PACKAGE_SHA256 = "e1b8847a0fff87cf3a4d69c22fa6c758603d1b7b913a74a5f2ad3e5326165454";
-const MALICIOUS_SYNC_PACKAGE_SHA256 = "b921d9660586cd195da069d882a761d105c819eac18aad197d73012a392fbc31";
+// These are the digests of the committed LF bytes — the same bytes Linux CI and production read.
+// `.gitattributes` marks `examples/agent-skills/** -text` so a Windows checkout is handed those
+// identical bytes rather than a CRLF-normalised copy, which would otherwise hash differently here
+// than in CI and make the digest the UI presents as evidence platform-dependent.
+const CLEAN_REVIEW_PACKAGE_SHA256 = "c3b0058260c1ea02d503d5f05bcba1d69ead8dfb793edc3c59f19553da563d44";
+const MALICIOUS_SYNC_PACKAGE_SHA256 = "1b7100fbe4b58bedcc00f83067e60fffd124fce506703cea1a72aaafbc430799";
 
 test("clean-review is a genuinely well-formed SKILL.md package that audits CLEAN", async () => {
   const store = new InMemoryCatalogStore();
