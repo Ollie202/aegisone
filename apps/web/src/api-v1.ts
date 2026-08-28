@@ -283,6 +283,14 @@ interface AssembledResource {
   readonly version: ResourceVersion | null;
   readonly capability: CapabilityResource;
   readonly integrity: AssembledIntegrity;
+  /**
+   * The raw latest verification row, exposed for the registry-commitment pointers the Evidence
+   * Passport renders. Consumers must NOT read trust dimensions from it — `capability.trust` is the
+   * integrity-checked view and the only one that may drive a state or a verdict. It is safe to read
+   * the registry pointers here only because callers gate them on
+   * `integrity.storagePublication.ok`, which is what binds them to a re-checked root.
+   */
+  readonly latestVerification: CapabilityVerification | null;
 }
 
 export async function loadAssembledResource(store: CatalogStore, resourceId: string): Promise<AssembledResource | null> {
@@ -306,7 +314,7 @@ export async function loadAssembledResource(store: CatalogStore, resourceId: str
   // invariants; this re-validates rather than trusting that by construction.
   validateCapabilityResource(capability);
 
-  return { resource, version, capability, integrity };
+  return { resource, version, capability, integrity, latestVerification };
 }
 
 function requiredPathSegment(raw: string | undefined): string {

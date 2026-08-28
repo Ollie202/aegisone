@@ -2,6 +2,7 @@ import { loadAssembledResource } from "./api-v1.ts";
 import { seedCookbookSkill, type CookbookSeedResult } from "./library-seed.ts";
 import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "./library-seed-fixtures.ts";
 import { classifySkillCategory, browsableCategories } from "./ui/skill-category.mjs";
+import { deriveLibraryStates, type LibraryStates } from "./library-state.ts";
 import type { CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import type { CapabilityTrustEvidence } from "../../../packages/capability-model/src/index.ts";
 import type { SkillFormatValidation } from "../../../packages/skill-audit/src/model.ts";
@@ -59,6 +60,24 @@ export interface SkillLibraryEntry {
   readonly formatValidation: SkillFormatValidation | null;
   /** Verbatim from `assembleTrustEvidence` — the same object the Evidence Passport renders. */
   readonly trust: CapabilityTrustEvidence;
+  /**
+   * The four independent library facts (`library-state.ts`). Derived from the already
+   * integrity-checked `trust` plus the 0G publication gate result — this module performs no
+   * verification of its own and cannot upgrade anything the assembler produced.
+   */
+  readonly states: LibraryStates;
+  /** Real 0G publication pointers, present ONLY when the gate passed. */
+  readonly publication: {
+    readonly storageRoot: string;
+    readonly storageTransaction: string;
+    readonly canonicalEvidenceSha256: string;
+    readonly network: string;
+    readonly chainId: number;
+    readonly verifiedAt: string;
+    readonly registryContract: string | null;
+    readonly registryRecordId: string | null;
+    readonly registryTransaction: string | null;
+  } | null;
 }
 
 export interface SkillLibrary {
@@ -163,6 +182,30 @@ export class SkillLibraryLoader {
         canonicalUrl: sourceRepositoryUrl,
       });
 
+      const states = deriveLibraryStates({
+        discoveryStatus: capability.discovery.status,
+        trust: capability.trust,
+        storagePublication: assembled.integrity.storagePublication,
+      });
+
+      // Publication pointers exist only behind the gate. There is no branch here that can produce
+      // them from a row that failed, so the UI cannot render a 0G root AegisOne has not re-checked.
+      const gate = assembled.integrity.storagePublication;
+      const verification = assembled.latestVerification;
+      const publication = gate.ok
+        ? {
+            storageRoot: gate.storageRoot,
+            storageTransaction: gate.storageTransaction,
+            canonicalEvidenceSha256: gate.canonicalEvidenceSha256,
+            network: gate.network,
+            chainId: gate.chainId,
+            verifiedAt: gate.verifiedAt,
+            registryContract: verification?.registryContract ?? null,
+            registryRecordId: verification?.registryRecordId ?? null,
+            registryTransaction: verification?.registryTransaction ?? null,
+          }
+        : null;
+
       entries.push({
         resourceId: assembled.resource.id,
         name: capability.name,
@@ -178,6 +221,8 @@ export class SkillLibraryLoader {
         formatValidation: seedFacts.formatValidation,
         // Verbatim. Never re-derived, re-thresholded or summarised into a score.
         trust: capability.trust,
+        states,
+        publication,
       });
     }
 
