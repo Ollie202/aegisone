@@ -33,7 +33,7 @@ import { renderVerificationHtml } from "./render.ts";
 import { isStaticAssetPath, serveStaticAsset } from "./static-assets.ts";
 import { renderSkillsPageHtml } from "./pages/skills.ts";
 import { renderVerifiedPageHtml } from "./pages/verified.ts";
-import { renderAgentsPageHtml } from "./pages/agents.ts";
+import { renderAgentsPageHtml, resolveConnectOrigin } from "./pages/agents.ts";
 import { renderResourcePageHtml, renderResourceNotFoundHtml } from "./pages/resource.ts";
 import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
 import { renderScanPageHtml } from "./pages/scan.ts";
@@ -517,8 +517,21 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         return;
       }
       if (request.method === "GET" && url.pathname === "/agents") {
+        // ADR-019: the connection instructions address the origin that actually served the page,
+        // so a local, preview, Railway or Vercel deployment each render themselves and never send
+        // an agent to a host that is not this one. `resolveConnectOrigin` validates the
+        // caller-controlled Host header and falls back to the configured public base URL when it
+        // is not a structurally valid host[:port].
+        const forwardedProto = request.headers["x-forwarded-proto"];
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        response.end(renderAgentsPageHtml({ publicBaseUrl, advisoryConfigured: zeroGComputeConfig !== null }));
+        response.end(renderAgentsPageHtml({
+          connectOrigin: resolveConnectOrigin(
+            request.headers.host,
+            Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto,
+            publicBaseUrl,
+          ),
+          advisoryConfigured: zeroGComputeConfig !== null,
+        }));
         return;
       }
 

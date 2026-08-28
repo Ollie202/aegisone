@@ -240,9 +240,11 @@ test("GET /agents lists the real live endpoints and the tools that deliberately 
     for (const denied of ["aegisone_install", "aegisone_execute", "aegisone_sign"]) {
       assert.match(html, new RegExp(denied), `missing denied-tool disclosure: ${denied}`);
     }
-    // Endpoints are addressed against this deployment's own base URL.
-    assert.match(html, /POST https:\/\/aegisone\.example\/mcp/);
-    assert.match(html, /POST https:\/\/aegisone\.example\/api\/v1\/policy\/evaluate/);
+    // PR 4/4 (ADR-019): endpoints are addressed against the origin that actually served the page,
+    // so a local, preview, Railway or Vercel deployment each render themselves and an agent is
+    // never sent to a host other than the one it just read the instructions from.
+    assert.match(html, new RegExp(`POST ${running.baseUrl.replace(/[.\/]/g, "\\$&")}/mcp`));
+    assert.match(html, new RegExp(`POST ${running.baseUrl.replace(/[.\/]/g, "\\$&")}/api/v1/policy/evaluate`));
     assert.match(html, /No public route installs, executes or signs anything/);
 
     // And the endpoint it advertises really is live.

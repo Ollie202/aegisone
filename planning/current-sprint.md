@@ -28,12 +28,21 @@ Current implementation gate: **M8.11 / Issue #30 / branch `agent/m8-11-backend-f
 - [x] M7 Agent Skill commitments registered/read back on Galileo.
 - [x] Production remains exactly `proofrail-app` + `proofrail-worker`.
 - [x] Worker signer boundary remains controlled; public signing disabled.
-- [x] **PR 3/4 (ADR-017)**: the 0G evidence publication path is built, wired and tested against
-      injected fake transports. `aegisone-worker` gains one internal, token-authenticated,
-      fail-closed publication route; the app gains an operator-only trigger; `/verified` becomes the
-      real Verified Library with four independently-earned states. **No funded live run has been
-      performed** — `STORED ON 0G` is currently `not established` for every resource, and the page
-      says so rather than showing a number it cannot back. The live run is a separate approved step.
+- [x] **PR 3/4 (ADR-017), merged (PR #53)**: the 0G evidence publication path is built, wired and
+      tested against injected fake transports. `aegisone-worker` gains one internal,
+      token-authenticated, fail-closed publication route; the app gains an operator-only trigger;
+      `/verified` becomes the real Verified Library with four independently-earned states. **No
+      funded live run has been performed** — `STORED ON 0G` is currently `not established` for every
+      resource, and the page says so rather than showing a number it cannot back. The live run is a
+      separate approved step.
+- [x] **PR 4/4 (ADR-019), open against `main`**: `/agents` is now a real FOR AGENTS page — verbatim
+      MCP/REST payloads, the four real MCP tool names held equal to the server's registered set by a
+      real-client test, and an explicit "not available today" section (0G evidence retrieval, the
+      operator-only publish route, `SIGNED_RELEASE`, per-agent credentials). Existing
+      `hub-pages.test.ts`/`m9-frontend-security-audit.test.ts` extended to cover it. This PR also
+      resolves an ADR numbering collision (see ADR-019) and reconciles `PROJECT_STATE.md`,
+      `planning/current-sprint.md`, `README.md`, and `docs/18-m9-frontend-plan.md` to current
+      reality.
 
 ## M8.1 — COMPLETE
 
@@ -225,7 +234,7 @@ noted (confirmed unrelated: this issue's diff touches only `apps/web` and `docs/
 repo owner, unchanged from M8.5/M8.9: a live GitHub OAuth click-through (no GitHub App credentials
 exist in this environment) and live 0G evidence links (no live M8.9 run has been performed yet).
 
-## Active gate — product restructure, four-section IA (PR 1 of 4)
+## Active gate — product restructure, four-section IA (PR 4 of 4, final)
 
 Branch `feature/skills-library-ia`. Decision record:
 `docs/decisions/016-four-section-product-ia-and-skill-library.md`.
@@ -251,10 +260,10 @@ Primary navigation becomes exactly **SKILLS** (`/`) · **AUDIT** (`/audit`) · *
       audit values, escaping, no-SAFE-badge on every new page.
 - [x] Both entrypoints (`server.ts`, `vercel-entry.ts`) verified serving every route.
 
-### PR 2 — AUDIT section build-out ("Audit Lab") — IN REVIEW, NOT MERGED
+### PR 2 — AUDIT section build-out ("Audit Lab") — MERGED (PR #52)
 
 Branch `feature/audit-lab`. Decision record:
-`docs/decisions/017-audit-lab-and-package-verification-deferral.md`.
+`docs/decisions/018-audit-lab-and-package-verification-deferral.md`.
 
 - [x] `/audit` (alias `/scan`) opens with a four-card audit-type selector: **Agent Skill Audit**
       (LIVE — the existing deterministic paste-to-scan tool), **Package / Artifact Verification**,
@@ -266,7 +275,7 @@ Branch `feature/audit-lab`. Decision record:
       still-visible rule id), and an unconditional "What AegisOne did NOT prove" section rendered
       on every result regardless of verdict (Threat M8-019).
 - [x] Package/Artifact Verification (`packages/skill-verification-link`, fully built in M8.6) is
-      **deliberately deferred**, not wired to a public route, in this PR — see ADR-017 for the full
+      **deliberately deferred**, not wired to a public route, in this PR — see ADR-018 for the full
       reasoning (its `VerificationAuthorization` brand-gate has no provisioned end-user-facing
       trigger design yet, and rushing one around a real-compute/real-clone security boundary was
       judged worse than an honest "upcoming"). Existing verification evidence already in the
@@ -287,12 +296,47 @@ Branch `feature/audit-lab`. Decision record:
       changed; the full pre-existing `apps/web` test suite (191 tests before this PR) still passes
       unchanged, plus this PR's new tests.
 
-### PRs 3–4 — NOT STARTED
+### PR 3 — 0G publish path + Verified Library — MERGED (PR #53)
 
-- [ ] PR 3 — VERIFIED section: browsable index of resources carrying a real correspondence verdict.
-- [ ] PR 4 — FOR AGENTS: guided onboarding, per-agent credentials, worked client examples.
+Branch `feature/0g-publish-verified-library`. Decision record:
+`docs/decisions/017-0g-evidence-publication-and-verified-library.md`.
 
-Do not begin PR 3 until PR 2 is merged.
+- [x] `packages/evidence-publish`: canonical evidence manifest binding the 0G Storage root into the
+      canonical evidence digest, plus `checkStoragePublicationIntegrity`.
+- [x] `apps/worker` gains `POST /internal/publish-evidence` — the only route in AegisOne able to
+      spend 0G, absent unless `AEGISONE_WORKER_INTERNAL_TOKEN` is set, constant-time bearer auth
+      before any body read, closed request key set.
+- [x] `apps/web` gains operator-token-only `POST /api/v1/publish`; `assembleTrustEvidence` and the
+      evidence-history endpoint both null `storageRoot`/`registryRecordId` unless the publication
+      gate passes.
+- [x] `/verified` is the real Verified Library: `INDEXED`/`AUDITED`/`VERIFIED`/`STORED ON 0G`, each
+      independently earned, absent reasons printed rather than hidden.
+- [x] Whole path proven in CI against injected fake 0G transports.
+- [ ] **No funded live 0G publication has been run.** `STORED ON 0G` reads `not established` and the
+      library tally reads `0` for every resource. This is a separate, explicitly approved step
+      requiring the repo owner to deploy the worker with real env vars and approve testnet spend.
+
+### PR 4 — FOR AGENTS + final reconciliation — OPEN AGAINST `main`
+
+Branch `feature/for-agents`. Decision record:
+`docs/decisions/019-for-agents-and-final-reconciliation.md`.
+
+- [x] `/agents` rebuilt as a real page: the four live MCP tool names
+      (`aegisone_search`/`aegisone_inspect`/`aegisone_evaluate`/`aegisone_scan`) held exactly equal
+      to the server's registered set by a real `@modelcontextprotocol/sdk` client test; every printed
+      HTTP endpoint issued as a real request in the same test; every payload block on the page
+      captured verbatim from a running server.
+- [x] Threat M8-018's denylist (`aegisone_install`/`_execute`/`_sign`/`_run_arbitrary_build`/
+      `_upload_secret`) printed on the page and asserted to never be advertisable.
+- [x] Explicit "not available today" section: 0G evidence retrieval (no funded publication),
+      `POST /api/v1/publish` (operator-only, not an agent-callable route), `SIGNED_RELEASE` (no code
+      path emits it), per-agent credentials/rate budgets (none exist).
+- [x] `apps/web/test/hub-pages.test.ts` and `apps/web/test/m9-frontend-security-audit.test.ts`
+      extended to cover the real page in place of the PR 1 placeholder assertions.
+- [x] ADR numbering collision (two files both claiming ADR-017) resolved by renumbering the Audit
+      Lab decision to ADR-018.
+- [x] `PROJECT_STATE.md`, `planning/current-sprint.md` (this file), `README.md`, and
+      `docs/18-m9-frontend-plan.md` reconciled to current reality.
 
 ### Standing invariants for every PR in this restructure
 

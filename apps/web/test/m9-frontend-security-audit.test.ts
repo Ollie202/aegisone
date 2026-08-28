@@ -223,3 +223,35 @@ test("the library state vocabulary never collapses the four facts into one verdi
   assert.match(libraryStateMeaning("STORED_ON_0G"), /Not a verdict/);
   assert.match(libraryStateMeaning("INDEXED"), /Not a verification/);
 });
+
+/**
+ * PR 4/4 (ADR-019) additions: the FOR AGENTS page is the one surface that tells a *machine* what
+ * AegisOne offers, so a wrong claim there is acted on rather than read. These assertions cover the
+ * vocabulary and the script; `apps/web/test/agents-page.test.ts` covers set-equality with the live
+ * server's registered tools.
+ */
+
+test("the advertised MCP tool list can never contain a Threat M8-018 denied primitive", async () => {
+  const { ADVERTISED_MCP_TOOLS } = await import("../src/pages/agents.ts");
+  const advertised = new Set<string>(ADVERTISED_MCP_TOOLS);
+  for (const denied of ["aegisone_install", "aegisone_execute", "aegisone_sign", "aegisone_run_arbitrary_build", "aegisone_upload_secret"]) {
+    assert.ok(!advertised.has(denied), `${denied} must never be advertised (docs/17 Threat M8-018)`);
+  }
+  // Read/policy vocabulary only: nothing that names a mutation, a build, a spend or a signature.
+  for (const name of advertised) {
+    assert.doesNotMatch(name, /install|execute|run|build|sign|upload|publish|write|deploy|spend/i, `${name} names a non-read primitive`);
+  }
+});
+
+test("the FOR AGENTS page's inline script is a clipboard convenience and nothing else", async () => {
+  const source = await readFile(fileURLToPath(new URL("../src/pages/agents.ts", import.meta.url)), "utf8");
+  const script = source.match(/const COPY_SCRIPT = `([\s\S]*?)`;/)?.[1] ?? "";
+  assert.ok(script.length > 0, "expected the copy-to-clipboard script to be present");
+  // No network, no evaluation, no storage, no dynamic import — a copy button cannot become a
+  // channel for anything else.
+  for (const forbidden of [/\bfetch\s*\(/, /XMLHttpRequest/, /\beval\s*\(/, /new Function/, /import\s*\(/, /localStorage/, /document\.write/, /innerHTML/]) {
+    assert.doesNotMatch(script, forbidden, `the copy script must not use ${forbidden}`);
+  }
+  // It reads only from elements this page rendered itself, and writes only to the clipboard.
+  assert.match(script, /navigator\.clipboard\.writeText/);
+});

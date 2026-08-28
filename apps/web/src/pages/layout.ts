@@ -342,13 +342,47 @@ p{color:var(--ink-soft);max-width:62ch}
 .sectionNote{font-size:13px;margin:0 0 16px;max-width:70ch}
 
 /* ---------- FOR AGENTS: machine-access surface ---------- */
-.endpointList{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
-.endpoint{border:var(--border);border-radius:var(--radius-md);background:var(--paper);padding:18px 20px;position:relative}
-.endpoint h3{margin:0 0 6px;font-size:17px}
-.endpoint p{font-size:13.5px;margin:0 0 10px}
-.endpointUrl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--card);border:var(--line) solid var(--ink);border-radius:8px;padding:8px 11px;display:block;word-break:break-all;font-weight:700}
+.endpointList{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0;border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);overflow:hidden;background:var(--card)}
+.endpoint{padding:14px 16px;border-right:var(--line) solid var(--ink);border-bottom:var(--line) solid var(--ink)}
+.endpoint h3{margin:0 0 5px;font-size:14px}
+.endpoint p{font-size:12.5px;margin:0 0 8px;max-width:46ch}
+.endpointUrl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--paper);border:1px solid var(--ink);border-radius:6px;padding:5px 8px;display:block;word-break:break-all;font-weight:700}
 .toolList{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .toolList li{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;border:var(--line) solid var(--ink);border-radius:999px;padding:4px 11px;background:var(--card);font-weight:700}
+.toolList--denied li{background:transparent;border-style:dashed;color:var(--ink-soft);text-decoration:line-through}
+
+/* ---------- FOR AGENTS: code blocks. Ink field, paper text: maximum contrast, real monospace,
+   horizontally scrollable in their own box so the page body never scrolls sideways. ---------- */
+.codeCard{border:var(--line-thick) solid var(--ink);border-radius:var(--radius-sm);overflow:hidden;margin:12px 0 0;background:var(--ink)}
+.codeHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 13px;background:var(--yellow);color:var(--ink);border-bottom:var(--line) solid var(--ink);font-size:10.5px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+.codeHead--in{background:var(--cyan)}
+.codeHead--out{background:var(--periwinkle)}
+.codeHead--refuse{background:var(--alarm)}
+.codeCard pre{margin:0;padding:15px 17px;overflow-x:auto;color:var(--paper);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.62;tab-size:2}
+.codeCard code{font:inherit;color:inherit;background:none;border:0;padding:0}
+.copyButton{font-family:inherit;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;border:var(--line) solid var(--ink);border-radius:999px;background:var(--card);color:var(--ink);padding:3px 10px;cursor:pointer;transition:transform 150ms ease,box-shadow 150ms ease}
+.copyButton:hover{transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink)}
+.copyButton[hidden]{display:none}
+
+/* ---------- FOR AGENTS: the flow spine. One numbered editorial column, not a card grid. ------- */
+.flow{list-style:none;margin:24px 0 0;padding:0;counter-reset:flowstep}
+.flowStep{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 20px;padding:24px 0;border-top:var(--line) solid var(--ink)}
+.flowStep:first-child{border-top:var(--line-thick) solid var(--ink)}
+.flowNum{counter-increment:flowstep;font-size:clamp(30px,4vw,52px);font-weight:900;letter-spacing:-.06em;line-height:.9;opacity:.24;transform:rotate(-7deg);min-width:2ch}
+.flowNum::before{content:"0" counter(flowstep)}
+.flowBody{min-width:0}
+.flowBody h3{margin:0 0 6px;font-size:clamp(18px,2.1vw,25px);letter-spacing:-.035em}
+.flowBody > p{font-size:13.5px;margin:0;max-width:64ch}
+.flowAside{font-size:12.5px;margin:12px 0 0;border-left:var(--line-thick) solid var(--lavender);background:var(--paper);padding:9px 13px;border-radius:0 10px 10px 0;font-weight:600;max-width:64ch}
+
+/* The refusal is the page's second dominant object: a full-bleed alarm-edged field, deliberately
+   breaking the frame's inner margin so it reads as the punchline rather than another section. */
+.refusal{border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);background:var(--card);padding:clamp(20px,3vw,34px);margin:32px -10px;box-shadow:var(--hard-shadow);position:relative}
+.refusal::before{content:"";position:absolute;left:0;top:22px;bottom:22px;width:10px;background:var(--alarm);border-right:var(--line) solid var(--ink)}
+.refusal h2{font-size:clamp(24px,3.6vw,44px);line-height:.98;max-width:18ch}
+.refusalGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,2.4vw,28px);align-items:start;margin-top:18px}
+.agentArt{width:100%;max-width:430px;justify-self:center}
+.agentArt svg{width:100%;height:auto;display:block;overflow:visible}
 
 /* ---------- upcoming-section notice: honest about what is not built yet ---------- */
 .upcoming{border:var(--line-thick) dashed var(--ink);border-radius:var(--radius-md);background:var(--paper);padding:20px 22px;margin-top:26px}
@@ -380,6 +414,7 @@ p{color:var(--ink-soft);max-width:62ch}
   .libRow{grid-template-columns:auto 76px minmax(0,1fr);gap:6px 16px}
   .libArt{width:76px;height:76px;border-radius:14px}
   .libRow--feature .libArt{width:96px;height:96px}
+  .refusalGrid{grid-template-columns:1fr}
 }
 /* ── Verified Library (PR 3/4) ───────────────────────────────────────────────
    The four states are shown as a ledger of chips, never as one badge. An established state gets a
@@ -463,6 +498,17 @@ p{color:var(--ink-soft);max-width:62ch}
   .tally--zerog{transform:none}
   .tallyNum{font-size:24px}
   .pubBlock{padding:12px 13px}
+  /* FOR AGENTS, recomposed rather than shrunk: the flow numeral becomes a header chip above its
+     own step instead of a squeezed left column, the refusal loses its negative margin and hard
+     shadow, and the endpoint table becomes a single stacked column. */
+  .flowStep{grid-template-columns:1fr;gap:4px;padding:20px 0}
+  .flowNum{font-size:26px;transform:rotate(-5deg);opacity:.32}
+  .refusal{margin:24px 0;padding:18px 16px;box-shadow:none}
+  .refusal::before{width:7px}
+  .refusalGrid{grid-template-columns:1fr}
+  .endpoint{border-right:0}
+  .codeCard pre{font-size:11.5px;padding:12px 13px}
+  .agentArt{max-width:100%}
 }
 `;
 

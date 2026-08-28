@@ -1,7 +1,7 @@
 # Project State
 
-**Last updated:** 2026-08-26  
-**Phase:** M9 active — M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 merged (PR #43, backend security/deployment/contract-freeze) — the backend JSON/MCP contract is declared frontend-ready, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`; M9 (Issue #31, Hub frontend) implemented on `agent/m9-hub-frontend`, PR pending review/merge — see "M9" section below
+**Last updated:** 2026-08-28  
+**Phase:** M9/product-restructure active — M8.2 merged (PR #34); M8.3 merged (PR #35); M8.4 merged (PR #36); M8.5 merged (PR #37); M8.6 merged (PR #38); M8.7 merged (PR #39); M8.8 merged (PR #40); M8.9 merged (PR #41) — local/deterministic substitution proof only; the live repository-authenticated + real-0G-evidence version remains pending repo-owner GitHub App credentials and explicit 0G testnet spend approval; M8.10 merged (PR #42, official MCP Registry indexing); M8.11 merged (PR #43, backend security/deployment/contract-freeze) — the backend JSON/MCP contract is declared frontend-ready, but production deployment verification (Railway health, Supabase advisors, pending migration application, GitHub App creation) remains deferred to the repo owner per `docs/23-m8-11-production-readiness.md`; the M9 Hub frontend (Issue #31) evolved into the four-section-IA product restructure (PR 1 #51, PR 2 #52 and PR 3 #53 are each merged into `main`; verified via `git log origin/main --merges`) and **PR 4/4 (`feature/for-agents`) is open against `main`, not yet merged** — see "Product restructure — four-section IA" below for what is real today: SKILLS (`/`) and AUDIT (`/audit`, `/scan`) are fully live; VERIFIED (`/verified`) is real with `STORED ON 0G` honestly at 0 (no funded publication has run); FOR AGENTS (`/agents`) is now the real MCP/REST onboarding surface, not a placeholder
 **Product name:** AegisOne
 
 **2026-08-26 — Rebrand:** the product was renamed from ProofRail to AegisOne (repository `Ollie202/proofrail-0g` renamed to `Ollie202/aegisone`). This was a mechanical rename of the npm package scope (`@proofrail/*` → `@aegisone/*`), branding text, and the two Supabase Edge Function folders (`proofrail-catalog`/`proofrail-jobs` → `aegisone-catalog`/`aegisone-jobs`) — no product logic changed. The Railway service names (`proofrail-app`, `proofrail-worker`), the production URL (`https://proofrail-app-production.up.railway.app`), and every `PROOFRAIL_*` environment variable name were deliberately left unchanged to avoid breaking the live deployment, since this environment has no Railway/Supabase credentials to update the actual live infrastructure to match. The live Supabase project still has the Edge Functions deployed under their old `proofrail-catalog`/`proofrail-jobs` names until the repo owner redeploys them under the new folder names; see `docs/decisions/014-rebrand-proofrail-to-aegisone.md` for the full rationale and the infra-identifier exceptions.
@@ -653,13 +653,17 @@ The previous technical submission packet remains complete. Final user-authentica
 
 M8 engineering improves the judgeable product without invalidating the already-proven M1–M7 evidence.
 
-## Product restructure — four-section IA (PR 1 of 4, merged; PR 2 of 4, in review)
+## Product restructure — four-section IA (PR 1-3 of 4 merged into `feature/for-agents`; PR 4 of 4 open against `main`)
 
 The M9 Hub's information architecture is being restructured across four PRs. **PR 1
 (`feature/skills-library-ia`) merged to `main` as PR #51**; see
 `docs/decisions/016-four-section-product-ia-and-skill-library.md` for its decision record.
-**PR 2 (`feature/audit-lab`) is open and not merged**; see
-`docs/decisions/017-audit-lab-and-package-verification-deferral.md`.
+**PR 2 (`feature/audit-lab`) is merged (PR #52)**; see
+`docs/decisions/018-audit-lab-and-package-verification-deferral.md`.
+**PR 3 (`feature/0g-publish-verified-library`) is merged (PR #53)**; see
+`docs/decisions/017-0g-evidence-publication-and-verified-library.md`.
+**PR 4 (`feature/for-agents`) is the FOR AGENTS section plus this final reconciliation pass and is
+open, not yet merged to `main`**; see `docs/decisions/019-for-agents-and-final-reconciliation.md`.
 
 Primary navigation is now exactly **SKILLS** (`/`), **AUDIT** (`/audit`), **VERIFIED**
 (`/verified`), **FOR AGENTS** (`/agents`).
@@ -695,7 +699,7 @@ manufacture a pass. Its correspondence is honestly `NOT_EVALUATED` (there is no 
 artifact), its source assurance is `DECLARED` (authority was never proven), and it has no canonical
 evidence and no 0G storage root because nothing was written to 0G for it.
 
-### PR 2 — Audit Lab (AUDIT section build-out) — open, not merged
+### PR 2 — Audit Lab (AUDIT section build-out) — merged (PR #52)
 
 `/audit` (alias `/scan`) now opens with a four-card audit-type selector: **Agent Skill Audit**
 (LIVE — the existing deterministic paste-to-scan tool, unchanged in its core verdict logic),
@@ -717,7 +721,7 @@ worker/admin-token authorization path today — nothing provisions an end-user-f
 selection flow, an independently-stricter rate limiter, or a real (non-fixture-local)
 end-to-end proof, and the underlying operation is a genuine bounded `git clone` plus artifact
 fetch, not a cheap read. Rather than rush a trigger route around that security boundary, this PR
-marks it UPCOMING in the UI and records the full reasoning in ADR-017 — the issue's own explicitly
+marks it UPCOMING in the UI and records the full reasoning in ADR-018 — the issue's own explicitly
 authorized "honest deferral beats an unsafe endpoint" option. Existing verification evidence
 already persisted in the catalog remains fully visible through the unchanged `/api/v1/resources/:id/evidence`
 route and Evidence Passport; only *anonymously triggering a new one* is deferred.
@@ -743,7 +747,7 @@ repository/commit, so only `security` carries real evidence for either.
 
 PR 2/4 (Audit Lab, ADR-016 sections 2/4) is merged (PR #52).
 
-### PR 3/4 — 0G publish path + Verified Library — CODE COMPLETE / LIVE RUN PENDING
+### PR 3/4 — 0G publish path + Verified Library — merged (PR #53); LIVE RUN STILL PENDING
 
 Branch `feature/0g-publish-verified-library`. ADR-017
 (`docs/decisions/017-0g-evidence-publication-and-verified-library.md`).
@@ -780,17 +784,51 @@ and (if a registry contract is configured) a real record id + transaction. That 
 approval for testnet spend, the worker deployed with the new env vars, and the operator token set —
 none of which this environment may do.
 
+### PR 4/4 — FOR AGENTS + final reconciliation — open against `main`, not yet merged
+
+Branch `feature/for-agents`. ADR-019 (`docs/decisions/019-for-agents-and-final-reconciliation.md`).
+
+`/agents` is now a real page, not the PR 1 placeholder. It advertises exactly the four MCP tools
+`apps/web/src/mcp.ts` registers (`aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`,
+`aegisone_scan`) and the eight HTTP endpoints those tools/the REST API actually serve, with every
+request/response block on the page captured verbatim from a running server rather than invented.
+Two anti-drift tests hold the page to the running code:
+`apps/web/test/agents-page.test.ts` connects a real `@modelcontextprotocol/sdk` client to a real
+`POST /mcp` and asserts the page's advertised tool set is exactly equal to the server's registered
+set (and issues every printed HTTP endpoint as a real request); `apps/web/test/hub-pages.test.ts`
+and `apps/web/test/m9-frontend-security-audit.test.ts` were extended to cover the new page (no
+generic SAFE/TRUSTED badge, no invented trust score, no bare `verified:true`/`safe:true`, all
+untrusted text escaped, no non-read primitive nameable in the advertised tool list, the inline
+copy-to-clipboard script does nothing but read the page's own DOM and write to the clipboard).
+
+The page also states, in its own visible "not available today" section, four things this surface
+deliberately cannot do: retrieving a stored evidence bundle from 0G (no funded publication has run,
+so `trust.canonicalEvidence.storageRoot` is `null` on every resource this deployment serves —
+consistent with PR 3's honest `STORED ON 0G: not established` / tally-of-0 state); calling
+`POST /api/v1/publish` (operator-token-gated, not part of the agent surface, and never will be);
+`SIGNED_RELEASE` (no code path emits it); and per-agent credentials or rate-limit budgets (there is
+none — every read/policy route is public and unauthenticated).
+
+This PR also renumbers `docs/decisions/017-audit-lab-and-package-verification-deferral.md` to
+`018-audit-lab-and-package-verification-deferral.md` — the PR 2 and PR 3 agents had both minted
+ADR-017 for different decisions, and this reconciliation pass is where the collision was noticed
+and fixed. `docs/decisions/017-0g-evidence-publication-and-verified-library.md` (PR 3) keeps its
+number; every prose/code reference to the audit-lab decision now says ADR-018.
+
 ## Current next action
 
-Review and merge **PR 3/4** (`feature/0g-publish-verified-library`) with green CI. Do not perform a
-live 0G run as part of that merge — the live publication is a separate, explicitly approved step
-requiring the repo owner to deploy the worker with `AEGISONE_WORKER_INTERNAL_TOKEN` (and optionally
+Review and merge **PR 4/4** (`feature/for-agents` → `main`) with green CI. PR 1-3 (#51, #52, #53)
+already targeted and merged into `main` individually, so this merge adds only PR 4's own work.
+Do not perform a live 0G run as
+part of that merge — the live publication is a separate, explicitly approved step requiring the
+repo owner to deploy the worker with `AEGISONE_WORKER_INTERNAL_TOKEN` (and optionally
 `AEGISONE_REGISTRY_CONTRACT`), set `AEGISONE_WORKER_URL` +
 `AEGISONE_PUBLISH_OPERATOR_TOKEN_SHA256` on the app, and approve Galileo testnet spend. Env var
 details are in `docs/15-m8-api-inventory.md` section 11.
 
-Previously recorded, still accurate: open/review the **M9 / Issue #31** pull request (`agent/m9-hub-frontend`) — the human-facing Hub
-built on the now-merged M8.11-frozen backend contract — require green CI, merge.
+Previously recorded, still accurate: the **M9 / Issue #31** Hub frontend and the four-section-IA
+restructure it evolved into are the same body of work described above; there is no separate M9 PR
+still pending beyond PR 4/4.
 
 Repo-owner actions remain outstanding and do not block M9 **code** from starting, but are required
 before this can be called a verified-healthy production deployment or before M8's live-evidence

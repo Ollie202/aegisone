@@ -1,5 +1,17 @@
 # M9 Frontend Plan — AegisOne Hub
 
+> **Information architecture superseded.** This document's four-page IA (`Search`, resource detail,
+> `Claim`, `Ledger`) was replaced by the four-section IA — SKILLS (`/`), AUDIT (`/audit`), VERIFIED
+> (`/verified`), FOR AGENTS (`/agents`) — decided in
+> `docs/decisions/016-four-section-product-ia-and-skill-library.md` and completed by
+> `docs/decisions/017-0g-evidence-publication-and-verified-library.md`,
+> `docs/decisions/018-audit-lab-and-package-verification-deferral.md`, and
+> `docs/decisions/019-for-agents-and-final-reconciliation.md`. Follow those ADRs for the current
+> navigation and page set. This document's **evidence-dimension content** — the Evidence Passport's
+> seven named sections, the "never collapse to SAFE/TRUSTED" principle, and the resource-detail field
+> list — remains accurate and is still what `/resources/:resourceId` implements; only the top-level
+> page/route list below is stale.
+
 **Start condition:** do not implement this until M8 backend is frozen and the controlled substitution vertical slice is proven.
 
 ## Goal

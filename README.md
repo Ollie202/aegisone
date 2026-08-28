@@ -1,13 +1,29 @@
 # AegisOne *(submission name / working brand)*
 
-> Independently reproduce software or Agent Skills from publisher-declared source and give humans or AI agents evidence of whether the distributed artifact actually corresponds to that source.
+> A trust-aware discovery layer for agent capabilities: independently reproduce software or Agent
+> Skills from publisher-declared source, and give humans or AI agents named, separate evidence —
+> never a single trust score — about whether what they'd get actually corresponds to that source.
 
-**Status:** M1–M7 live-proven; submission-readiness pass in progress  
-**Current target:** 0G Bridge Buildathon — Wave 3  
-**Live app:** https://proofrail-app-production.up.railway.app  
+**Status:** M1–M7 live-proven; M8 backend frozen and merged; M9 Hub frontend live as a four-section
+product (SKILLS / AUDIT / VERIFIED / FOR AGENTS)  
+**Primary live app (Vercel):** https://aegisone-three.vercel.app  
+**Parity/fallback (Railway):** https://proofrail-app-production.up.railway.app  
 **Public source:** https://github.com/Ollie202/aegisone
 
 `AegisOne` remains the submission name for this build. A separate brand-risk note is retained in `research/brand-risk.md`; the name is not being represented as a cleared production trademark.
+
+## The product today
+
+AegisOne is four sections, each answering a different question:
+
+| Section | Route | What it answers |
+| --- | --- | --- |
+| **SKILLS** | `/` | What can I get? A real, browsable library of Agent Skills/capabilities, backed by catalog rows, never fabricated demo data. |
+| **AUDIT** | `/audit` (alias `/scan`) | Check something you already have, right now. Paste-to-scan is live today; Package/Artifact Verification, Smart Contract Audit, and MCP/Agent Capability Audit are explicitly upcoming, not silently stubbed. |
+| **VERIFIED** | `/verified` | What did AegisOne actually prove, and what does that mean? Four independent, never-summed states: `INDEXED`, `AUDITED`, `VERIFIED`, `STORED ON 0G`. The 0G publish path is built and tested end to end against injected transports, but **no funded live publication has run yet** — every resource shows `STORED ON 0G` as not established, and the library's tally reads `0`. |
+| **FOR AGENTS** | `/agents` | Machine access to the same evidence: four read/policy-only MCP tools (`aegisone_search`, `aegisone_inspect`, `aegisone_evaluate`, `aegisone_scan`) and the frozen M8.7 REST contract, with verbatim captured payloads and an explicit list of what this surface deliberately cannot do (0G retrieval, publishing, `SIGNED_RELEASE`, per-agent credentials). |
+
+The full decision record for this structure is `docs/decisions/016-four-section-product-ia-and-skill-library.md` through `docs/decisions/019-for-agents-and-final-reconciliation.md`. The rest of this README covers the proven M1–M7 correspondence engine those four sections are built on.
 
 ## The problem
 
@@ -110,7 +126,7 @@ proofrail-worker = controlled secret-bearing worker, standby by default
 0G registry      = compact immutable commitments
 ```
 
-Production Railway is intentionally consolidated to only `proofrail-app` and `proofrail-worker`. The old milestone-specific M2/M3/M4/M5 service boxes have been removed after their evidence was preserved.
+Production Railway is intentionally consolidated to only `proofrail-app` and `proofrail-worker`. The old milestone-specific M2/M3/M4/M5 service boxes have been removed after their evidence was preserved. Vercel hosts the same `apps/web` frontend (via `apps/web/src/vercel-entry.ts`) as the primary production origin at `https://aegisone-three.vercel.app`; Railway's `proofrail-app` remains a parity/fallback deployment of the identical code. Neither Vercel nor `proofrail-app` ever holds the 0G signer — only `proofrail-worker` does.
 
 The dedicated Supabase database has **no mutable MATCH/MISMATCH field**. Cached verification results are rendered only after AegisOne's integrity-checked presentation layer accepts the evidence.
 
@@ -171,7 +187,8 @@ node --experimental-strip-types packages/cli/src/cli.ts inspect \
 
 ## Judge/demo links
 
-- Live app: https://proofrail-app-production.up.railway.app
+- Live app (Vercel, primary): https://aegisone-three.vercel.app
+- Live app (Railway, parity/fallback): https://proofrail-app-production.up.railway.app
 - Evidence ledger: `hackathon/evidence.md`
 - M5 mainnet receipt: `hackathon/m5-aristotle-mainnet.json`
 - M7 live Agent Skill receipt: `hackathon/m7-live-evidence.json`
@@ -185,10 +202,12 @@ node --experimental-strip-types packages/cli/src/cli.ts inspect \
 3. `docs/03-architecture.md`
 4. `docs/11-trust-model.md`
 5. `planning/current-sprint.md`
-6. `hackathon/m5-live-evidence.json`
-7. `hackathon/m5-aristotle-mainnet.json`
-8. `hackathon/m7-live-evidence.json`
-9. `hackathon/evidence.md`
+6. `docs/decisions/016-four-section-product-ia-and-skill-library.md` through
+   `docs/decisions/019-for-agents-and-final-reconciliation.md` (the current product structure)
+7. `hackathon/m5-live-evidence.json`
+8. `hackathon/m5-aristotle-mainnet.json`
+9. `hackathon/m7-live-evidence.json`
+10. `hackathon/evidence.md`
 
 ## License
 
