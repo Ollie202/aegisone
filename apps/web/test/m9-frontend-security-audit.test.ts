@@ -95,7 +95,7 @@ test("the trust-state accent tokens are distinct values, so INDEXED can never sh
  */
 
 const PAGE_MODULES = ["skills.ts", "verified.ts", "agents.ts", "scan.ts", "resource.ts", "source-claim.ts", "layout.ts"];
-const NEW_UI_MODULES = ["skill-card.mjs", "skill-category.mjs", "category-art.mjs"];
+const NEW_UI_MODULES = ["skill-card.mjs", "skill-category.mjs", "category-art.mjs", "verify-view.mjs"];
 
 test("no server-rendered page or UI module emits a generic SAFE/TRUSTED badge or a numeric trust score", async () => {
   const files = [
@@ -109,6 +109,10 @@ test("no server-rendered page or UI module emits a generic SAFE/TRUSTED badge or
     fileURLToPath(new URL("../src/library-state.ts", import.meta.url)),
     fileURLToPath(new URL("../src/publish-trigger.ts", import.meta.url)),
     fileURLToPath(new URL("../src/publication-network.ts", import.meta.url)),
+    // ADR-020: the package/artifact verification trigger and its result renderer. This is the
+    // newest surface that could collapse a real correspondence verdict into a "SAFE" word or an
+    // invented score, so it is held to exactly the same vocabulary rules.
+    fileURLToPath(new URL("../src/verify-trigger.ts", import.meta.url)),
   ];
   for (const file of files) {
     const source = await readFile(file, "utf8");
@@ -120,6 +124,54 @@ test("no server-rendered page or UI module emits a generic SAFE/TRUSTED badge or
     assert.doesNotMatch(code, /"verified"\s*:\s*true|verified:\s*true/, `${file} emits a bare verified:true`);
     assert.doesNotMatch(code, /"safe"\s*:\s*true|safe:\s*true/, `${file} emits a bare safe:true`);
   }
+});
+
+/**
+ * ADR-020. The verification result panel is the only place in the frontend that renders a real
+ * MATCH, so it carries the highest risk of quietly becoming "this package is safe". These are the
+ * properties that must hold no matter how the copy is later edited.
+ */
+test("the verification result renderer states its limits unconditionally and never collapses MATCH into a safety claim", async () => {
+  const { verifyResultHtml, verifyErrorHtml } = await import("../src/ui/verify-view.mjs");
+
+  const matched = verifyResultHtml({
+    resourceId: "aegisone-test:x",
+    capabilityVerificationId: "row-1",
+    inspected: { repositoryUrl: "https://github.com/o/r", exactCommitSha: "a".repeat(40), subdirectory: null, sourceSnapshotSha256: "b".repeat(64) },
+    sourceInspection: { status: "INSPECTED", exactCommitSha: "a".repeat(40), sourceSnapshotSha256: "b".repeat(64) },
+    correspondence: { status: "MATCH", publisherSha256: "c".repeat(64), reproducedSha256: "c".repeat(64) },
+    security: { status: "COMPLETED", analysisKind: "DETERMINISTIC_STATIC", highestSeverity: "INFO", findingCount: 0, auditTarget: "publisher" },
+    comparedDistinctDistributedArtifact: true,
+  });
+  // The limits block is unconditional — it appears on the best possible outcome, not only on bad ones.
+  assert.match(matched, /What this does NOT prove/);
+  assert.match(matched, /MATCH is not/);
+  assert.match(matched, /not source authentication/);
+  assert.doesNotMatch(matched, />\s*(SAFE|TRUSTED|SECURE)\s*</i);
+
+  // A source-only run must say so loudly, and must not render an absent verdict as a passing one.
+  const sourceOnly = verifyResultHtml({
+    resourceId: "aegisone-test:y",
+    capabilityVerificationId: "row-2",
+    inspected: { repositoryUrl: "https://github.com/o/r", exactCommitSha: "a".repeat(40), subdirectory: null, sourceSnapshotSha256: "b".repeat(64) },
+    sourceInspection: { status: "INSPECTED", exactCommitSha: "a".repeat(40), sourceSnapshotSha256: "b".repeat(64) },
+    correspondence: { status: "NOT_EVALUATED", publisherSha256: null, reproducedSha256: null },
+    security: { status: "COMPLETED", analysisKind: "DETERMINISTIC_STATIC", highestSeverity: "INFO", findingCount: 0, auditTarget: "source" },
+    comparedDistinctDistributedArtifact: false,
+  });
+  assert.match(sourceOnly, /No distributed artifact was compared/);
+  assert.doesNotMatch(sourceOnly, />MATCH</);
+
+  // Hostile text from a backend error envelope is escaped, never injected.
+  const hostile = verifyErrorHtml({ error: "<img src=x onerror=alert(1)>", message: "<script>alert(2)</script>" });
+  assert.doesNotMatch(hostile, /<img src=x/);
+  assert.doesNotMatch(hostile, /<script>alert/);
+  assert.match(hostile, /&lt;script&gt;/);
+  // A failed run is never rendered as a verdict about the resource.
+  assert.doesNotMatch(hostile, />MATCH<|>MISMATCH</);
+
+  // The resting state asserts nothing at all.
+  assert.doesNotMatch(verifyResultHtml(null), />MATCH<|>MISMATCH<|>INSPECTED</);
 });
 
 test("the new UI modules handle external text safely, each in the way its role requires", async () => {
