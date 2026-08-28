@@ -216,7 +216,17 @@ async function seedFixtureSkill(store: CatalogStore, definition: FixtureSkillDef
     authenticatedAt: null,
     authorityObservations: [],
   };
-  const claimResult = await store.createSourceClaim(claim);
+  /**
+   * IDEMPOTENCY (see the same guard in `library-seed.ts`, added after this bug emptied the
+   * production library once already). This seed runs on every cold start. The canonical claim is
+   * deterministic, so its digest is too — and `source_claims.claim_digest_sha256` is UNIQUE, so an
+   * unconditional insert succeeds exactly once and then throws on every subsequent boot, taking
+   * the whole library down with it. Reuse the existing claim for identical evidence; never mint a
+   * second claim for it, and never mutate the stored one.
+   */
+  const existingClaims = await store.listActiveSourceClaimsByResourceVersion(version.id);
+  const existingClaim = existingClaims.find((candidate) => candidate.claimDigestSha256 === claim.claimDigestSha256);
+  const claimResult = existingClaim ? { claim: existingClaim } : await store.createSourceClaim(claim);
 
   const verification: NewCapabilityVerification = {
     resourceVersionId: version.id,
@@ -239,7 +249,23 @@ async function seedFixtureSkill(store: CatalogStore, definition: FixtureSkillDef
     registryTransaction: null,
     verifiedAt: null,
   };
-  await store.createCapabilityVerification(verification);
+  /**
+   * Same requirement. `capability_verifications` has no unique constraint, so an unconditional
+   * insert would not fail loudly — it would quietly append an identical evidence row on every cold
+   * start forever. Only record one when the latest row does not already describe exactly this
+   * evidence. A genuinely new result (a real ADR-020 verification run, say) still appends a new row
+   * and never mutates the previous verdict.
+   */
+  const latestVerification = await store.getLatestCapabilityVerification(version.id);
+  const alreadyRecorded =
+    latestVerification !== null &&
+    latestVerification.sourceClaimId === claimResult.claim.id &&
+    latestVerification.sourceInspectionStatus === verification.sourceInspectionStatus &&
+    latestVerification.sourceSnapshotSha256 === verification.sourceSnapshotSha256 &&
+    latestVerification.correspondenceStatus === verification.correspondenceStatus &&
+    latestVerification.securityHighestSeverity === verification.securityHighestSeverity &&
+    latestVerification.securityFindingCount === verification.securityFindingCount;
+  if (!alreadyRecorded) await store.createCapabilityVerification(verification);
 
   return {
     resourceId: resource.id,

@@ -91,3 +91,24 @@ test("both fixtures persist with a DECLARED source pin, no inspection yet, and n
   assert.equal(maliciousEntry!.trust.security.highestSeverity, "CRITICAL");
   assert.ok((maliciousEntry!.trust.security.findingCount ?? 0) >= 6);
 });
+
+test("re-seeding a fixture is idempotent: no duplicate source claim, no duplicate evidence row", async () => {
+  /**
+   * The seed runs on every cold start. `source_claims.claim_digest_sha256` is UNIQUE and the
+   * canonical claim is deterministic, so an unconditional insert succeeds exactly once and then
+   * throws forever after — which has already emptied the production library once (see the same
+   * guard in `library-seed.ts`). This asserts the fixture seeds are safe to run repeatedly.
+   */
+  const store = new InMemoryCatalogStore();
+  const first = await seedCleanReviewSkill(store);
+  const second = await seedCleanReviewSkill(store);
+  assert.equal(second.resourceId, first.resourceId);
+  assert.equal(second.resourceVersionId, first.resourceVersionId);
+
+  const claims = await store.listActiveSourceClaimsByResourceVersion(first.resourceVersionId);
+  assert.equal(claims.length, 1, "identical evidence must never mint a second source claim");
+  assert.equal(claims[0]?.assuranceLevel, "DECLARED");
+
+  const rows = await store.listCapabilityVerificationsByResourceVersion(first.resourceVersionId);
+  assert.equal(rows.length, 1, "identical evidence must never append a duplicate verification row");
+});
