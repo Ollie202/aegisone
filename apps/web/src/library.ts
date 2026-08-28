@@ -132,6 +132,14 @@ export class SkillLibraryLoader {
     if (!this.#seedPromise) {
       this.#seedPromise = this.#seed().catch((error) => {
         this.#seedPromise = null;
+        // Every caller below deliberately degrades to an empty library rather than fabricating
+        // one, which is correct — but it also made a total seeding failure invisible in
+        // production (the library silently rendered empty on both deployments while working
+        // locally). Log the reason here so the failure is diagnosable; this changes no
+        // behaviour and never turns a failure into content.
+        process.stderr.write(
+          `AegisOne library seeding failed: ${error instanceof Error ? error.message : String(error)}\n`,
+        );
         throw error;
       });
     }
