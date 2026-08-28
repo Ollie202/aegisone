@@ -17,7 +17,7 @@ import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "../src/library-see
 // `.gitattributes` marks `examples/agent-skills/** -text` so a Windows checkout is handed those
 // identical bytes rather than a CRLF-normalised copy, which would otherwise hash differently here
 // than in CI and make the digest the UI presents as evidence platform-dependent.
-const CLEAN_REVIEW_PACKAGE_SHA256 = "c3b0058260c1ea02d503d5f05bcba1d69ead8dfb793edc3c59f19553da563d44";
+const CLEAN_REVIEW_PACKAGE_SHA256 = "5bf754ab6273fadfb7fe358d9b41a8ef15160dbe7e7efb0df4c63cf780db0434";
 const MALICIOUS_SYNC_PACKAGE_SHA256 = "1b7100fbe4b58bedcc00f83067e60fffd124fce506703cea1a72aaafbc430799";
 
 test("clean-review is a genuinely well-formed SKILL.md package that audits CLEAN", async () => {
