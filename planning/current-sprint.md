@@ -219,11 +219,55 @@ noted (confirmed unrelated: this issue's diff touches only `apps/web` and `docs/
 repo owner, unchanged from M8.5/M8.9: a live GitHub OAuth click-through (no GitHub App credentials
 exist in this environment) and live 0G evidence links (no live M8.9 run has been performed yet).
 
+## Active gate — product restructure, four-section IA (PR 1 of 4)
+
+Branch `feature/skills-library-ia`. Decision record:
+`docs/decisions/016-four-section-product-ia-and-skill-library.md`.
+
+Primary navigation becomes exactly **SKILLS** (`/`) · **AUDIT** (`/audit`) · **VERIFIED**
+(`/verified`) · **FOR AGENTS** (`/agents`).
+
+### PR 1 — nav shell + SKILLS section — IN REVIEW, NOT MERGED
+
+- [x] Four-section primary nav; no nav route 404s or renders a dead control.
+- [x] SKILLS complete: real catalog-backed library, nine deterministic categories, per-category
+      bespoke illustrations, separate live-federated discovery strip.
+- [x] One real seeded resource (`Ollie202/goat_cookbook` @ `1471116222…`) with genuine digest,
+      genuine audit, and a genuine *failing* format validation shown honestly. No wrapping applied.
+- [x] AUDIT: `/audit` and `/scan` serve the identical working paste-to-scan page.
+- [x] VERIFIED / FOR AGENTS: real pages from what works today, each with a visible "not built yet"
+      section for the parts PRs 3–4 add.
+- [x] `Claim` and `Ledger` leave primary nav; `/source/claim`, `/proof`, `/scan` still work by
+      direct URL and from the footer. No M8.5 code removed.
+- [x] ARD fixtures still back `POST /search` and `/.well-known/ai-catalog.json`, and are asserted
+      unable to appear in the human library.
+- [x] Regression tests: category classifier, category/relevance non-escalation, seeded digests and
+      audit values, escaping, no-SAFE-badge on every new page.
+- [x] Both entrypoints (`server.ts`, `vercel-entry.ts`) verified serving every route.
+
+### PRs 2–4 — NOT STARTED
+
+- [ ] PR 2 — AUDIT section build-out.
+- [ ] PR 3 — VERIFIED section: browsable index of resources carrying a real correspondence verdict.
+- [ ] PR 4 — FOR AGENTS: guided onboarding, per-agent credentials, worked client examples.
+
+Do not begin PR 2 until PR 1 is merged.
+
+### Standing invariants for every PR in this restructure
+
+- Category and relevance can never reach trust evidence or policy evaluation.
+- `INDEXED` stays visually and semantically distinct from audited/verified states.
+- No generic `SAFE`/`TRUSTED` badge, no invented numeric trust score, no bare `verified:true`.
+- Colour is never the only signal for any state; unknown renders as the word "unknown".
+- Backend fields rendered verbatim; no client-side reinterpretation of any verdict.
+- Production stays Vercel + the two Railway services. No new hosting, service, or dependency.
+
 ## Planning artifacts
 
 Coding agents should read:
 
 - `CODEX.md`
+- `docs/decisions/016-four-section-product-ia-and-skill-library.md`
 - `docs/13-m8-backend-blueprint.md`
 - `docs/14-source-authentication.md`
 - `docs/15-m8-api-inventory.md`
