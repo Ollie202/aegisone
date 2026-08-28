@@ -381,6 +381,45 @@ p{color:var(--ink-soft);max-width:62ch}
   .libArt{width:76px;height:76px;border-radius:14px}
   .libRow--feature .libArt{width:96px;height:96px}
 }
+/* ── Verified Library (PR 3/4) ───────────────────────────────────────────────
+   The four states are shown as a ledger of chips, never as one badge. An established state gets a
+   filled glyph and a flat accent field; an unestablished one gets a hollow glyph, a dashed
+   outline and the words "not established" — so the distinction survives with colour removed, in a
+   screen reader, and in print. Each state owns a distinct accent, and none of them is green:
+   there is no "all clear" colour in this system because there is no all-clear claim. */
+.stateLedger{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.stateChip{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;border:var(--line) solid var(--ink);border-radius:999px;padding:5px 13px;background:var(--paper)}
+.stateChip__glyph{font-size:9px;line-height:1}
+.stateChip--on.stateChip--INDEXED{background:var(--lavender)}
+.stateChip--on.stateChip--AUDITED{background:var(--periwinkle)}
+.stateChip--on.stateChip--VERIFIED{background:var(--cyan)}
+.stateChip--on.stateChip--STORED_ON_0G{background:var(--yellow);box-shadow:var(--hard-shadow-sm)}
+.stateChip--off{border-style:dashed;color:var(--ink-soft);background:transparent;font-weight:800}
+.stateChip__not{font-weight:700;letter-spacing:.04em;text-transform:none;opacity:.75}
+.absenceList{list-style:none;margin:0 0 12px;padding:10px 14px;border-left:var(--line-thick) solid var(--ink);background:var(--paper-deep);border-radius:0 var(--radius-sm) var(--radius-sm) 0;display:flex;flex-direction:column;gap:6px}
+.absenceList li{font-size:12px;line-height:1.5}
+.pubBlock{border:var(--line) solid var(--ink);border-radius:var(--radius-sm);background:var(--card);padding:14px 16px;margin:0 0 14px;position:relative}
+.pubBlock .edgeLabel{position:static;display:block;margin-bottom:8px;transform:none;writing-mode:horizontal-tb}
+.pubNote{font-size:12px;margin:10px 0 0;color:var(--ink-soft);line-height:1.55}
+/* The state key is the page's one dominant explanatory object: an oversized, off-grid strip that
+   defines the vocabulary before a single row is read. */
+.stateKey{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0;border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);overflow:hidden;margin:26px -6px 0;background:var(--card)}
+.stateKeyItem{padding:16px 18px;border-right:var(--line) solid var(--ink);display:flex;flex-direction:column;gap:6px}
+.stateKeyItem:last-child{border-right:0}
+.stateKeyLabel{font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.stateKeyMeaning{font-size:12px;line-height:1.5;color:var(--ink-soft)}
+.stateKeyItem--INDEXED{background:var(--lavender)}
+.stateKeyItem--AUDITED{background:var(--periwinkle)}
+.stateKeyItem--VERIFIED{background:var(--cyan)}
+.stateKeyItem--STORED_ON_0G{background:var(--yellow)}
+.stateKeyItem--INDEXED .stateKeyMeaning,.stateKeyItem--AUDITED .stateKeyMeaning,
+.stateKeyItem--VERIFIED .stateKeyMeaning,.stateKeyItem--STORED_ON_0G .stateKeyMeaning{color:var(--ink)}
+.tallyStrip{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0 8px}
+.tally{border:var(--border);border-radius:var(--radius-sm);padding:10px 18px;background:var(--paper);display:flex;flex-direction:column;gap:2px;min-width:104px}
+.tally--zerog{background:var(--yellow);box-shadow:var(--hard-shadow-sm);transform:rotate(-1.5deg)}
+.tallyNum{font-size:30px;font-weight:900;letter-spacing:-.05em;line-height:1}
+.tallyLabel{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.tally--zerog .tallyLabel{color:var(--ink)}
 @media (max-width:640px){
   .page{grid-template-columns:1fr;padding:12px 12px 0}
   .rail{display:none}
@@ -412,6 +451,18 @@ p{color:var(--ink-soft);max-width:62ch}
   .libRow--feature .libArt{width:78px;height:78px}
   .libFacts{grid-template-columns:1fr}
   .catRail{gap:6px}
+  /* The state key becomes a stacked list of full-width bands rather than a squeezed four-column
+     strip: each state keeps its own colour field and reads as its own statement. */
+  .stateKey{grid-template-columns:1fr;margin:20px 0 0}
+  .stateKeyItem{border-right:0;border-bottom:var(--line) solid var(--ink)}
+  .stateKeyItem:last-child{border-bottom:0}
+  .stateLedger{gap:6px}
+  .stateChip{font-size:10px;padding:5px 11px}
+  .tallyStrip{gap:10px}
+  .tally{flex:1 1 calc(50% - 10px);min-width:0;padding:9px 13px}
+  .tally--zerog{transform:none}
+  .tallyNum{font-size:24px}
+  .pubBlock{padding:12px 13px}
 }
 `;
 

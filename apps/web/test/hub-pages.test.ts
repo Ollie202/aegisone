@@ -217,9 +217,12 @@ test("GET /verified states the limits of MATCH and links only to things that act
     // Real recorded 0G anchors, not placeholders.
     assert.match(html, /0xc727fe83637fa9e323c84f2f7507599c9778cc9081a5b762cf5ba4fd54bdf181/);
     assert.match(html, /0xeD2361a6B56dc0d4a7494F3a46BA47f352050BA4/);
-    // The unbuilt part is stated plainly rather than mocked up.
-    assert.match(html, /Not built yet/);
-    assert.match(html, /will not fake it with an empty grid/);
+    // PR 3/4: the library is real now. The four states are named and defined on the page, and the
+    // M5/M7 anchors above are explicitly labelled as recorded historical runs rather than as
+    // output of a publication made by a library entry.
+    assert.match(html, /STORED ON 0G/);
+    assert.match(html, /completed M5 and M7 live runs/);
+    assert.match(html, /Publication is an operator action/);
     // The TEE boundary is never overstated.
     assert.match(html, /does not claim TEE output binding/);
   } finally {

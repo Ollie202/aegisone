@@ -107,6 +107,12 @@ function publisherFromRepositoryUrl(repositoryUrl: string | null): string | null
 interface SeedFacts {
   readonly contentSha256: string;
   readonly formatValidation: SkillFormatValidation;
+  /** The exact canonical package bytes this repository packaged, and the deterministic audit
+   * report for them. Held so an operator publication can put the *real* artifact and report into
+   * the 0G evidence bundle. A resource with no bytes here cannot be published at all — the trigger
+   * refuses rather than uploading a placeholder. */
+  readonly canonicalPackageBytes: Uint8Array;
+  readonly auditReport: unknown;
 }
 
 /**
@@ -138,6 +144,8 @@ export class SkillLibraryLoader {
     facts.set(cookbook.resourceId, {
       contentSha256: cookbook.packageSha256,
       formatValidation: cookbook.formatValidation,
+      canonicalPackageBytes: cookbook.canonicalPackageBytes,
+      auditReport: cookbook.auditReport,
     });
 
     // Two real, well-formed Agent Skill fixtures (PR 2/4): a genuine CLEAN example and a genuine
@@ -147,15 +155,39 @@ export class SkillLibraryLoader {
     facts.set(cleanReview.resourceId, {
       contentSha256: cleanReview.packageSha256,
       formatValidation: cleanReview.formatValidation,
+      canonicalPackageBytes: cleanReview.canonicalPackageBytes,
+      auditReport: cleanReview.auditReport,
     });
 
     const maliciousSync = await seedMaliciousSyncSkill(this.#store);
     facts.set(maliciousSync.resourceId, {
       contentSha256: maliciousSync.packageSha256,
       formatValidation: maliciousSync.formatValidation,
+      canonicalPackageBytes: maliciousSync.canonicalPackageBytes,
+      auditReport: maliciousSync.auditReport,
     });
 
     return facts;
+  }
+
+  /** The exact canonical package bytes for a seeded resource, or `null` when this repository did
+   * not package it. `null` makes the publication trigger refuse — there is nothing honest to
+   * store for a resource whose bytes AegisOne does not hold. */
+  async packageBytesFor(resourceId: string): Promise<Uint8Array | null> {
+    try {
+      return (await this.#ensureSeeded()).get(resourceId)?.canonicalPackageBytes ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The deterministic audit report for a seeded resource. */
+  async auditReportFor(resourceId: string): Promise<unknown> {
+    try {
+      return (await this.#ensureSeeded()).get(resourceId)?.auditReport ?? { analysisKind: "DETERMINISTIC_STATIC", available: false };
+    } catch {
+      return { analysisKind: "DETERMINISTIC_STATIC", available: false };
+    }
   }
 
   /** Loads the library. Returns an empty library (never a fabricated one) if seeding fails. */

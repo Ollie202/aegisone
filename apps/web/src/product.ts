@@ -21,7 +21,7 @@ import type { SkillVerificationResult } from "../../../packages/skill-audit/src/
 import { InMemoryCatalogStore, type CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { createGithubSourceAuthConfigFromEnv, type GithubSourceAuthConfig } from "../../../packages/source-auth-github/src/index.ts";
 import { createZeroGComputeConfigFromEnv, type ZeroGComputeConfig } from "../../../packages/compute-0g/src/index.ts";
-import { createApiV1Router, buildEvidenceResponse, loadAssembledResource, toResourceApiResponse } from "./api-v1.ts";
+import { createApiV1Router, buildEvidenceResponse, loadAssembledResource, readJsonBody, toResourceApiResponse } from "./api-v1.ts";
 import { createSourceAuthRouter } from "./source-auth.ts";
 import { createMcpRequestHandler } from "./mcp.ts";
 import { ProductRequestError } from "./errors.ts";
@@ -39,6 +39,17 @@ import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
 import { renderScanPageHtml } from "./pages/scan.ts";
 import { seedDemoCatalog, type DemoSeedResult } from "./demo-seed.ts";
 import { SkillLibraryLoader, type SkillLibrary } from "./library.ts";
+import {
+  callWorkerOverHttp,
+  publishTriggerConfigFromEnv,
+  publishTriggerEnabled,
+  runPublishTrigger,
+  PublishTriggerError,
+  PUBLISH_RATE_LIMIT,
+  PUBLISH_RATE_WINDOW_MS,
+  type PublishTriggerConfig,
+  type WorkerPublishResponse,
+} from "./publish-trigger.ts";
 import {
   M5_MAINNET_RECORD,
   M5_MAINNET_REGISTRY,
@@ -88,6 +99,21 @@ export interface ProductRequestHandlerOptions {
    * Tier-1 limiter since it can trigger real (if bounded) compute work. Overridable for tests
    * only. */
   advisoryRateLimiter?: FixedWindowRateLimiter;
+  /** Operator evidence-publication configuration. Omitted reads the environment; every field must
+   * be present for `POST /api/v1/publish` to exist at all. */
+  publishConfig?: PublishTriggerConfig;
+  /** Independent limiter for the funded publication route. Overridable for tests only. */
+  publishRateLimiter?: FixedWindowRateLimiter;
+  /** Test-only override for the real worker call, so the whole trigger is exercisable without a
+   * worker, a network, or any 0G spend. */
+  callPublishWorker?: (body: unknown, config: PublishTriggerConfig) => Promise<WorkerPublishResponse>;
+}
+
+/** Rate-limit key for the funded publication route. Uses the socket peer address for the same
+ * reason `api-v1.ts` does: `x-forwarded-for` is caller-spoofable unless a trusted proxy is
+ * guaranteed to rewrite it. */
+function clientRateLimitKey(request: IncomingMessage): string {
+  return request.socket.remoteAddress ?? "unknown";
 }
 
 function defaultDiscoveryProviders(): ReadonlyMap<string, DiscoveryProvider> {
@@ -332,6 +358,11 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
   // path `/api/v1/resources/:id` uses. A seeding/loading failure degrades to an empty library —
   // never to fabricated rows.
   const libraryLoader = new SkillLibraryLoader(catalogStore);
+  // Operator publication configuration and its own strict, independent limiter (docs/17 Threat
+  // M8-005). Separate from every other limiter in this handler on purpose: a funded action must
+  // not share a budget with free read traffic.
+  const publishConfig = options.publishConfig ?? publishTriggerConfigFromEnv();
+  const publishLimiter = options.publishRateLimiter ?? new FixedWindowRateLimiter(PUBLISH_RATE_LIMIT, PUBLISH_RATE_WINDOW_MS);
   async function loadLibrarySafely(): Promise<SkillLibrary> {
     try {
       return await libraryLoader.load();
@@ -428,8 +459,57 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         } catch {
           demoResourceId = null;
         }
+        // Same loader, same integrity-checked assembly as `/`. The Verified Library never reads a
+        // catalog row directly, so it cannot present a state the API would not also present.
+        const library = await loadLibrarySafely();
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        response.end(renderVerifiedPageHtml({ demoResourceId }));
+        response.end(renderVerifiedPageHtml({
+          entries: library.entries,
+          demoResourceId,
+          publicationConfigured: publishTriggerEnabled(publishConfig),
+        }));
+        return;
+      }
+
+      /**
+       * Operator-only evidence publication (see `publish-trigger.ts` for why this is not an
+       * end-user action). Absent entirely unless the operator token, worker URL and worker
+       * internal token are all configured — an unconfigured deployment 404s here exactly like an
+       * unknown path, so there is never a present-but-unauthenticated funded endpoint.
+       */
+      if (request.method === "POST" && url.pathname === "/api/v1/publish" && publishTriggerEnabled(publishConfig)) {
+        try {
+          requireJsonContentType(request);
+          const body = await readJsonBody(request, 4 * 1024);
+          const resourceId = typeof body === "object" && body !== null ? (body as Record<string, unknown>).resourceId : undefined;
+          if (typeof resourceId !== "string" || resourceId.length === 0) {
+            response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+            response.end(JSON.stringify({ error: "invalid_request", message: "resourceId is required" }));
+            return;
+          }
+          const header = request.headers.authorization;
+          const operatorToken = typeof header === "string" ? /^Bearer\s+(.+)$/i.exec(header.trim())?.[1]?.trim() ?? null : null;
+          const result = await runPublishTrigger(catalogStore, {
+            resourceId,
+            operatorToken,
+            rateLimitKey: clientRateLimitKey(request),
+          }, {
+            config: publishConfig,
+            limiter: publishLimiter,
+            callWorker: options.callPublishWorker ?? callWorkerOverHttp,
+            loadPackageBytes: (id) => libraryLoader.packageBytesFor(id),
+            loadAuditReport: (id) => libraryLoader.auditReportFor(id),
+          });
+          response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+          response.end(JSON.stringify({ ok: true, ...result }));
+        } catch (error) {
+          if (error instanceof PublishTriggerError) {
+            response.writeHead(error.status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+            response.end(JSON.stringify({ error: error.code, message: error.message }));
+            return;
+          }
+          throw error;
+        }
         return;
       }
       if (request.method === "GET" && url.pathname === "/agents") {
