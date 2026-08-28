@@ -667,3 +667,54 @@ test("ADR-020: /audit offers only catalog-resolved verification targets and no f
     await stopApp(app);
   }
 });
+
+test("ADR-020: the Evidence Passport offers the trigger only where the catalog actually resolves a target", async () => {
+  const fixture = await createFixtureGitRepository(GENUINE_SKILL_MD);
+  const store = new InMemoryCatalogStore();
+  const app = await startApp(store, { verifyTestOverrides: fixtureOverrides() });
+  try {
+    const verifiableId = await seedTarget(store, {
+      id: "passport-verifiable",
+      repositoryPath: fixture.repositoryPath,
+      commitSha: fixture.commitSha,
+      subdirectory: fixture.subdirectory,
+      distributionUrl: null,
+    });
+    const verifiable = await (await fetch(`${app.baseUrl}/resources/${encodeURIComponent(verifiableId)}`)).text();
+    assert.match(verifiable, /id="verify-resource"/);
+    assert.match(verifiable, /Reproduce this package yourself/);
+    // Even here the page offers no way to name a repository, commit or URL.
+    assert.doesNotMatch(verifiable, /name="repositoryUrl"|name="commitSha"|name="distributionUrl"/);
+
+    // A resource with no exact source revision must say so plainly rather than showing a button
+    // the backend would refuse.
+    const { resource } = await store.upsertDiscoveredResource({
+      schemaVersion: "1",
+      id: "aegisone-test:passport-unpinned",
+      kind: "agent-skill",
+      name: "Unpinned passport",
+      description: "A catalog resource with no recorded exact source revision.",
+      discovery: {
+        status: "INDEXED",
+        source: "aegisone-test",
+        sourceResourceId: "passport-unpinned",
+        resourceUrl: "https://example.invalid/passport-unpinned",
+        discoveredAt: new Date(0).toISOString(),
+      },
+      currentVersion: { id: "1.0.0", versionLabel: "1.0.0", source: null, distribution: null },
+      trust: {
+        sourceAssurance: { level: "NONE", evidenceRefs: [] },
+        sourceInspection: { status: "NOT_RUN", exactCommitSha: null, sourceSnapshotSha256: null },
+        correspondence: { status: "NOT_EVALUATED", publisherSha256: null, reproducedSha256: null },
+        security: { status: "NOT_RUN", analysisKind: null, highestSeverity: null, findingCount: null },
+        canonicalEvidence: { status: "NONE", sha256: null, verifiedAt: null, storageRoot: null, registryRecordId: null },
+      },
+    });
+    const unpinned = await (await fetch(`${app.baseUrl}/resources/${encodeURIComponent(resource.id)}`)).text();
+    assert.doesNotMatch(unpinned, /id="verify-resource"/);
+    assert.match(unpinned, /Not independently reproducible yet/);
+    assert.match(unpinned, /missing evidence, not a finding/);
+  } finally {
+    await stopApp(app);
+  }
+});

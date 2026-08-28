@@ -53,6 +53,7 @@ import {
 import {
   isSourceAcquisitionAvailable,
   listVerificationTargets,
+  resolveVerificationTarget,
   runVerifyTrigger,
   verifyTriggerConfigFromEnv,
   VerifyTriggerError,
@@ -643,10 +644,17 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         }
         const evidenceApi = await buildEvidenceResponse(catalogStore, resourceId);
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        // ADR-020: resolved server-side against the catalog, so the passport only offers the
+        // trigger where the backend would genuinely accept it.
+        const verificationTarget = await resolveVerificationTarget(catalogStore, resourceId, {
+          allowLocalFixtureRepository: options.verifyTestOverrides?.allowLocalFixtureRepository,
+        });
         response.end(renderResourcePageHtml({
           resourceApi: toResourceApiResponse(assembled),
           evidenceApi: evidenceApi!,
           isDemo,
+          verifiable: verificationTarget !== null,
+          sourceAcquisitionAvailable: await (options.verifyTestOverrides?.sourceAcquisitionAvailable ?? isSourceAcquisitionAvailable)(),
         }));
         return;
       }
