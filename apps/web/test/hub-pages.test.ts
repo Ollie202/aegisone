@@ -385,7 +385,7 @@ test("/audit and /scan serve the identical page, so no existing link to /scan br
   }
 });
 
-test("GET /audit presents the Audit Lab four-card selector: one LIVE, three honestly UPCOMING, no dead links", async () => {
+test("GET /audit presents the Audit Lab four-card selector: two LIVE, two honestly UPCOMING, no dead links", async () => {
   const running = await startServer();
   try {
     const html = await (await fetch(`${running.baseUrl}/audit`)).text();
@@ -393,13 +393,17 @@ test("GET /audit presents the Audit Lab four-card selector: one LIVE, three hone
     assert.match(html, /Package \/ Artifact Verification/);
     assert.match(html, /Smart Contract Audit/);
     assert.match(html, /MCP \/ Agent Capability Audit/);
-    // Exactly one LIVE pill; the other three cards are labelled UPCOMING, not silently hidden and
-    // not linked to a route (a dead/fake result would be worse than an honest "not yet").
-    assert.equal((html.match(/>LIVE</g) ?? []).length, 1);
-    assert.equal((html.match(/>UPCOMING</g) ?? []).length, 3);
+    // ADR-020 made Package / Artifact Verification genuinely live, so there are now two LIVE
+    // pills. Smart Contract Audit and MCP / Agent Capability Audit remain honestly UPCOMING —
+    // still not silently hidden, and still not linked to a route (a dead/fake result would be
+    // worse than an honest "not yet").
+    assert.equal((html.match(/>LIVE</g) ?? []).length, 2);
+    assert.equal((html.match(/>UPCOMING</g) ?? []).length, 2);
     assert.match(html, /auditTypeCard--upcoming/);
-    // The upcoming cards carry no href of their own — they are informational, not clickable stubs.
-    const selectorSection = html.slice(html.indexOf("auditLabSelector"), html.indexOf("scanGrid"));
+    // The cards carry no href of their own — they are informational, not clickable stubs. Scoped
+    // to the card grid itself so the live verification panel below it is not swept in.
+    const gridStart = html.indexOf(`<div class="auditTypeGrid">`);
+    const selectorSection = html.slice(gridStart, html.indexOf("</section>", gridStart));
     assert.doesNotMatch(selectorSection, /<a\s/);
   } finally {
     await stopServer(running.server);

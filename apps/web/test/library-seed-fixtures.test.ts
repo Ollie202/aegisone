@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { InMemoryCatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import { SkillLibraryLoader } from "../src/library.ts";
-import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "../src/library-seed-fixtures.ts";
+import {
+  FIXTURE_SOURCE_COMMIT_SHA,
+  FIXTURE_SOURCE_REPOSITORY_URL,
+  seedCleanReviewSkill,
+  seedMaliciousSyncSkill,
+} from "../src/library-seed-fixtures.ts";
 
 /**
  * Pins the *real* evidence values the two newly-seeded Agent Skill fixtures carry (PR 2/4,
@@ -45,7 +50,7 @@ test("malicious-sync is a genuinely well-formed SKILL.md package that audits CRI
   assert.ok(seeded.auditFindingCount >= 6, "expected multiple genuine deterministic findings");
 });
 
-test("both fixtures persist as repository fixtures with no source claim and no correspondence claim", async () => {
+test("both fixtures persist with a DECLARED source pin, no inspection yet, and no correspondence claim", async () => {
   const store = new InMemoryCatalogStore();
   const cleanSeed = await seedCleanReviewSkill(store);
   const maliciousSeed = await seedMaliciousSyncSkill(store);
@@ -58,9 +63,21 @@ test("both fixtures persist as repository fixtures with no source claim and no c
   assert.ok(maliciousEntry, "expected malicious-sync in the library");
 
   for (const entry of [cleanEntry!, maliciousEntry!]) {
-    // No claimed external repository/commit was made for an inline repository fixture, so
-    // source assurance/inspection/correspondence stay honestly absent — only security is real.
-    assert.equal(entry.trust.sourceAssurance.level, "NONE");
+    /**
+     * ADR-020: each fixture now records the exact immutable commit of this repository its bytes
+     * live at, so the Package / Artifact Verification trigger has something real to reproduce.
+     *
+     * DECLARED and nothing stronger: a mapping was stated, not proven. No authorization flow ran,
+     * so there is no authority observation and `REPOSITORY_AUTHENTICATED` must stay unreachable
+     * here — a repository existing is not proof the publisher authorised it (AGENTS.md).
+     */
+    assert.equal(entry.trust.sourceAssurance.level, "DECLARED");
+    assert.notEqual(entry.trust.sourceAssurance.level, "REPOSITORY_AUTHENTICATED");
+    assert.equal(entry.sourceRepositoryUrl, FIXTURE_SOURCE_REPOSITORY_URL);
+    assert.equal(entry.sourceCommitSha, FIXTURE_SOURCE_COMMIT_SHA);
+    assert.match(entry.sourceCommitSha ?? "", /^[0-9a-f]{40}$/, "an immutable pin must be an exact commit SHA, never a branch");
+    // Recording where the source is claimed to be is not the same act as going and reproducing
+    // it: inspection stays NOT_RUN until a real verification run appends an INSPECTED row.
     assert.equal(entry.trust.sourceInspection.status, "NOT_RUN");
     assert.equal(entry.trust.correspondence.status, "NOT_EVALUATED");
     assert.equal(entry.trust.correspondence.publisherSha256, null);
