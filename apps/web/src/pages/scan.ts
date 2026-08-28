@@ -10,13 +10,24 @@
 // attribute below.
 
 import { scanResultHtml } from "../ui/scan-view.mjs";
+import { verifyResultHtml } from "../ui/verify-view.mjs";
+import { escapeHtml, shortHash } from "../ui/escape.mjs";
 import { renderLayoutHtml } from "./layout.ts";
+import type { VerificationTargetSummary } from "../verify-trigger.ts";
 
 export interface ScanPageState {
   /** Whether a 0G Compute key is configured on this deployment. When false, the optional advisory
    * checkbox stays usable (the backend answers with an explicit `advisory_unavailable` state
    * rather than silently skipping) but the page says up front that it will not run here. */
   advisoryConfigured: boolean;
+  /** ADR-020: catalog resources that genuinely carry an exact recorded source revision. This list
+   * IS the input surface for Package / Artifact Verification — the page never offers a free-text
+   * repository/URL field, because the backend would refuse one. */
+  verificationTargets?: readonly VerificationTargetSummary[];
+  /** Whether this runtime can perform exact-commit source acquisition at all (it needs `git`). */
+  sourceAcquisitionAvailable?: boolean;
+  /** Whether this deployment has locked verification behind an operator token. */
+  verificationOperatorGated?: boolean;
 }
 
 /** The scan-beam variant of the product's single stamp metaphor (ADR-015): pasted bytes pass under
@@ -41,11 +52,16 @@ function scanArtSvg(): string {
 const PLACEHOLDER = "Paste the contents of a SKILL.md (or any single skill file) here.";
 
 /**
- * The four audit types AUDIT LAB presents (PR 2/4). Exactly one is live; the rest are explicitly
- * labelled upcoming rather than hidden or wired to a dead/fake result (AGENTS.md: never claim a
- * capability that cannot be proven). See `docs/decisions/018-audit-lab-and-package-verification-deferral.md`
- * for why Package/Artifact Verification — which IS fully built in `packages/skill-verification-link`
- * — has no public HTTP trigger in this PR.
+ * The four audit types AUDIT LAB presents. Two are live; the other two are explicitly labelled
+ * upcoming rather than hidden or wired to a dead/fake result (AGENTS.md: never claim a capability
+ * that cannot be proven).
+ *
+ * Package / Artifact Verification was deferred by
+ * `docs/decisions/018-audit-lab-and-package-verification-deferral.md` because no safe public
+ * trigger existed for the fully-built M8.6 engine. That deferral is resolved — not overridden — by
+ * `docs/decisions/020-package-artifact-verification-public-trigger.md`: the trigger accepts a
+ * catalog `resourceId` and nothing else, so no caller-supplied repository or URL can reach the
+ * cloner/fetcher. See the panel below.
  */
 function auditTypeCardHtml(opts: { label: string; status: "live" | "upcoming"; description: string; note: string }): string {
   const statusPill = opts.status === "live"
@@ -63,7 +79,7 @@ function auditLabSelectorHtml(): string {
   return `<section class="panel panel--flat auditLabSelector" style="margin-top:8px">
     <span class="edgeLabel">Audit Lab — one place to check anything before you use it</span>
     <h2>Four audit types, honestly labelled</h2>
-    <p class="passportNote">Paste, upload, or select an item → AegisOne analyses it → you get a result → a detailed plain-English report → optional deeper evidence. Only the first of these four is live today; the rest are genuinely not built yet, and say so.</p>
+    <p class="passportNote">Paste, upload, or select an item → AegisOne analyses it → you get a result → a detailed plain-English report → optional deeper evidence. Two of these four are live today; the other two are genuinely not built yet, and say so.</p>
     <div class="auditTypeGrid">
       ${auditTypeCardHtml({
         label: "Agent Skill Audit",
@@ -73,9 +89,9 @@ function auditLabSelectorHtml(): string {
       })}
       ${auditTypeCardHtml({
         label: "Package / Artifact Verification",
-        status: "upcoming",
-        description: "Compare a publisher's distributed bytes against an independent reproduction from the exact claimed source commit — real MATCH / MISMATCH evidence, not a screening.",
-        note: "The verification engine is fully built (packages/skill-verification-link). It has no public trigger yet — exposing it safely to anonymous callers needs a catalog-only gate this PR deliberately did not rush. See the Evidence Passport on a catalog resource for existing verification results, and the ADR linked above for why.",
+        status: "live",
+        description: "Independently reproduce a catalog resource from its exact claimed source commit, and — where a distinct distributed artifact is recorded — compare the two byte-for-byte for real MATCH / MISMATCH / DIVERGED evidence.",
+        note: "Runs only against resources already in the AegisOne catalog with a recorded exact source revision. You cannot hand it a repository or a URL; that is what makes an unauthenticated trigger safe. See the panel below.",
       })}
       ${auditTypeCardHtml({
         label: "Smart Contract Audit",
@@ -90,6 +106,61 @@ function auditLabSelectorHtml(): string {
         note: "Not implemented as a distinct analysis. MCP servers are discoverable (see the Hub) but not yet independently audited.",
       })}
     </div>
+  </section>`;
+}
+
+
+/**
+ * The Package / Artifact Verification launcher (ADR-020).
+ *
+ * NOTE WHAT IS ABSENT: there is no repository field, no commit field and no URL field. The only
+ * input is a radio choice among catalog resources the server itself resolved, because the backend
+ * accepts nothing else. That is the whole reason an unauthenticated trigger is defensible, so the
+ * UI is built to make it obvious rather than to hide it.
+ */
+function verificationTargetHtml(target: VerificationTargetSummary): string {
+  const shape = target.hasDistinctDistributedArtifact
+    ? "source + a distinct distributed artifact &rarr; a real MATCH / MISMATCH / DIVERGED verdict"
+    : "source only &rarr; inspection and audit, and no correspondence verdict at all";
+  return `<label class="verifyTarget">
+    <input type="radio" name="verifyResourceId" value="${escapeHtml(target.resourceId)}">
+    <span class="verifyTargetBody">
+      <strong>${escapeHtml(target.resourceName)}</strong>
+      <span class="verifyTargetMeta">${escapeHtml(target.repositoryUrl)} @ <code class="hashValue" title="${escapeHtml(target.commitSha)}">${escapeHtml(shortHash(target.commitSha, 8))}</code>${target.subdirectory ? ` &middot; ${escapeHtml(target.subdirectory)}` : ""}</span>
+      <span class="verifyTargetMeta">Source assurance: ${escapeHtml(target.sourceAssuranceLevel)} &middot; ${shape}</span>
+    </span>
+  </label>`;
+}
+
+function verificationPanelHtml(state: ScanPageState): string {
+  const targets = state.verificationTargets ?? [];
+  const available = state.sourceAcquisitionAvailable !== false;
+
+  const unavailableNote = available
+    ? ""
+    : `<p class="passportWarning">This deployment cannot perform exact-commit source acquisition: no <code>git</code> is available in this runtime, so there is nothing to independently reproduce from. Verification returns an explicit <code>source_acquisition_unavailable</code> refusal here rather than a partial or guessed result. The Railway <code>proofrail-app</code> deployment and any local run do have it.</p>`;
+
+  const operatorNote = state.verificationOperatorGated
+    ? `<p class="passportNote">This deployment has locked verification behind an operator token, so the button below will answer <code>unauthorized</code> without one.</p>`
+    : `<p class="passportNote">Open to anyone, with no account and no token &mdash; because the only thing you can hand it is a resource already in this catalog. Limited to a few runs per hour per client, and one verification at a time, because a real clone and a real download are real work.</p>`;
+
+  const body = targets.length === 0
+    ? `<p class="emptyState">No catalog resource currently carries an exact recorded source revision, so there is nothing here to independently reproduce yet. This is an empty catalog, not a broken button.</p>`
+    : `<form id="verify-form">
+        <div class="verifyTargets">${targets.map(verificationTargetHtml).join("")}</div>
+        <div class="scanControls">
+          <button class="button button--primary" type="submit" id="verify-submit"${available ? "" : " disabled"}>Verify this package <span class="arrow" aria-hidden="true">&rarr;</span></button>
+        </div>
+      </form>`;
+
+  return `<section class="panel" id="package-verification" style="margin-top:26px">
+    <span class="edgeLabel">Package / Artifact Verification &mdash; live</span>
+    <h2>Reproduce it yourself, from the exact commit</h2>
+    <p class="lede">AegisOne clones the exact 40-character commit the catalog recorded for this resource, packages that directory with the same deterministic packer the audit pipeline uses, and &mdash; only when a distinct distributed artifact is on record &mdash; compares the two byte-for-byte.</p>
+    ${operatorNote}
+    ${unavailableNote}
+    ${body}
+    <div id="verify-result" style="margin-top:18px">${verifyResultHtml(null)}</div>
   </section>`;
 }
 
@@ -113,6 +184,8 @@ export function renderScanPageHtml(state: ScanPageState): string {
     </section>
 
     ${auditLabSelectorHtml()}
+
+    ${verificationPanelHtml(state)}
 
     <div class="scanGrid" style="margin-top:8px">
       <section class="panel">

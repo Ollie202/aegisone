@@ -51,6 +51,20 @@ import {
   type WorkerPublishResponse,
 } from "./publish-trigger.ts";
 import {
+  isSourceAcquisitionAvailable,
+  listVerificationTargets,
+  resolveVerificationTarget,
+  runVerifyTrigger,
+  verifyTriggerConfigFromEnv,
+  VerifyTriggerError,
+  VERIFY_MAX_CONCURRENCY,
+  VERIFY_RATE_LIMIT,
+  VERIFY_RATE_WINDOW_MS,
+  type VerifyTriggerConfig,
+  type VerifyTriggerDependencies,
+} from "./verify-trigger.ts";
+import { VerificationConcurrencyLimiter } from "../../../packages/skill-verification-link/src/authorization.ts";
+import {
   M5_MAINNET_RECORD,
   M5_MAINNET_REGISTRY,
   M5_MAINNET_TX,
@@ -107,6 +121,23 @@ export interface ProductRequestHandlerOptions {
   /** Test-only override for the real worker call, so the whole trigger is exercisable without a
    * worker, a network, or any 0G spend. */
   callPublishWorker?: (body: unknown, config: PublishTriggerConfig) => Promise<WorkerPublishResponse>;
+  /** Package/Artifact Verification configuration. Omitted reads the environment; an unset operator
+   * token digest leaves `POST /api/v1/verify` public *and still catalog-scoped* (see
+   * `verify-trigger.ts` and ADR-020). */
+  verifyConfig?: VerifyTriggerConfig;
+  /** Independent, deliberately strict limiter for the verification route. Overridable for tests
+   * only — it shares a budget with no other route because a verification is real compute. */
+  verifyRateLimiter?: FixedWindowRateLimiter;
+  /**
+   * Test-only overrides forwarded to `runVerifyTrigger` (a local fixture Git repository, a
+   * `127.0.0.1` distribution server, or a stubbed engine). Never set from production code and
+   * never derived from environment/configuration, so a deployed instance always runs with the
+   * GitHub-only repository rule and the full SSRF/private-address block in force.
+   */
+  verifyTestOverrides?: Pick<
+    VerifyTriggerDependencies,
+    "allowLocalFixtureRepository" | "distributionFetchOptions" | "runEnrichment" | "sourceAcquisitionAvailable"
+  >;
 }
 
 /** Rate-limit key for the funded publication route. Uses the socket peer address for the same
@@ -363,6 +394,18 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
   // not share a budget with free read traffic.
   const publishConfig = options.publishConfig ?? publishTriggerConfigFromEnv();
   const publishLimiter = options.publishRateLimiter ?? new FixedWindowRateLimiter(PUBLISH_RATE_LIMIT, PUBLISH_RATE_WINDOW_MS);
+  /**
+   * Package / Artifact Verification (ADR-020). Its limiter and its concurrency cap are both
+   * constructed here, once per server process, and shared by no other route: a real bounded
+   * `git clone` + artifact download must never draw on the cheap-read budget the Tier-1 scan
+   * limiter grants (docs/17 Threat M8-005).
+   */
+  const verifyConfig = options.verifyConfig ?? verifyTriggerConfigFromEnv();
+  const verifyLimiter = options.verifyRateLimiter ?? new FixedWindowRateLimiter(VERIFY_RATE_LIMIT, VERIFY_RATE_WINDOW_MS);
+  const verifyConcurrency = new VerificationConcurrencyLimiter(VERIFY_MAX_CONCURRENCY);
+  function verifyDependencies(): VerifyTriggerDependencies {
+    return { config: verifyConfig, limiter: verifyLimiter, concurrency: verifyConcurrency, ...options.verifyTestOverrides };
+  }
   async function loadLibrarySafely(): Promise<SkillLibrary> {
     try {
       return await libraryLoader.load();
@@ -516,6 +559,53 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         }
         return;
       }
+      /**
+       * ==================================================================================
+       * PACKAGE / ARTIFACT VERIFICATION (ADR-020) — the Audit Lab's second live audit type.
+       * ==================================================================================
+       * Public and unauthenticated by default, and safe to be so for exactly one structural
+       * reason: the body carries `resourceId` and nothing else. No repository, no commit, no URL.
+       * Every network target is read back out of the named catalog resource's own recorded source
+       * claim, so the reachable surface is the curated catalog rather than the open internet. A
+       * `resourceId` that is not in the catalog is refused (409) — never fetched anyway.
+       *
+       * Gates, all in `verify-trigger.ts`: an optional operator-token lock, a strict independent
+       * hourly rate limit, the existing `VerificationConcurrencyLimiter`, and the existing
+       * brand-gated `VerificationAuthorization`. Every M8.6 SSRF/size/timeout/redirect/archive
+       * protection stays in force unmodified.
+       */
+      if (request.method === "POST" && url.pathname === "/api/v1/verify") {
+        try {
+          requireJsonContentType(request);
+          const body = await readJsonBody(request, 4 * 1024);
+          const resourceId = typeof body === "object" && body !== null ? (body as Record<string, unknown>).resourceId : undefined;
+          if (typeof resourceId !== "string" || resourceId.length === 0) {
+            response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+            response.end(JSON.stringify({ error: "invalid_request", message: "resourceId is required" }));
+            return;
+          }
+          // Seeding is lazy (first `/`, `/audit` or `/verified` hit); without this a verification
+          // issued before any page view would report "not in the catalog" for a resource that is.
+          await loadLibrarySafely();
+          const header = request.headers.authorization;
+          const operatorToken = typeof header === "string" ? /^Bearer\s+(.+)$/i.exec(header.trim())?.[1]?.trim() ?? null : null;
+          const result = await runVerifyTrigger(catalogStore, {
+            resourceId,
+            operatorToken,
+            rateLimitKey: clientRateLimitKey(request),
+          }, verifyDependencies());
+          response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+          response.end(JSON.stringify({ ok: true, ...result }));
+        } catch (error) {
+          if (error instanceof VerifyTriggerError) {
+            response.writeHead(error.status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+            response.end(JSON.stringify({ error: error.code, message: error.message }));
+            return;
+          }
+          throw error;
+        }
+        return;
+      }
       if (request.method === "GET" && url.pathname === "/agents") {
         // ADR-019: the connection instructions address the origin that actually served the page,
         // so a local, preview, Railway or Vercel deployment each render themselves and never send
@@ -554,10 +644,17 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         }
         const evidenceApi = await buildEvidenceResponse(catalogStore, resourceId);
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        // ADR-020: resolved server-side against the catalog, so the passport only offers the
+        // trigger where the backend would genuinely accept it.
+        const verificationTarget = await resolveVerificationTarget(catalogStore, resourceId, {
+          allowLocalFixtureRepository: options.verifyTestOverrides?.allowLocalFixtureRepository,
+        });
         response.end(renderResourcePageHtml({
           resourceApi: toResourceApiResponse(assembled),
           evidenceApi: evidenceApi!,
           isDemo,
+          verifiable: verificationTarget !== null,
+          sourceAcquisitionAvailable: await (options.verifyTestOverrides?.sourceAcquisitionAvailable ?? isSourceAcquisitionAvailable)(),
         }));
         return;
       }
@@ -568,8 +665,24 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
       // ADR-016 section 2 (AUDIT). `/audit` is its nav home; `/scan` is the original URL and keeps
       // working byte-identically so nothing that already links to it breaks.
       if (request.method === "GET" && (url.pathname === "/audit" || url.pathname === "/scan")) {
+        // ADR-020: the Package / Artifact Verification selector lists only catalog resources that
+        // genuinely carry an exact recorded source revision. An empty list renders as "nothing is
+        // verifiable here yet", never as a disabled-looking button that would 409.
+        const library = await loadLibrarySafely();
+        const verificationTargets = await listVerificationTargets(
+          catalogStore,
+          library.entries.map((entry) => entry.resourceId),
+          { allowLocalFixtureRepository: options.verifyTestOverrides?.allowLocalFixtureRepository },
+        );
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        response.end(renderScanPageHtml({ advisoryConfigured: zeroGComputeConfig !== null }));
+        response.end(renderScanPageHtml({
+          advisoryConfigured: zeroGComputeConfig !== null,
+          verificationTargets,
+          // Stated up front rather than discovered as a 503 mid-run: exact-commit acquisition
+          // needs a `git` binary, and not every runtime ships one.
+          sourceAcquisitionAvailable: await (options.verifyTestOverrides?.sourceAcquisitionAvailable ?? isSourceAcquisitionAvailable)(),
+          verificationOperatorGated: verifyConfig.operatorTokenSha256 !== null,
+        }));
         return;
       }
 

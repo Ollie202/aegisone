@@ -144,6 +144,12 @@ const ENDPOINTS: readonly Endpoint[] = [
     description: "Deterministic static audit of skill content you supply inline. No publisher, no source claim, and the response says exactly that.",
   },
   {
+    method: "POST",
+    path: "/api/v1/verify",
+    title: "Reproduce a catalog resource",
+    description: "Independently rebuild a catalog resource from its recorded exact commit and, where a distinct distributed artifact exists, compare the bytes. Takes a catalog resourceId and nothing else: you cannot hand it a repository, a commit or a URL. Strictly rate-limited, one at a time (ADR-020).",
+  },
+  {
     method: "GET",
     path: "/.well-known/ai-catalog.json",
     title: "ARD catalog manifest",

@@ -243,6 +243,80 @@ documented caps), `400 invalid_request` (malformed JSON/content shape), `429 sca
 `advisoryFindings.status: "rate_limited"`, since the deterministic Tier-1 result is still valid and
 returned), `503 scan_unavailable` (paste-to-scan not wired up on this server instance).
 
+### `POST /api/v1/verify` (ADR-020 — package / artifact verification)
+
+Publicly reachable **without any auth by default**, and safe to be so for one structural reason:
+the caller cannot name a target. The body carries a catalog `resourceId` and nothing else — no
+repository, no commit, no URL — and every network target is read back out of that resource's own
+recorded source claim (or its recorded version source pin). Extra body fields are inert. A
+`resourceId` that is not in the catalog, or one with no exact immutable source revision recorded,
+is refused before any network or filesystem work happens.
+
+Its own strict limits apply (`docs/17-m8-security-boundaries.md` "Package verification limits"):
+3 runs per client per hour and one verification in flight at a time, shared with no other route.
+A deployment may additionally require an operator bearer token by setting
+`AEGISONE_VERIFY_OPERATOR_TOKEN_SHA256`.
+
+Request body (JSON, ≤4 KiB):
+
+```ts
+interface VerifyRequest {
+  resourceId: string; // required; must already exist in the AegisOne catalog
+}
+```
+
+Response:
+
+```ts
+interface VerifyApiResponse {
+  ok: true;
+  resourceId: string;
+  resourceVersionId: string;
+  capabilityVerificationId: string;   // the NEW immutable row this run appended
+  inspected: {
+    repositoryUrl: string;            // read from the catalog, never from the request
+    exactCommitSha: string;           // always a full 40-hex SHA, never a branch
+    subdirectory: string | null;
+    sourceSnapshotSha256: string | null;
+  };
+  sourceInspection: { status: "NOT_RUN" | "INSPECTED"; exactCommitSha: string | null; sourceSnapshotSha256: string | null };
+  correspondence: {
+    status: "NOT_EVALUATED" | "INSUFFICIENT_EVIDENCE" | "MATCH" | "MISMATCH" | "DIVERGED";
+    publisherSha256: string | null;
+    reproducedSha256: string | null;
+  };
+  security: {
+    status: "NOT_RUN" | "COMPLETED";
+    analysisKind: "DETERMINISTIC_STATIC" | null;
+    highestSeverity: "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null;
+    findingCount: number | null;
+    auditTarget: "source" | "publisher" | null;
+  };
+  comparedDistinctDistributedArtifact: boolean; // false ⇒ correspondence is structurally NOT_EVALUATED
+}
+```
+
+Invariants this route guarantees, and that its regression tests pin:
+
+- when `comparedDistinctDistributedArtifact` is `false`, `correspondence.status` is
+  `NOT_EVALUATED` and both digests are `null`. Source-only inspection can never emit
+  `MATCH`/`MISMATCH` — that is structural in `packages/skill-verification-link/src/enrichment.ts`,
+  and the route additionally refuses (`500 correspondence_without_distribution`) if it ever saw
+  such a result;
+- `MATCH` rests on two genuinely distinct acquisitions — an exact-commit `git clone` and an
+  independent bounded HTTPS download — never the same bytes packaged twice;
+- every run **appends** a `capability_verifications` row; no prior verdict is ever modified;
+- no 0G pointer is ever produced here. Publishing evidence to 0G stays the separate, funded,
+  operator-gated `POST /api/v1/publish`.
+
+Errors: `415 unsupported_media_type`, `413 request_too_large`, `400 invalid_request` (missing
+`resourceId`), `401 unauthorized` (only where the deployment configured an operator token),
+`409 no_verifiable_target` (not in the catalog, or no exact immutable source revision recorded),
+`429 rate_limited`, `429 verification_in_progress` (concurrency cap), `502 source_*` /
+`502 distribution_*` (a bounded acquisition/fetch failed — SSRF block, size cap, timeout, redirect
+cap, malformed package, digest mismatch), `503 source_acquisition_unavailable` (this runtime has no
+`git`, so no independent reproduction is possible here), `500 correspondence_without_distribution`.
+
 ## Error taxonomy (all routes)
 
 Every error response has the shape:
@@ -259,7 +333,10 @@ interface ApiV1ErrorResponse {
 Known codes: `resource_not_found`, `version_not_found`, `invalid_request`, `invalid_policy`,
 `invalid_resource`, `unsupported_media_type` (415), `request_too_large` (413),
 `scan_rate_limited` (429, paste-to-scan Tier-1 limiter), `scan_unavailable` (503, paste-to-scan
-not wired up on this server instance).
+not wired up on this server instance), and — for `POST /api/v1/verify` (ADR-020) —
+`no_verifiable_target` (409), `rate_limited` (429), `verification_in_progress` (429),
+`source_acquisition_unavailable` (503), `correspondence_without_distribution` (500), plus the
+`source_*`/`distribution_*` bounded-acquisition codes (502).
 
 ## What this contract deliberately does not do
 

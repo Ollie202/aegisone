@@ -9,6 +9,16 @@
 
 Accepted. Implemented by PR 2 of the four-PR product restructure (`docs/decisions/016-four-section-product-ia-and-skill-library.md`).
 
+> **Section 3 (the Package/Artifact Verification deferral) is superseded by
+> `docs/decisions/020-package-artifact-verification-public-trigger.md`.** The deferral was resolved,
+> not overridden: ADR-020 builds exactly what this ADR said a future PR would owe — catalog-only
+> scoping (the caller supplies a `resourceId` and cannot name a repository, commit or URL), an
+> independent strict rate limit and a concurrency cap of one, reuse of the unmodified
+> `VerificationAuthorization` brand gate, and a real end-to-end proof over HTTP producing genuine
+> MATCH and MISMATCH from real bytes. Sections 1, 2 and 4 of this ADR stand, except that the Audit
+> Lab now shows two LIVE audit types rather than one, and the two seeded fixtures now carry a
+> `DECLARED` source claim pinning the exact commit their bytes live at (see ADR-020 section 5).
+
 ## Context
 
 PR 1 established the four-section IA and set `/audit` (alias `/scan`) as the AUDIT section home,

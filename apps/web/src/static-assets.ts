@@ -27,6 +27,10 @@ const UI_MODULES = [
   "evidence-passport.mjs",
   "source-claim-view.mjs",
   "scan-view.mjs",
+  // ADR-020 Package / Artifact Verification result panel: the browser imports the same renderer
+  // the server used for SSR, so a client-side refresh cannot drift from the server's escaping or
+  // its "what this does NOT prove" copy.
+  "verify-view.mjs",
   // ADR-016 skill library. The browser imports these directly so a client-side re-render of the
   // library/live-discovery regions runs the identical escaping, classification and markup the
   // server used — never a second implementation that could drift.

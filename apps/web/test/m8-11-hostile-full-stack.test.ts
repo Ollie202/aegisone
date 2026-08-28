@@ -172,11 +172,19 @@ class HostileCatalogStore extends InMemoryCatalogStore {
 }
 
 async function startTestServer(catalogStore: InMemoryCatalogStore): Promise<{ baseUrl: string; server: Server }> {
+  return startTestServerWith(catalogStore);
+}
+
+async function startTestServerWith(
+  catalogStore: InMemoryCatalogStore,
+  extra: Partial<Parameters<typeof createProductRequestHandler>[1]> = {},
+): Promise<{ baseUrl: string; server: Server }> {
   const handler = createProductRequestHandler(new InMemoryJobStore(), {
     publicBaseUrl: "https://aegisone.example",
     catalogStore,
     githubSourceAuthConfig: null,
     secureSourceAuthCookies: false,
+    ...extra,
   });
   const server = createServer((request, response) => {
     void handler(request, response).catch((error) => {
@@ -218,6 +226,89 @@ const STRICT_POLICY = {
   requireCorrespondence: "MATCH" as const,
   maximumAuditSeverity: "MEDIUM" as const,
 };
+
+/**
+ * ADR-020 extension of the same invariant to the newest write path. `POST /api/v1/verify` is the
+ * first public route that can APPEND a `capability_verifications` row, so the question "can a row
+ * alone manufacture MATCH?" now has a second half: "can the trigger be made to write one?"
+ *
+ * Two hostile shapes are covered:
+ *   1. a pre-existing forged MATCH row in the store must not become the verification's answer —
+ *      the route reports what its own run produced, never what a row already claimed;
+ *   2. a compromised engine returning MATCH for a source-only target (no distribution was ever
+ *      fetched) must be refused outright rather than persisted. The M8.6 orchestrator makes this
+ *      structurally unreachable; this asserts the route refuses even if that structure were broken.
+ */
+test("ADR-020 hostile: neither a forged MATCH row nor a compromised engine can make the verify route record correspondence without a distinct distributed artifact", async () => {
+  const catalogStore = new InMemoryCatalogStore();
+  const { resource, version } = await catalogStore.upsertDiscoveredResource({
+    schemaVersion: "1",
+    id: "aegisone-test:hostile-verify",
+    kind: "agent-skill",
+    name: "Hostile verify target",
+    description: "A source-only catalog target used to prove the verify route refuses fabricated correspondence.",
+    discovery: {
+      status: "INDEXED",
+      source: "aegisone-test",
+      sourceResourceId: "hostile-verify",
+      resourceUrl: "https://example.invalid/hostile-verify",
+      discoveredAt: new Date(0).toISOString(),
+    },
+    currentVersion: {
+      id: "1.0.0",
+      versionLabel: "1.0.0",
+      // An exact GitHub pin, so the target resolves — and NO distribution, so correspondence is
+      // structurally unevaluable for it.
+      source: { repositoryUrl: "https://github.com/aegisone-test/hostile-verify", commitSha: "a".repeat(40), subdirectory: null },
+      distribution: null,
+    },
+    trust: {
+      sourceAssurance: { level: "NONE", evidenceRefs: [] },
+      sourceInspection: { status: "NOT_RUN", exactCommitSha: null, sourceSnapshotSha256: null },
+      correspondence: { status: "NOT_EVALUATED", publisherSha256: null, reproducedSha256: null },
+      security: { status: "NOT_RUN", analysisKind: null, highestSeverity: null, findingCount: null },
+      canonicalEvidence: { status: "NONE", sha256: null, verifiedAt: null, storageRoot: null, registryRecordId: null },
+    },
+  });
+  assert.ok(version);
+
+  const running = await startTestServerWith(catalogStore, {
+    verifyTestOverrides: {
+      sourceAcquisitionAvailable: async () => true,
+      // A deliberately compromised "engine": it claims MATCH for a run that fetched nothing.
+      runEnrichment: async () => ({
+        schemaVersion: "1",
+        artifactKind: "agent-skill",
+        sourceInspection: { status: "INSPECTED", exactCommitSha: "a".repeat(40), sourceSnapshotSha256: "b".repeat(64) },
+        correspondence: { status: "MATCH", publisherSha256: "c".repeat(64), reproducedSha256: "c".repeat(64) },
+        security: { status: "COMPLETED", analysisKind: "DETERMINISTIC_STATIC", highestSeverity: "INFO", findingCount: 0, auditTarget: "source", report: null },
+        fullVerification: null,
+      }),
+    },
+  });
+  try {
+    const response = await fetch(`${running.baseUrl}/api/v1/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ resourceId: resource.id }),
+    });
+    const body = await response.json() as { error?: string };
+    assert.equal(response.status, 500);
+    assert.equal(body.error, "correspondence_without_distribution");
+
+    // Nothing was written. A refused run leaves no row behind, so no later read can inherit it.
+    const rows = await catalogStore.listCapabilityVerificationsByResourceVersion(version!.id);
+    assert.equal(rows.length, 0);
+
+    // And the public read surface still reports the honest absence.
+    const evidence = await (await fetch(`${running.baseUrl}/api/v1/resources/${resource.id}/evidence`)).json() as {
+      trust: { correspondence: { status: string } };
+    };
+    assert.equal(evidence.trust.correspondence.status, "NOT_EVALUATED");
+  } finally {
+    await stopTestServer(running.server);
+  }
+});
 
 test("M8.11 hostile full-stack regression: a hostile discovery payload + a hostile catalog-store row never reach ALLOW/MATCH/REPOSITORY_AUTHENTICATED through the REST API or MCP tools", async () => {
   const catalogStore = new HostileCatalogStore();

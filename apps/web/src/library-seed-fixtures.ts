@@ -4,7 +4,8 @@ import { canonicalSkillPackageBytes, readSkillDirectory } from "../../../package
 import { auditSkillPackage } from "../../../packages/skill-audit/src/audit.ts";
 import { validateSkillPackage } from "../../../packages/skill-audit/src/validate.ts";
 import type { SkillFormatValidation } from "../../../packages/skill-audit/src/model.ts";
-import type { CatalogStore, NewCapabilityVerification } from "../../../packages/catalog-store/src/index.ts";
+import { buildCanonicalSourceClaim, computeSourceClaimDigest } from "../../../packages/source-auth-github/src/index.ts";
+import type { CatalogStore, NewCapabilityVerification, NewSourceClaim } from "../../../packages/catalog-store/src/index.ts";
 import type { CapabilityResource } from "../../../packages/capability-model/src/index.ts";
 
 /**
@@ -21,15 +22,29 @@ import type { CapabilityResource } from "../../../packages/capability-model/src/
  * (`canonicalSkillPackageBytes`, `sha256Bytes`, `auditSkillPackage`, `validateSkillPackage`) —
  * nothing about their digests, audit findings, or format-validation result is invented.
  *
- * Because they are inline fixture files rather than a claimed external repository/commit, no
- * source claim is created for either: `sourceAssurance` stays `NONE` (there was no publisher
- * identity to declare a mapping for) and `sourceInspection` stays `NOT_RUN` (there is no exact
- * external commit being reproduced). This is the accurate representation, not a downgrade — it
- * is exactly analogous to what `POST /api/v1/scan` (paste-to-scan) produces for pasted content
- * with no claimed source. `correspondence` stays `NOT_EVALUATED`: there is no distinct
- * *distributed* artifact, only the source file (AGENTS.md: packaging the same source twice is
- * not correspondence proof). Only `security` carries real evidence, because a real deterministic
- * audit really ran over these real bytes.
+ * ==========================================================================================
+ * WHY THEY NOW CARRY A DECLARED SOURCE CLAIM (ADR-020)
+ * ==========================================================================================
+ * PR 2 seeded these with no source claim at all, because nothing could act on one. ADR-020's
+ * Package / Artifact Verification trigger changes that: a resource is verifiable exactly when the
+ * catalog holds an exact, immutable source revision for it. These files genuinely do live at an
+ * exact commit of a real public repository — this one — so each fixture now records that pin:
+ * `FIXTURE_SOURCE_REPOSITORY_URL` at the exact 40-character commit `FIXTURE_SOURCE_COMMIT_SHA`
+ * below, subdirectory `examples/agent-skills/<name>`. That is a statement of fact anyone can
+ * check, and it is what makes "verify this package" a real button rather than a promise.
+ *
+ * The assurance level is `DECLARED`, and deliberately not more. Nobody completed a GitHub App
+ * authorization flow for these rows, so no authority observation exists and none is invented:
+ * AGENTS.md is explicit that `DECLARED`, `REPOSITORY_AUTHENTICATED` and `SIGNED_RELEASE` mean
+ * different things, and that a repository existing is not proof the publisher authorised it.
+ *
+ * `sourceInspection` still starts at `NOT_RUN` and `correspondence` at `NOT_EVALUATED`: recording
+ * where the source is claimed to be is not the same act as going and reproducing it, and there is
+ * no distinct *distributed* artifact for either fixture, only the source files themselves
+ * (AGENTS.md: packaging the same source twice is not correspondence proof). Running the ADR-020
+ * trigger against one of these appends a real `INSPECTED` row; it can never produce MATCH or
+ * MISMATCH, because there is nothing distinct to compare against. Only `security` carries real
+ * evidence at seed time, because a real deterministic audit really ran over these real bytes.
  *
  * `clean-review` passes real `SKILL.md` format validation (valid frontmatter, `name` matches its
  * parent directory) and audits `INFO` / 0 findings — a genuine "nothing detected" example.
@@ -46,6 +61,19 @@ import type { CapabilityResource } from "../../../packages/capability-model/src/
  */
 
 const EXAMPLES_ROOT = new URL("../../../examples/agent-skills/", import.meta.url);
+
+/**
+ * The exact, immutable commit these two fixtures are pinned to on the public AegisOne repository.
+ * A 40-character SHA, never a branch name (AGENTS.md: "immutable source revisions use exact commit
+ * SHAs, not mutable branches") — a branch tip would silently change what "the source" means.
+ *
+ * If the fixture files are ever edited, this pin does NOT move automatically, and that is correct:
+ * the pin says where these bytes came from, and a later edit is a different revision that would
+ * need its own claim. A verification run against this commit reproduces what was really there.
+ */
+export const FIXTURE_SOURCE_REPOSITORY_FULL_NAME = "Ollie202/aegisone";
+export const FIXTURE_SOURCE_REPOSITORY_URL = `https://github.com/${FIXTURE_SOURCE_REPOSITORY_FULL_NAME}`;
+export const FIXTURE_SOURCE_COMMIT_SHA = "eeac27076bbd98f99a147f51004d8ce07afad331";
 
 export interface FixtureSkillDefinition {
   readonly resourceId: string;
@@ -123,9 +151,18 @@ function fixtureResource(definition: FixtureSkillDefinition): CapabilityResource
     currentVersion: {
       id: "fixture",
       versionLabel: "repository fixture",
-      // No claimed external source repository/commit: this file lives inline in this
-      // repository's own examples/ tree, not at a claimed publisher's exact commit.
-      source: null,
+      // The exact immutable revision these bytes live at in the public AegisOne repository. This
+      // is a *claim about where the source is*, not evidence that it was reproduced — the
+      // `sourceInspection`/`correspondence` values below stay honestly absent until a real
+      // verification run appends one.
+      source: {
+        repositoryUrl: FIXTURE_SOURCE_REPOSITORY_URL,
+        commitSha: FIXTURE_SOURCE_COMMIT_SHA,
+        subdirectory: `examples/agent-skills/${definition.directory}`,
+      },
+      // No distinct distributed artifact exists for a repository fixture: there is the source and
+      // nothing else. Correspondence is therefore structurally unevaluable for these two, which is
+      // exactly what the verification trigger reports for them.
       distribution: null,
     },
     trust: {
@@ -143,9 +180,57 @@ async function seedFixtureSkill(store: CatalogStore, definition: FixtureSkillDef
   const { resource, version } = await store.upsertDiscoveredResource(fixtureResource(definition));
   if (!version) throw new Error(`library seed: expected a resource version for ${definition.resourceId}`);
 
+  /**
+   * The DECLARED source claim. Built with the same unmodified `buildCanonicalSourceClaim` +
+   * `computeSourceClaimDigest` functions the real M8.5 flow uses, so `assembleTrustEvidence`
+   * recomputes the digest and accepts it for the same reason it accepts a real one — and would
+   * reject it for the same reason too, if the row were ever mutated. `authority: null`: no
+   * authorization flow was performed, so no authority is asserted and the level stays `DECLARED`.
+   */
+  const subdirectory = `examples/agent-skills/${definition.directory}`;
+  const canonicalClaim = buildCanonicalSourceClaim({
+    resourceId: resource.id,
+    resourceVersionId: version.id,
+    provider: "github",
+    repository: { id: null, fullName: FIXTURE_SOURCE_REPOSITORY_FULL_NAME },
+    source: { commitSha: FIXTURE_SOURCE_COMMIT_SHA, subdirectory },
+    distribution: null,
+    authority: null,
+  });
+  const claim: NewSourceClaim = {
+    resourceVersionId: version.id,
+    provider: "github",
+    assuranceLevel: "DECLARED",
+    sourceRepository: FIXTURE_SOURCE_REPOSITORY_FULL_NAME,
+    sourceRepositoryId: null,
+    sourceRepositoryNodeId: null,
+    sourceOwnerLogin: null,
+    sourceOwnerId: null,
+    sourceCommitSha: FIXTURE_SOURCE_COMMIT_SHA,
+    sourceSubdirectory: subdirectory,
+    distributionUrl: null,
+    distributionSha256: null,
+    claimDigestSha256: computeSourceClaimDigest(canonicalClaim),
+    canonicalClaimJson: canonicalClaim,
+    // Never authenticated: DECLARED means a mapping was stated, not proven.
+    authenticatedAt: null,
+    authorityObservations: [],
+  };
+  /**
+   * IDEMPOTENCY (see the same guard in `library-seed.ts`, added after this bug emptied the
+   * production library once already). This seed runs on every cold start. The canonical claim is
+   * deterministic, so its digest is too — and `source_claims.claim_digest_sha256` is UNIQUE, so an
+   * unconditional insert succeeds exactly once and then throws on every subsequent boot, taking
+   * the whole library down with it. Reuse the existing claim for identical evidence; never mint a
+   * second claim for it, and never mutate the stored one.
+   */
+  const existingClaims = await store.listActiveSourceClaimsByResourceVersion(version.id);
+  const existingClaim = existingClaims.find((candidate) => candidate.claimDigestSha256 === claim.claimDigestSha256);
+  const claimResult = existingClaim ? { claim: existingClaim } : await store.createSourceClaim(claim);
+
   const verification: NewCapabilityVerification = {
     resourceVersionId: version.id,
-    sourceClaimId: null,
+    sourceClaimId: claimResult.claim.id,
     verificationJobId: null,
     artifactKind: "agent-skill",
     sourceInspectionStatus: "NOT_RUN",
@@ -164,7 +249,23 @@ async function seedFixtureSkill(store: CatalogStore, definition: FixtureSkillDef
     registryTransaction: null,
     verifiedAt: null,
   };
-  await store.createCapabilityVerification(verification);
+  /**
+   * Same requirement. `capability_verifications` has no unique constraint, so an unconditional
+   * insert would not fail loudly — it would quietly append an identical evidence row on every cold
+   * start forever. Only record one when the latest row does not already describe exactly this
+   * evidence. A genuinely new result (a real ADR-020 verification run, say) still appends a new row
+   * and never mutates the previous verdict.
+   */
+  const latestVerification = await store.getLatestCapabilityVerification(version.id);
+  const alreadyRecorded =
+    latestVerification !== null &&
+    latestVerification.sourceClaimId === claimResult.claim.id &&
+    latestVerification.sourceInspectionStatus === verification.sourceInspectionStatus &&
+    latestVerification.sourceSnapshotSha256 === verification.sourceSnapshotSha256 &&
+    latestVerification.correspondenceStatus === verification.correspondenceStatus &&
+    latestVerification.securityHighestSeverity === verification.securityHighestSeverity &&
+    latestVerification.securityFindingCount === verification.securityFindingCount;
+  if (!alreadyRecorded) await store.createCapabilityVerification(verification);
 
   return {
     resourceId: resource.id,
