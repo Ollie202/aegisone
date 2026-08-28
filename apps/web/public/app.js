@@ -12,6 +12,7 @@ import { policyResultHtml, policyErrorHtml } from "/static/ui/policy-result.mjs"
 import { policyFromFormValues } from "/static/ui/policy-form.mjs";
 import { repositoryListHtml, claimResultHtml, claimErrorHtml } from "/static/ui/source-claim-view.mjs";
 import { scanResultHtml, scanErrorHtml } from "/static/ui/scan-view.mjs";
+import { verifyResultHtml, verifyErrorHtml } from "/static/ui/verify-view.mjs";
 
 // `document.currentScript` is always null for `type="module"` scripts per the HTML spec
 // (module scripts don't set it), so it cannot be used here — query the script tag instead.
@@ -313,7 +314,42 @@ function initScanPage() {
   });
 }
 
+/**
+ * Package / Artifact Verification (ADR-020). The browser sends exactly one field — the catalog
+ * `resourceId` the user selected from the server-rendered list — and renders the response verbatim
+ * through the same isomorphic module the server used. It never builds a repository/commit/URL, and
+ * it never derives, caches or re-thresholds a correspondence verdict.
+ */
+function initVerifyPanel() {
+  const form = document.getElementById("verify-form");
+  const submit = document.getElementById("verify-submit");
+  const resultContainer = document.getElementById("verify-result");
+  if (!form || !resultContainer) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const selected = form.querySelector('input[name="verifyResourceId"]:checked');
+    if (!selected) {
+      resultContainer.innerHTML = verifyErrorHtml({ error: "no_selection", message: "Choose a catalog resource to verify first." });
+      return;
+    }
+    if (submit) submit.disabled = true;
+    resultContainer.innerHTML = `<section class="panel verifyPanel" aria-live="polite"><span class="edgeLabel">Verification result</span><h2>Reproducing the exact commit…</h2><p class="passportNote">Cloning the recorded commit and packaging it deterministically. This is real work and takes a moment.</p></section>`;
+    try {
+      const { ok, json } = await postJson("/api/v1/verify", { resourceId: selected.value });
+      resultContainer.innerHTML = ok ? verifyResultHtml(json) : verifyErrorHtml(json);
+    } catch (error) {
+      resultContainer.innerHTML = verifyErrorHtml({ error: "unreachable", message: error instanceof Error ? error.message : String(error) });
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+}
+
 if (page === "skills") initSkillsPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
-if (page === "audit") initScanPage();
+if (page === "audit") {
+  initScanPage();
+  initVerifyPanel();
+}

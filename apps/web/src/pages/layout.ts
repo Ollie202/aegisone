@@ -264,6 +264,12 @@ p{color:var(--ink-soft);max-width:62ch}
 .notProven{border-left:var(--line-thick) solid var(--alarm)}
 .notProvenList{margin:12px 0 0;padding-left:20px;font-size:13.5px;line-height:1.55;display:flex;flex-direction:column;gap:8px}
 .auditTypeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
+.verifyTargets{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.verifyTarget{display:flex;gap:12px;align-items:flex-start;border:var(--line) solid var(--ink);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--card)}
+.verifyTarget:hover{background:var(--paper)}
+.verifyTargetBody{display:flex;flex-direction:column;gap:4px;min-width:0}
+.verifyTargetMeta{font-size:12.5px;opacity:.75;word-break:break-word}
+.verifyPanel h3{margin:18px 0 6px;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
 .auditTypeCard{border:var(--border);border-radius:var(--radius-sm);padding:16px;background:var(--card);position:relative}
 .auditTypeCard--live{box-shadow:var(--hard-shadow-sm);background:var(--card)}
 .auditTypeCard--upcoming{opacity:.86;background:var(--paper-deep);border-style:dashed}
