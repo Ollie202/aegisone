@@ -88,3 +88,85 @@ test("the trust-state accent tokens are distinct values, so INDEXED can never sh
   assert.match(contents, /--tone-negative:var\(--alarm\)/);
   assert.match(contents, /--tone-caution:var\(--amber\)/);
 });
+
+/**
+ * ADR-016 extension of this audit to the new SKILLS / AUDIT / VERIFIED / FOR AGENTS pages and the
+ * three new isomorphic modules they add.
+ */
+
+const PAGE_MODULES = ["skills.ts", "verified.ts", "agents.ts", "scan.ts", "resource.ts", "source-claim.ts", "layout.ts"];
+const NEW_UI_MODULES = ["skill-card.mjs", "skill-category.mjs", "category-art.mjs"];
+
+test("no server-rendered page or UI module emits a generic SAFE/TRUSTED badge or a numeric trust score", async () => {
+  const files = [
+    ...PAGE_MODULES.map((name) => fileURLToPath(new URL(`../src/pages/${name}`, import.meta.url))),
+    ...NEW_UI_MODULES.map((name) => fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url))),
+    fileURLToPath(new URL("../src/library.ts", import.meta.url)),
+    fileURLToPath(new URL("../src/library-seed.ts", import.meta.url)),
+  ];
+  for (const file of files) {
+    const source = await readFile(file, "utf8");
+    // Strip comments: these modules deliberately *discuss* the forbidden vocabulary in order to
+    // explain why they refuse it. What matters is that no such string is ever rendered.
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.doesNotMatch(code, /badge\([^)]*["'](SAFE|TRUSTED|VERIFIED|SECURE)["']/i, `${file} renders a forbidden collapsed badge`);
+    assert.doesNotMatch(code, /\b(trustScore|safetyScore|overallScore|riskScore)\b/, `${file} invents a numeric trust score`);
+    assert.doesNotMatch(code, /"verified"\s*:\s*true|verified:\s*true/, `${file} emits a bare verified:true`);
+    assert.doesNotMatch(code, /"safe"\s*:\s*true|safe:\s*true/, `${file} emits a bare safe:true`);
+  }
+});
+
+test("the new UI modules handle external text safely, each in the way its role requires", async () => {
+  const read = async (name: string) =>
+    readFile(fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url)), "utf8");
+
+  // skill-card.mjs is the only one of the three that renders external text into HTML, so it must
+  // route everything through the shared escaper.
+  const card = await read("skill-card.mjs");
+  assert.match(card, /import \{[^}]*escapeHtml[^}]*\} from "\.\/escape\.mjs"/);
+  assert.match(card, /safeHttpUrl/, "URLs must go through the http(s)-only guard");
+
+  // category-art.mjs emits only its own hardcoded SVG constants. It must never interpolate
+  // anything caller-supplied beyond the class name it is given.
+  const art = await read("category-art.mjs");
+  const artInterpolations = new Set([...art.matchAll(/\$\{([A-Za-z_][\w.]*)/g)].map((match) => match[1]));
+  for (const name of artInterpolations) {
+    assert.ok(
+      // `fill` is the `SF(fill)` helper's own parameter, and every call site passes one of the
+      // hardcoded palette constants above — asserted separately below.
+      ["INK", "YELLOW", "LAVENDER", "CYAN", "PERIWINKLE", "CARD", "S", "SF", "fill", "inner", "className", "options.className"].includes(name),
+      `category-art.mjs interpolates unexpected value: ${name}`,
+    );
+  }
+  for (const [, argument] of art.matchAll(/\bSF\(([^)]*)\)/g)) {
+    assert.ok(
+      ["fill", "INK", "YELLOW", "LAVENDER", "CYAN", "PERIWINKLE", "CARD"].includes(argument.trim()),
+      `SF() must only ever be given a hardcoded palette constant, got: ${argument}`,
+    );
+  }
+
+  // skill-category.mjs renders no HTML at all — it is a pure classifier and must stay that way,
+  // which is exactly why it needs (and has) no escaper and no imports.
+  const category = await read("skill-category.mjs");
+  assert.doesNotMatch(category, /<[a-z]+[\s>]/, "skill-category.mjs must not render markup");
+  assert.doesNotMatch(category, /^\s*import\s/m, "skill-category.mjs must stay import-free");
+});
+
+test("the new UI modules are on the static allowlist, so SSR and the browser share one renderer", async () => {
+  const { listStaticAssetPaths } = await import("../src/static-assets.ts");
+  const served = listStaticAssetPaths();
+  for (const name of NEW_UI_MODULES) {
+    assert.ok(served.includes(`/static/ui/${name}`), `${name} must be served for the browser to import`);
+  }
+});
+
+test("INDEXED and the verdict states keep distinct textual labels, not just distinct colours", async () => {
+  const badges = await readFile(fileURLToPath(new URL("../src/ui/badges.mjs", import.meta.url)), "utf8");
+  // Each of the new dimension badges carries a full text label plus a glyph.
+  assert.match(badges, /"ON 0G STORAGE"/);
+  assert.match(badges, /"NOT STORED ON 0G"/);
+  assert.match(badges, /"VALID SKILL PACKAGE"/);
+  assert.match(badges, /NOT A VALID SKILL PACKAGE/);
+  // Absence of 0G storage is stated as missing evidence, never as a finding against the resource.
+  assert.match(badges, /missing evidence, not a finding against this resource/);
+});

@@ -1,5 +1,5 @@
 // Isomorphic search-result-card rendering (see escape.mjs header). Used both by the server-side
-// initial render of `/` (`apps/web/src/pages/hub.ts`) and by the browser after a debounced
+// initial render of `/` (`apps/web/src/pages/skills.ts`) and by the browser after a debounced
 // `fetch('/search', ...)` re-query (`apps/web/public/app.js`) — one renderer, never two.
 //
 // `POST /search` (docs/24-m8-11-contract-freeze.md) returns one of two distinct shapes depending on

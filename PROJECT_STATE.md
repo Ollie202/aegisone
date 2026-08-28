@@ -653,6 +653,48 @@ The previous technical submission packet remains complete. Final user-authentica
 
 M8 engineering improves the judgeable product without invalidating the already-proven M1–M7 evidence.
 
+## Product restructure — four-section IA (PR 1 of 4, in review)
+
+The M9 Hub's information architecture is being restructured on branch
+`feature/skills-library-ia`. See `docs/decisions/016-four-section-product-ia-and-skill-library.md`
+for the full decision record. **PR 1 is open and not merged.**
+
+Primary navigation is now exactly **SKILLS** (`/`), **AUDIT** (`/audit`), **VERIFIED**
+(`/verified`), **FOR AGENTS** (`/agents`).
+
+What PR 1 actually delivers:
+
+- The four-section nav shell, with no route in it that 404s or renders a dead control.
+- **SKILLS**, complete: a real skill library reading catalog rows through the same
+  `loadAssembledResource` path the Evidence Passport uses, browsable by nine deterministic
+  categories, plus a separate client-side strip of live federated discovery results.
+- **AUDIT**: `/audit` and `/scan` serve the identical, fully working paste-to-scan page.
+- **VERIFIED** and **FOR AGENTS**: real pages built from what genuinely works today (recorded live
+  M5/M7 0G anchors; the live `/mcp` endpoint and the frozen M8.7 REST contract). Each carries a
+  visible "not built yet" section for the parts PRs 3 and 4 will add. Nothing is mocked up.
+
+Truth boundaries this restructure deliberately preserves:
+
+- The four pinned ARD fixtures in `packages/discovery-ard/src/local-catalog.ts` still back
+  `POST /search` and `/.well-known/ai-catalog.json` **unchanged**, and are now asserted by name to
+  be unable to appear in the human library.
+- `Claim` left primary navigation. **No M8.5 source-authentication code was removed**;
+  `/source/claim`, `/proof` and `/scan` all still work by direct URL and from the footer.
+- Categories are view-layer discovery metadata in the same invariant class as a relevance score.
+  The classifier has zero imports, category is never persisted and never appears in the served
+  resource API, and policy decisions are provably unaffected by it.
+
+The library's one seeded resource is real: the repo owner's own `Ollie202/goat_cookbook` design
+document at exact commit `1471116222dfe959f091f3d5818993edd968d57c`, with a genuine canonical
+package digest of `5ae591eac9078b26f243675f721456485f85ecf3737ac36ffa565eca87df685a`, a genuine
+`INFO`/0-finding deterministic audit, and a genuine **failing** Agent Skill format validation
+(`missing_skill_md`) — it is a prose design guide, not a `SKILL.md`, and no wrapping was applied to
+manufacture a pass. Its correspondence is honestly `NOT_EVALUATED` (there is no distinct distributed
+artifact), its source assurance is `DECLARED` (authority was never proven), and it has no canonical
+evidence and no 0G storage root because nothing was written to 0G for it.
+
+PRs 2–4 remain to be done and have not been started.
+
 ## Current next action
 
 Open/review the **M9 / Issue #31** pull request (`agent/m9-hub-frontend`) — the human-facing Hub

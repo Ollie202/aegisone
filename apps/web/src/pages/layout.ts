@@ -27,7 +27,7 @@
 
 export interface LayoutOptions {
   title: string;
-  activeNav: "hub" | "resource" | "scan" | "source-claim" | "none";
+  activeNav: "skills" | "audit" | "verified" | "agents" | "resource" | "source-claim" | "none";
   bodyHtml: string;
   /** A raw <script> tag (already trusted, authored by this codebase) appended before </body>. */
   scriptTag?: string;
@@ -275,6 +275,73 @@ p{color:var(--ink-soft);max-width:62ch}
 .claimResult--error{background:var(--paper-deep)}
 .claimPreview{border:var(--border);border-radius:var(--radius-sm);background:var(--paper);padding:14px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;max-height:260px;margin:0}
 
+/* ---------- skill library: an editorial numbered list, deliberately NOT a card grid ----------
+   Design skill §17 explicitly rejects "endless three-column feature cards" and §16 requires one
+   dominant element per viewport. So: rule-separated editorial rows, one featured lead entry with a
+   flat colour field, oversized outlined index numerals, and a rotated illustration tile per row. */
+.catRail{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;padding-bottom:18px;border-bottom:var(--line-thick) solid var(--ink)}
+.catChip{font-family:inherit;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;display:inline-flex;gap:7px;align-items:center;transition:transform 160ms ease, box-shadow 160ms ease}
+.catChip:hover:not([disabled]){transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-sm)}
+.catChip--active{background:var(--yellow);box-shadow:var(--hard-shadow-sm);transform:translate(-2px,-2px)}
+.catChip--empty,.catChip[disabled]{opacity:.4;cursor:not-allowed}
+.catCount{font-size:10px;font-weight:900;border:var(--line) solid var(--ink);border-radius:999px;padding:0 6px;background:var(--paper)}
+.catChip--active .catCount{background:var(--card)}
+
+.library{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.libRow{position:relative;display:grid;grid-template-columns:auto 96px minmax(0,1fr);gap:6px 22px;align-items:start;padding:26px 4px;border-bottom:var(--line) solid var(--ink)}
+.libRow:last-child{border-bottom:0}
+.libRow[hidden]{display:none}
+.libIndex{font-size:clamp(26px,3.4vw,44px);font-weight:900;letter-spacing:-.06em;line-height:1;color:var(--ink);opacity:.22;transform:rotate(-6deg);align-self:start;min-width:2ch}
+.libArt{display:block;width:96px;height:96px;border:var(--border);border-radius:18px;background:var(--paper);padding:6px;transform:rotate(-4deg);transition:transform 200ms ease}
+.libArt svg{width:100%;height:100%;display:block;overflow:visible}
+.libRow:hover .libArt{transform:rotate(2deg) translateY(-3px)}
+.libBody{min-width:0}
+.libHead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.libHead h3{margin:0;font-size:clamp(19px,2.1vw,27px);letter-spacing:-.035em}
+.libDesc{font-size:14px;margin:0 0 12px;max-width:68ch}
+.libMeta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.pill--cat{background:var(--periwinkle)}
+.libBy{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.libBy--unknown{border:var(--line) dashed var(--ink);border-radius:999px;padding:2px 9px}
+.libDims{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.libFacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 20px;margin:0 0 12px}
+.libFact{display:flex;flex-direction:column;gap:3px;border-top:1px dotted rgba(10,10,10,.24);padding-top:6px}
+.libFact dt{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.libFact dd{margin:0}
+.libFactValue{font-size:13px;font-weight:700}
+.libFactValue--mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:6px;padding:1px 6px;display:inline-block}
+/* "unknown" is a real rendered word, never an empty cell — a blank would read as "fine". */
+.libFactValue--unknown{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);border:1px dashed var(--ink);border-radius:6px;padding:1px 7px;display:inline-block}
+.libUrl{font-size:12px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-bottom:12px}
+.libActions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.libCta{font-size:13px;padding:9px 18px}
+.libCta--none{font-size:12px;font-weight:700;color:var(--ink-soft);border:var(--line) dashed var(--ink);border-radius:999px;padding:6px 13px}
+/* The single dominant entry: flat colour field, thicker ink, deliberate overflow past the rule. */
+.libRow--feature{background:var(--periwinkle);border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);margin:0 -10px 18px;padding:28px 26px;box-shadow:var(--hard-shadow)}
+.libRow--feature .libIndex{opacity:.4}
+.libRow--feature .libArt{width:132px;height:132px;background:var(--card);transform:rotate(4deg)}
+.libRow--feature .libHead h3{font-size:clamp(23px,3vw,36px)}
+@media (min-width:961px){.libRow--feature{grid-template-columns:auto 132px minmax(0,1fr)}}
+
+/* ---------- live federated strip: visually separate from the catalog library ---------- */
+.liveStrip{margin-top:34px;border-top:var(--line-thick) solid var(--ink);padding-top:22px}
+.sectionHeadRow{display:flex;justify-content:space-between;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+.sectionNote{font-size:13px;margin:0 0 16px;max-width:70ch}
+
+/* ---------- FOR AGENTS: machine-access surface ---------- */
+.endpointList{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
+.endpoint{border:var(--border);border-radius:var(--radius-md);background:var(--paper);padding:18px 20px;position:relative}
+.endpoint h3{margin:0 0 6px;font-size:17px}
+.endpoint p{font-size:13.5px;margin:0 0 10px}
+.endpointUrl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--card);border:var(--line) solid var(--ink);border-radius:8px;padding:8px 11px;display:block;word-break:break-all;font-weight:700}
+.toolList{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.toolList li{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;border:var(--line) solid var(--ink);border-radius:999px;padding:4px 11px;background:var(--card);font-weight:700}
+
+/* ---------- upcoming-section notice: honest about what is not built yet ---------- */
+.upcoming{border:var(--line-thick) dashed var(--ink);border-radius:var(--radius-md);background:var(--paper);padding:20px 22px;margin-top:26px}
+.upcoming h2{font-size:clamp(17px,1.8vw,22px)}
+.upcoming p{font-size:13.5px;margin:0 0 10px}
+
 /* ---------- notices ---------- */
 .demoBanner{border:var(--border);border-radius:var(--radius-sm);padding:13px 17px;font-size:13.5px;font-weight:700;margin-bottom:22px;background:var(--periwinkle);box-shadow:var(--hard-shadow-sm)}
 .footer{grid-column:1 / -1;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:0 4px 34px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
@@ -297,6 +364,9 @@ p{color:var(--ink-soft);max-width:62ch}
   .scanGrid{grid-template-columns:1fr}
   .passportHead{grid-template-columns:1fr}
   .passportStamp{width:108px}
+  .libRow{grid-template-columns:auto 76px minmax(0,1fr);gap:6px 16px}
+  .libArt{width:76px;height:76px;border-radius:14px}
+  .libRow--feature .libArt{width:96px;height:96px}
 }
 @media (max-width:640px){
   .page{grid-template-columns:1fr;padding:12px 12px 0}
@@ -318,6 +388,17 @@ p{color:var(--ink-soft);max-width:62ch}
   .float,.float--slow{animation:none}
   .historyWhen{min-width:0;width:100%}
   .footer{padding-bottom:24px}
+  /* Library recomposed rather than shrunk (design skill §12): the index numeral and the one
+     illustration form a compact header strip, and the text block takes the full width beneath it
+     instead of being squeezed into a third column. */
+  .libRow{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:20px 0}
+  .libIndex{font-size:26px;align-self:center}
+  .libArt{width:64px;height:64px;border-radius:12px;transform:rotate(-4deg)}
+  .libBody{grid-column:1 / -1}
+  .libRow--feature{margin:0 0 16px;padding:20px 16px;box-shadow:var(--hard-shadow-sm)}
+  .libRow--feature .libArt{width:78px;height:78px}
+  .libFacts{grid-template-columns:1fr}
+  .catRail{gap:6px}
 }
 `;
 
@@ -366,11 +447,26 @@ export function brandLogoImg(size = 56): string {
   return `<span class="brandMark" style="--brand-size:${size}px"><img src="/static/brand/logo.jpg" width="${size}" height="${size}" alt="AegisOne" decoding="async"></span>`;
 }
 
+/**
+ * The four-section information architecture (ADR-016). Primary navigation is exactly these four
+ * and nothing else:
+ *
+ *   SKILLS      what you can get      the browsable, evidence-annotated skill library
+ *   AUDIT       check something now   paste-to-scan, the real POST /api/v1/scan surface
+ *   VERIFIED    what AegisOne proved  resources AegisOne actually holds evidence for
+ *   FOR AGENTS  machine access        the live MCP endpoint and stable read API
+ *
+ * `Claim` was removed from primary navigation: authenticating a source claim is a publisher-side
+ * task, not something a first-time visitor should be asked to do. The `/source/claim` route and
+ * every piece of M8.5 source-authentication code remain fully working and reachable by direct URL
+ * and from the footer — nothing was deleted. `/proof` (the M1-M7 live 0G evidence ledger) likewise
+ * leaves primary nav and keeps a footer link.
+ */
 const NAV_ITEMS: ReadonlyArray<{ href: string; num: string; label: string; key: LayoutOptions["activeNav"] }> = [
-  { href: "/", num: "01", label: "Search", key: "hub" },
-  { href: "/scan", num: "02", label: "Scan", key: "scan" },
-  { href: "/source/claim", num: "03", label: "Claim", key: "source-claim" },
-  { href: "/proof", num: "04", label: "Ledger", key: "none" },
+  { href: "/", num: "01", label: "Skills", key: "skills" },
+  { href: "/audit", num: "02", label: "Audit", key: "audit" },
+  { href: "/verified", num: "03", label: "Verified", key: "verified" },
+  { href: "/agents", num: "04", label: "For agents", key: "agents" },
 ];
 
 function railNav(active: LayoutOptions["activeNav"]): string {
@@ -423,7 +519,7 @@ ${SPRITE}
   </div>
   <footer class="footer">
     <span>Discovery, source assurance, correspondence, security and policy are always shown as independent dimensions — never collapsed into one trust score.</span>
-    <span><a href="https://github.com/Ollie202/aegisone" rel="noopener noreferrer" target="_blank">public source</a></span>
+    <span class="footerLinks"><a href="/proof">0G evidence ledger</a> · <a href="/source/claim">Claim a source</a> · <a href="https://github.com/Ollie202/aegisone" rel="noopener noreferrer" target="_blank">public source</a></span>
   </footer>
 </div>
 ${options.scriptTag ?? ""}

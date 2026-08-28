@@ -18,7 +18,22 @@ const UI_DIR_URL = new URL("../src/ui/", import.meta.url);
  * thing and stays inline SVG. */
 const BRAND_LOGO_URL = new URL("../public/brand/logo.jpg", import.meta.url);
 
-const UI_MODULES = ["escape.mjs", "badges.mjs", "result-card.mjs", "policy-result.mjs", "policy-form.mjs", "evidence-passport.mjs", "source-claim-view.mjs", "scan-view.mjs"];
+const UI_MODULES = [
+  "escape.mjs",
+  "badges.mjs",
+  "result-card.mjs",
+  "policy-result.mjs",
+  "policy-form.mjs",
+  "evidence-passport.mjs",
+  "source-claim-view.mjs",
+  "scan-view.mjs",
+  // ADR-016 skill library. The browser imports these directly so a client-side re-render of the
+  // library/live-discovery regions runs the identical escaping, classification and markup the
+  // server used — never a second implementation that could drift.
+  "skill-category.mjs",
+  "category-art.mjs",
+  "skill-card.mjs",
+];
 
 const ASSETS = new Map<string, { fileUrl: URL; contentType: string }>([
   ["/static/app.js", { fileUrl: APP_JS_URL, contentType: "application/javascript; charset=utf-8" }],

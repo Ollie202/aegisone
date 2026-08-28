@@ -37,18 +37,36 @@ async function getJson(url) {
   return { ok: response.ok, status: response.status, json };
 }
 
-function initHubPage() {
+const FEDERATION_PROVIDERS = ["github-agent-finder", "hugging-face-discover", "mcp-official-registry"];
+
+/**
+ * SKILLS page (ADR-016). Three independent behaviours, none of which may invent a verdict:
+ *   1. search — unchanged from the previous Hub, including the SSR `?q=` path;
+ *   2. the catalog library — client-side category filtering only (pure show/hide of server-rendered
+ *      rows; the browser never reclassifies or re-ranks anything);
+ *   3. the live federated strip — a real `POST /search` against the three discovery providers,
+ *      deferred until after first paint so a page load never blocks on three upstream APIs.
+ */
+function initSkillsPage() {
   const form = document.getElementById("search-form");
   const input = document.getElementById("search-input");
   const results = document.getElementById("search-results");
+  const libraryRegion = document.getElementById("library-region");
   const federationToggle = document.getElementById("federation-toggle");
   if (!form || !input || !results) return;
 
-  // The server-rendered "no search yet" state is the single source of that copy; clearing the query
-  // restores it instead of leaving a blank strip (and never falls back to fixture rows).
-  const emptyStateHtml = results.innerHTML;
+  // Searching replaces the library; clearing the query restores it. The library markup is the
+  // server's own, reused verbatim — it is never re-fetched and never falls back to fixture rows.
+  function showLibrary() {
+    results.innerHTML = "";
+    if (libraryRegion) libraryRegion.hidden = false;
+  }
+  function showResults(html) {
+    if (libraryRegion) libraryRegion.hidden = true;
+    results.innerHTML = html;
+  }
 
-  document.querySelectorAll(".exampleChip").forEach((chip) => {
+  document.querySelectorAll(".exampleChip[data-example]").forEach((chip) => {
     chip.addEventListener("click", () => {
       input.value = chip.dataset.example ?? "";
       runSearch(input.value);
@@ -57,24 +75,24 @@ function initHubPage() {
 
   async function runSearch(text) {
     const trimmed = text.trim();
+    const url = new URL(window.location.href);
     if (trimmed === "") {
-      results.innerHTML = emptyStateHtml;
+      url.searchParams.delete("q");
+      window.history.replaceState(null, "", url.toString());
+      showLibrary();
       return;
     }
     const body = { query: { text: trimmed } };
-    if (federationToggle?.checked) {
-      body.federation = ["github-agent-finder", "hugging-face-discover", "mcp-official-registry"];
-    }
-    const url = new URL(window.location.href);
+    if (federationToggle?.checked) body.federation = FEDERATION_PROVIDERS;
     url.searchParams.set("q", trimmed);
     window.history.replaceState(null, "", url.toString());
 
     const { ok, json } = await postJson("/search", body);
     if (!ok) {
-      results.innerHTML = `<p class="errorText">Search failed: ${escapeForDisplay(json?.message ?? "unknown error")}</p>`;
+      showResults(`<p class="errorText">Search failed: ${escapeForDisplay(json?.message ?? "unknown error")}</p>`);
       return;
     }
-    results.innerHTML = resultListHtml(json);
+    showResults(resultListHtml(json));
   }
 
   const debouncedSearch = debounce(runSearch, 350);
@@ -84,6 +102,79 @@ function initHubPage() {
     event.preventDefault();
     runSearch(input.value);
   });
+
+  initCategoryFilter();
+  initLiveFederated();
+}
+
+/**
+ * Category filtering is presentation-only: it toggles the `hidden` attribute on rows the server
+ * already classified and rendered. The browser never computes a category, and a category can
+ * therefore never influence anything the server said about trust.
+ */
+function initCategoryFilter() {
+  const chips = [...document.querySelectorAll(".catChip")];
+  const rows = [...document.querySelectorAll(".libRow")];
+  if (chips.length === 0 || rows.length === 0) return;
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      if (chip.hasAttribute("disabled")) return;
+      const selected = chip.dataset.category ?? "";
+      chips.forEach((other) => {
+        const isActive = other === chip;
+        other.classList.toggle("catChip--active", isActive);
+        if (isActive) other.setAttribute("aria-current", "true");
+        else other.removeAttribute("aria-current");
+      });
+      rows.forEach((row) => {
+        row.hidden = selected !== "" && row.dataset.category !== selected;
+      });
+    });
+  });
+}
+
+/**
+ * The live federated discovery strip. These results are genuinely live and genuinely
+ * discovery-only: `result-card.mjs` renders provider entries with empty trust, so nothing here can
+ * present an upstream `verified`/score-looking field as AegisOne evidence.
+ */
+function initLiveFederated() {
+  const button = document.getElementById("live-federated-load");
+  const container = document.getElementById("live-federated-results");
+  if (!button || !container) return;
+
+  let inFlight = false;
+  async function load() {
+    if (inFlight) return;
+    inFlight = true;
+    button.disabled = true;
+    container.innerHTML = `<p class="emptyState">Querying the MCP Official Registry, GitHub Agent Finder and Hugging Face Discover…</p>`;
+    try {
+      const { ok, json } = await postJson("/search", {
+        query: { text: "agent skill" },
+        federation: FEDERATION_PROVIDERS,
+        pageSize: 12,
+      });
+      container.innerHTML = ok
+        ? resultListHtml(json)
+        : `<p class="errorText">Federated discovery failed: ${escapeForDisplay(json?.message ?? "unknown error")}</p>`;
+    } catch (error) {
+      // A provider outage is a provider outage — never rendered as a finding about a resource.
+      container.innerHTML = `<p class="errorText">Federated discovery is unreachable right now: ${escapeForDisplay(
+        error instanceof Error ? error.message : String(error),
+      )}</p>`;
+    } finally {
+      inFlight = false;
+      button.disabled = false;
+    }
+  }
+
+  button.addEventListener("click", load);
+  // Deferred to idle so the SKILLS page paints its real catalog library immediately and never
+  // waits on three upstream APIs (AGENTS.md: discovery stays cheap and read-only).
+  const defer = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 400));
+  defer(() => load());
 }
 
 function escapeForDisplay(text) {
@@ -222,7 +313,7 @@ function initScanPage() {
   });
 }
 
-if (page === "hub") initHubPage();
+if (page === "skills") initSkillsPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
-if (page === "scan") initScanPage();
+if (page === "audit") initScanPage();
