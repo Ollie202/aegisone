@@ -134,11 +134,28 @@ export interface AdvisoryFindingsField {
   readonly message?: string;
 }
 
+export interface InspectedFileSummary {
+  readonly path: string;
+  readonly byteLength: number;
+}
+
+export interface InspectedSummary {
+  readonly fileCount: number;
+  readonly totalBytes: number;
+  readonly files: readonly InspectedFileSummary[];
+}
+
 export interface ScanApiResponse {
   readonly schemaVersion: "1";
   readonly contentSha256: string;
   readonly verdict: PastedSkillScanVerdict;
   readonly cached: boolean;
+  /**
+   * Plain-English report requirement (PR 2/4): exactly what AegisOne inspected, additive to the
+   * existing contract (docs/20-m8-api-contract.md) — every existing field is unchanged, this is a
+   * new field a caller that does not know about it can simply ignore.
+   */
+  readonly inspected: InspectedSummary;
   readonly deterministicFindings: readonly PastedSkillDeterministicFinding[];
   /**
    * `null` only when `includeAdvisoryScan` was not requested. When requested, this is ALWAYS
@@ -215,11 +232,18 @@ export async function performPastedSkillScan(rawBody: unknown, deps: ScanService
     }
   }
 
+  const inspected: InspectedSummary = {
+    fileCount: entries.length,
+    totalBytes: entries.reduce((sum, entry) => sum + entry.bytes.byteLength, 0),
+    files: entries.map((entry) => ({ path: entry.path, byteLength: entry.bytes.byteLength })),
+  };
+
   return {
     schemaVersion: "1",
     contentSha256,
     verdict: scan.verdict,
     cached,
+    inspected,
     deterministicFindings: scan.findings,
     advisoryFindings,
     scanCount: scan.scanCount,

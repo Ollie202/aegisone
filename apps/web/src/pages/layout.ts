@@ -257,6 +257,19 @@ p{color:var(--ink-soft);max-width:62ch}
 .findingRule{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--ink-soft);word-break:break-all}
 .findingWhere{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--ink-soft);word-break:break-all}
 .findingEvidence{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:6px;padding:6px 9px;margin-top:7px;word-break:break-all;white-space:pre-wrap;max-height:9em;overflow:auto}
+.findingPlainEnglish{font-size:13.5px;margin:8px 0 0;line-height:1.5}
+.findingConsequence{color:var(--ink-soft)}
+.findingEvidenceNote{font-size:11.5px;color:var(--ink-soft);margin:8px 0 0;font-style:italic}
+.fileList{list-style:none;margin:8px 0 0;padding:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.notProven{border-left:var(--line-thick) solid var(--alarm)}
+.notProvenList{margin:12px 0 0;padding-left:20px;font-size:13.5px;line-height:1.55;display:flex;flex-direction:column;gap:8px}
+.auditTypeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
+.auditTypeCard{border:var(--border);border-radius:var(--radius-sm);padding:16px;background:var(--card);position:relative}
+.auditTypeCard--live{box-shadow:var(--hard-shadow-sm);background:var(--card)}
+.auditTypeCard--upcoming{opacity:.86;background:var(--paper-deep);border-style:dashed}
+.auditTypeCard h3{margin:10px 0 6px;font-size:15px}
+.auditTypeCard p{margin:0 0 6px;font-size:13px;line-height:1.5}
+.auditTypeCard .passportNote{margin-top:6px}
 
 /* ---------- source claim ---------- */
 .stepList{counter-reset:step;padding:0;list-style:none;margin:26px 0 0;display:flex;flex-direction:column;gap:22px}
