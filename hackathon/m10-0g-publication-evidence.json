@@ -1,0 +1,32 @@
+{
+  "milestone": "0G evidence publication (Verified Library)",
+  "recordedAt": "2026-08-28T17:00:00Z",
+  "network": {
+    "name": "0G Galileo Testnet",
+    "chainId": 16602
+  },
+  "resource": {
+    "id": "1a0bdc58-faec-4ff1-a3a9-be61d4bdf330",
+    "name": "Playful Neo-Brutalist Web Design",
+    "resourceVersionId": "187d4254-fd7d-4a2c-90f9-30e915cb3291",
+    "sourceRepository": "Ollie202/goat_cookbook",
+    "sourceCommitSha": "1471116222dfe959f091f3d5818993edd968d57c",
+    "sourcePath": "frontend_design/playful_neo_brutalist_web.md"
+  },
+  "storage": {
+    "root": "0x0e1d07db2978c791e24a5eb1ffa566ffb1f797fe280bc4bb40146ad9108d59e1",
+    "transaction": "0x005c8b1ae4640f3f1d9db3eff64ab96d63f5b83cd7bceddc6b39047190578437",
+    "proofVerifiedExactByteReadback": true
+  },
+  "canonicalEvidenceSha256": "fcff2567d995c13e715807d781f61788808f73adbfc7f27c5ecf7878c28403af",
+  "registry": {
+    "committed": false,
+    "reason": "chain commitment skipped: this publication does not hold all five real commitments (source snapshot, publisher and reproduced digests are required)"
+  },
+  "notes": [
+    "Published through POST /api/v1/publish on aegisone-app, which calls the operator-gated internal route on aegisone-worker. The 0G signer exists only on the worker and the worker has no public domain.",
+    "The canonical evidence manifest is hashed over the facts PLUS the returned storage root, so a root and a digest from different publications can never be paired.",
+    "The on-chain commitment was deliberately NOT made: this resource is a design guide with no distinct distributed artifact, so correspondence is honestly NOT_EVALUATED and there are no publisher/reproduced digests to anchor. Refusing to anchor a partial claim is the intended behaviour, not a failure.",
+    "Every value in this file was returned by the live publication and is independently checkable on 0G Galileo."
+  ]
+}
