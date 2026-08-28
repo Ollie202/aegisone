@@ -2,6 +2,7 @@ import { loadAssembledResource } from "./api-v1.ts";
 import { seedCookbookSkill, type CookbookSeedResult } from "./library-seed.ts";
 import { seedCleanReviewSkill, seedMaliciousSyncSkill } from "./library-seed-fixtures.ts";
 import { classifySkillCategory, browsableCategories } from "./ui/skill-category.mjs";
+import { deriveLibraryStates, type LibraryStates } from "./library-state.ts";
 import type { CatalogStore } from "../../../packages/catalog-store/src/index.ts";
 import type { CapabilityTrustEvidence } from "../../../packages/capability-model/src/index.ts";
 import type { SkillFormatValidation } from "../../../packages/skill-audit/src/model.ts";
@@ -59,6 +60,24 @@ export interface SkillLibraryEntry {
   readonly formatValidation: SkillFormatValidation | null;
   /** Verbatim from `assembleTrustEvidence` — the same object the Evidence Passport renders. */
   readonly trust: CapabilityTrustEvidence;
+  /**
+   * The four independent library facts (`library-state.ts`). Derived from the already
+   * integrity-checked `trust` plus the 0G publication gate result — this module performs no
+   * verification of its own and cannot upgrade anything the assembler produced.
+   */
+  readonly states: LibraryStates;
+  /** Real 0G publication pointers, present ONLY when the gate passed. */
+  readonly publication: {
+    readonly storageRoot: string;
+    readonly storageTransaction: string;
+    readonly canonicalEvidenceSha256: string;
+    readonly network: string;
+    readonly chainId: number;
+    readonly verifiedAt: string;
+    readonly registryContract: string | null;
+    readonly registryRecordId: string | null;
+    readonly registryTransaction: string | null;
+  } | null;
 }
 
 export interface SkillLibrary {
@@ -88,6 +107,12 @@ function publisherFromRepositoryUrl(repositoryUrl: string | null): string | null
 interface SeedFacts {
   readonly contentSha256: string;
   readonly formatValidation: SkillFormatValidation;
+  /** The exact canonical package bytes this repository packaged, and the deterministic audit
+   * report for them. Held so an operator publication can put the *real* artifact and report into
+   * the 0G evidence bundle. A resource with no bytes here cannot be published at all — the trigger
+   * refuses rather than uploading a placeholder. */
+  readonly canonicalPackageBytes: Uint8Array;
+  readonly auditReport: unknown;
 }
 
 /**
@@ -119,6 +144,8 @@ export class SkillLibraryLoader {
     facts.set(cookbook.resourceId, {
       contentSha256: cookbook.packageSha256,
       formatValidation: cookbook.formatValidation,
+      canonicalPackageBytes: cookbook.canonicalPackageBytes,
+      auditReport: cookbook.auditReport,
     });
 
     // Two real, well-formed Agent Skill fixtures (PR 2/4): a genuine CLEAN example and a genuine
@@ -128,15 +155,39 @@ export class SkillLibraryLoader {
     facts.set(cleanReview.resourceId, {
       contentSha256: cleanReview.packageSha256,
       formatValidation: cleanReview.formatValidation,
+      canonicalPackageBytes: cleanReview.canonicalPackageBytes,
+      auditReport: cleanReview.auditReport,
     });
 
     const maliciousSync = await seedMaliciousSyncSkill(this.#store);
     facts.set(maliciousSync.resourceId, {
       contentSha256: maliciousSync.packageSha256,
       formatValidation: maliciousSync.formatValidation,
+      canonicalPackageBytes: maliciousSync.canonicalPackageBytes,
+      auditReport: maliciousSync.auditReport,
     });
 
     return facts;
+  }
+
+  /** The exact canonical package bytes for a seeded resource, or `null` when this repository did
+   * not package it. `null` makes the publication trigger refuse — there is nothing honest to
+   * store for a resource whose bytes AegisOne does not hold. */
+  async packageBytesFor(resourceId: string): Promise<Uint8Array | null> {
+    try {
+      return (await this.#ensureSeeded()).get(resourceId)?.canonicalPackageBytes ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The deterministic audit report for a seeded resource. */
+  async auditReportFor(resourceId: string): Promise<unknown> {
+    try {
+      return (await this.#ensureSeeded()).get(resourceId)?.auditReport ?? { analysisKind: "DETERMINISTIC_STATIC", available: false };
+    } catch {
+      return { analysisKind: "DETERMINISTIC_STATIC", available: false };
+    }
   }
 
   /** Loads the library. Returns an empty library (never a fabricated one) if seeding fails. */
@@ -163,6 +214,30 @@ export class SkillLibraryLoader {
         canonicalUrl: sourceRepositoryUrl,
       });
 
+      const states = deriveLibraryStates({
+        discoveryStatus: capability.discovery.status,
+        trust: capability.trust,
+        storagePublication: assembled.integrity.storagePublication,
+      });
+
+      // Publication pointers exist only behind the gate. There is no branch here that can produce
+      // them from a row that failed, so the UI cannot render a 0G root AegisOne has not re-checked.
+      const gate = assembled.integrity.storagePublication;
+      const verification = assembled.latestVerification;
+      const publication = gate.ok
+        ? {
+            storageRoot: gate.storageRoot,
+            storageTransaction: gate.storageTransaction,
+            canonicalEvidenceSha256: gate.canonicalEvidenceSha256,
+            network: gate.network,
+            chainId: gate.chainId,
+            verifiedAt: gate.verifiedAt,
+            registryContract: verification?.registryContract ?? null,
+            registryRecordId: verification?.registryRecordId ?? null,
+            registryTransaction: verification?.registryTransaction ?? null,
+          }
+        : null;
+
       entries.push({
         resourceId: assembled.resource.id,
         name: capability.name,
@@ -178,6 +253,8 @@ export class SkillLibraryLoader {
         formatValidation: seedFacts.formatValidation,
         // Verbatim. Never re-derived, re-thresholded or summarised into a score.
         trust: capability.trust,
+        states,
+        publication,
       });
     }
 

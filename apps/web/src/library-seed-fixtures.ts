@@ -65,6 +65,10 @@ export interface FixtureSeedResult {
   readonly auditHighestSeverity: string;
   readonly auditFindingCount: number;
   readonly formatValidation: SkillFormatValidation;
+  /** Exact canonical package bytes and the deterministic audit report, retained so an evidence
+   * publication carries the real artifact instead of a placeholder. */
+  readonly canonicalPackageBytes: Uint8Array;
+  readonly auditReport: ReturnType<typeof auditSkillPackage>;
 }
 
 const CLEAN_REVIEW: FixtureSkillDefinition = {
@@ -93,6 +97,7 @@ async function computeFixtureEvidence(definition: FixtureSkillDefinition): Promi
   const directoryPath = fileURLToPath(new URL(definition.directory, EXAMPLES_ROOT));
   const { entries, directoryName } = await readSkillDirectory(directoryPath);
   return {
+    entries,
     packageSha256: sha256Bytes(canonicalSkillPackageBytes(entries)),
     audit: auditSkillPackage(entries),
     formatValidation: validateSkillPackage(entries, directoryName),
@@ -168,6 +173,8 @@ async function seedFixtureSkill(store: CatalogStore, definition: FixtureSkillDef
     auditHighestSeverity: evidence.audit.highestSeverity,
     auditFindingCount: evidence.audit.findingCount,
     formatValidation: evidence.formatValidation,
+    canonicalPackageBytes: canonicalSkillPackageBytes(evidence.entries),
+    auditReport: evidence.audit,
   };
 }
 

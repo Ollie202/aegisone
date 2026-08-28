@@ -28,6 +28,12 @@ Current implementation gate: **M8.11 / Issue #30 / branch `agent/m8-11-backend-f
 - [x] M7 Agent Skill commitments registered/read back on Galileo.
 - [x] Production remains exactly `proofrail-app` + `proofrail-worker`.
 - [x] Worker signer boundary remains controlled; public signing disabled.
+- [x] **PR 3/4 (ADR-017)**: the 0G evidence publication path is built, wired and tested against
+      injected fake transports. `aegisone-worker` gains one internal, token-authenticated,
+      fail-closed publication route; the app gains an operator-only trigger; `/verified` becomes the
+      real Verified Library with four independently-earned states. **No funded live run has been
+      performed** — `STORED ON 0G` is currently `not established` for every resource, and the page
+      says so rather than showing a number it cannot back. The live run is a separate approved step.
 
 ## M8.1 — COMPLETE
 

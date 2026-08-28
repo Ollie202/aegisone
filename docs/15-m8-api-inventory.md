@@ -475,15 +475,50 @@ GITHUB_OAUTH_CALLBACK_URL
 GITHUB_OAUTH_STATE_SECRET
 ```
 
-For app-to-worker auth if an internal HTTP boundary is chosen:
+### App-to-worker auth for the 0G evidence publication path (ADR-017)
+
+The internal HTTP boundary is now implemented, and the variable name is settled as
+`AEGISONE_WORKER_INTERNAL_TOKEN` (the `PROOFRAIL_WORKER_INTERNAL_TOKEN` name in earlier drafts of
+this section was never used in code and is not read anywhere).
+
+**No value for any variable below is committed to this repository.** Generate each independently
+(for example `openssl rand -hex 32`) and set it only in the relevant service's environment.
+
+On `aegisone-worker` (Railway) — the ONLY service that may hold the signer:
 
 ```text
-PROOFRAIL_WORKER_INTERNAL_TOKEN
+ZEROG_STORAGE_PRIVATE_KEY     (already required; unchanged)
+AEGISONE_WORKER_INTERNAL_TOKEN   shared secret; when unset the publication route does not exist
+AEGISONE_REGISTRY_CONTRACT       optional; enables the compact on-chain commitment
+ZEROG_RPC_URL                    optional; defaults to the pinned Galileo RPC
+ZEROG_INDEXER_URL                optional; defaults to the pinned Galileo indexer
 ```
 
-Use a separate independently generated value on each service. Do not reuse the Supabase app token or 0G private key.
+On `aegisone-app` (Railway) and the Vercel deployment — never the signer:
 
-If queue/polling through Supabase is used instead, this variable may be unnecessary.
+```text
+AEGISONE_WORKER_URL                       base URL of aegisone-worker
+AEGISONE_WORKER_INTERNAL_TOKEN            the SAME value the worker holds
+AEGISONE_PUBLISH_OPERATOR_TOKEN_SHA256    SHA-256 hex digest of the operator token
+```
+
+Note the asymmetry, which is deliberate:
+
+- the **worker internal token** is a shared secret held in plaintext by both services, because the
+  app must present it to the worker;
+- the **operator token** is held by the app only as a SHA-256 **digest**. The raw operator token is
+  never stored on any service — an operator supplies it per request. Compute the digest with
+  `printf %s "$TOKEN" | sha256sum` and set only the digest.
+
+Fail-closed behaviour, asserted by tests:
+
+- worker: no `AEGISONE_WORKER_INTERNAL_TOKEN` -> `POST /internal/publish-evidence` 404s like any
+  unknown path. `/health` is unchanged apart from reporting `publishRouteEnabled` and
+  `registryCommitmentEnabled` as booleans (never a secret or any value derived from one).
+- app: any of the three app-side variables missing -> `POST /api/v1/publish` does not exist (404,
+  not 401). There is never a present-but-unauthenticated funded endpoint.
+
+Do not reuse the Supabase app token or the 0G private key for either token.
 
 On `proofrail-worker` only if GitHub attestation verification needs authenticated private access:
 

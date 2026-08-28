@@ -104,6 +104,11 @@ export interface CookbookSeedResult {
   readonly auditFindingCount: number;
   /** The genuine (failing) Agent Skill format validation result, persisted for display. */
   readonly formatValidation: SkillFormatValidation;
+  /** The exact canonical package bytes whose SHA-256 is `packageSha256`. Retained so an evidence
+   * publication can carry the real artifact rather than a placeholder. */
+  readonly canonicalPackageBytes: Uint8Array;
+  /** The deterministic audit report, retained for the same reason. */
+  readonly auditReport: ReturnType<typeof auditSkillPackage>;
 }
 
 /** Reads the committed fixture and derives every real value from it. Network-free and pure. */
@@ -247,5 +252,7 @@ export async function seedCookbookSkill(store: CatalogStore): Promise<CookbookSe
     auditHighestSeverity: evidence.audit.highestSeverity,
     auditFindingCount: evidence.audit.findingCount,
     formatValidation: evidence.formatValidation,
+    canonicalPackageBytes: canonicalSkillPackageBytes(evidence.entries),
+    auditReport: evidence.audit,
   };
 }

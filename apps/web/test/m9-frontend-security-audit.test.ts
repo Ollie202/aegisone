@@ -103,6 +103,12 @@ test("no server-rendered page or UI module emits a generic SAFE/TRUSTED badge or
     ...NEW_UI_MODULES.map((name) => fileURLToPath(new URL(`../src/ui/${name}`, import.meta.url))),
     fileURLToPath(new URL("../src/library.ts", import.meta.url)),
     fileURLToPath(new URL("../src/library-seed.ts", import.meta.url)),
+    // PR 3/4: the modules that decide and render the four library states, and the operator
+    // publication trigger. They are the newest place a collapsed "SAFE" badge or an invented score
+    // could creep in, so they are held to the same vocabulary rules as every page.
+    fileURLToPath(new URL("../src/library-state.ts", import.meta.url)),
+    fileURLToPath(new URL("../src/publish-trigger.ts", import.meta.url)),
+    fileURLToPath(new URL("../src/publication-network.ts", import.meta.url)),
   ];
   for (const file of files) {
     const source = await readFile(file, "utf8");
@@ -169,4 +175,51 @@ test("INDEXED and the verdict states keep distinct textual labels, not just dist
   assert.match(badges, /NOT A VALID SKILL PACKAGE/);
   // Absence of 0G storage is stated as missing evidence, never as a finding against the resource.
   assert.match(badges, /missing evidence, not a finding against this resource/);
+});
+
+
+/**
+ * PR 3/4 additions: the signer boundary and the 0G publication state, asserted from the frontend
+ * side. `apps/worker/test/signer-boundary.test.ts` asserts the same boundary from the worker side;
+ * both exist because this is the invariant that keeps a funded signer off the public deployment.
+ */
+
+test("no frontend-reachable file references the worker internal or operator publication tokens", async () => {
+  const publicDir = new URL("../public/", import.meta.url);
+  const uiDir = new URL("../src/ui/", import.meta.url);
+  const files = [...(await collectFiles(publicDir)), ...(await collectFiles(uiDir))];
+  for (const file of files) {
+    const contents = await readFile(file, "utf8");
+    for (const secret of [/AEGISONE_WORKER_INTERNAL_TOKEN/, /AEGISONE_PUBLISH_OPERATOR_TOKEN/, /PROOFRAIL_WORKER_INTERNAL_TOKEN/]) {
+      assert.doesNotMatch(contents, secret, `${file} must not reference a publication secret`);
+    }
+  }
+});
+
+test("the 0G storage badge cannot be produced by an arbitrary truthy value", async () => {
+  const { zeroGStorageBadge } = await import("../src/ui/badges.mjs");
+  // Anything that is not a structurally valid, non-zero 32-byte root must render the absent state.
+  for (const value of ["true", "yes", "1", "stored", "0x", "0xabc", `0x${"0".repeat(64)}`, `0x${"z".repeat(64)}`, true, 1, {}, [], null, undefined]) {
+    const html = zeroGStorageBadge(value as never);
+    assert.match(html, /NOT STORED ON 0G/, `value ${JSON.stringify(value)} must not render a positive 0G storage badge`);
+  }
+  // Only a well-formed non-zero root does.
+  assert.match(zeroGStorageBadge(`0x${"ab".repeat(32)}`), /ON 0G STORAGE/);
+});
+
+test("the library state vocabulary never collapses the four facts into one verdict word", async () => {
+  const { libraryStateLabel, libraryStateMeaning } = await import("../src/library-state.ts");
+  const labels = (["INDEXED", "AUDITED", "VERIFIED", "STORED_ON_0G"] as const).map(libraryStateLabel);
+  // Four distinct labels — never merged, never reduced to a single badge.
+  assert.equal(new Set(labels).size, 4);
+  for (const id of ["INDEXED", "AUDITED", "VERIFIED", "STORED_ON_0G"] as const) {
+    const meaning = libraryStateMeaning(id);
+    assert.ok(meaning.length > 0, `${id} must carry a stated meaning, never a bare word`);
+    assert.doesNotMatch(meaning, /safe(?! )/i);
+  }
+  // Each of the three strongest states states a limit in its own meaning text.
+  assert.match(libraryStateMeaning("AUDITED"), /Not a safety guarantee/);
+  assert.match(libraryStateMeaning("VERIFIED"), /Not a safety guarantee/);
+  assert.match(libraryStateMeaning("STORED_ON_0G"), /Not a verdict/);
+  assert.match(libraryStateMeaning("INDEXED"), /Not a verification/);
 });

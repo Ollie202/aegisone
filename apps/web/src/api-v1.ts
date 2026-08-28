@@ -24,6 +24,11 @@ import {
   type SourceClaim,
 } from "../../../packages/catalog-store/src/index.ts";
 import { computeSourceClaimDigest } from "../../../packages/source-auth-github/src/index.ts";
+import {
+  checkStoragePublicationIntegrity,
+  type StoragePublicationIntegrity,
+} from "../../../packages/evidence-publish/src/integrity.ts";
+import { PUBLICATION_NETWORK } from "./publication-network.ts";
 import { performPastedSkillScan, ScanServiceError, type ScanApiResponse, type ScanServiceDependencies } from "./scan-service.ts";
 
 /**
@@ -123,6 +128,11 @@ export interface EvidenceIntegrityFlags {
 export interface AssembledIntegrity {
   readonly sourceAssurance: EvidenceIntegrityFlags;
   readonly canonicalVerification: EvidenceIntegrityFlags;
+  /** Result of the 0G publication gate. `ok: false` carries an explicit reason — either
+   * `NO_PUBLICATION_RECORDED` (the ordinary case: nothing was ever published for this resource)
+   * or a specific integrity failure. Callers render an absent publication as missing evidence and
+   * a failed one as a refusal, never as a partial success. */
+  readonly storagePublication: StoragePublicationIntegrity;
 }
 
 function pickMostRecentActiveClaim(claims: readonly SourceClaim[]): SourceClaim | null {
@@ -158,15 +168,19 @@ function assembleVerificationEvidence(
   security: SecurityAssessmentEvidence;
   canonicalEvidence: CanonicalEvidencePointer;
   integrity: EvidenceIntegrityFlags;
+  storagePublication: StoragePublicationIntegrity;
 } {
   const empty = emptyTrust();
+  const noPublication = { ok: false, reason: "NO_PUBLICATION_RECORDED" } as const;
   if (!verification) {
-    return { ...empty, integrity: { present: false, integrityCheckPassed: false } };
+    return { ...empty, integrity: { present: false, integrityCheckPassed: false }, storagePublication: noPublication };
   }
 
+  // A row that fails its own structural validation is unavailable evidence in every dimension,
+  // including publication: a malformed row can never yield a usable storage root.
   const issues = validateNewCapabilityVerification(verification);
   if (issues.length > 0) {
-    return { ...empty, integrity: { present: true, integrityCheckPassed: false } };
+    return { ...empty, integrity: { present: true, integrityCheckPassed: false }, storagePublication: noPublication };
   }
 
   // The exact commit is the resource version's own recorded claim, never invented here; the
@@ -197,18 +211,43 @@ function assembleVerificationEvidence(
     findingCount: verification.securityFindingCount,
   };
 
+  /**
+   * ==========================================================================================
+   * THE 0G PUBLICATION GATE
+   * ==========================================================================================
+   * A `storage_root` column value is NOT sufficient to present a 0G storage root. The row is
+   * re-checked by `checkStoragePublicationIntegrity`, which recomputes the canonical evidence
+   * manifest — over this row's own evidence facts *and* the stored root, which the manifest
+   * commits to — and requires it to equal the stored `canonical_evidence_sha256`.
+   *
+   * Because this is the single assembler behind `GET /api/v1/resources/:id`, the evidence
+   * endpoint, the MCP tools, the Evidence Passport and the Verified Library, a root that fails
+   * the check is structurally unable to reach ANY surface: it is dropped to `null` here, so
+   * `STORED ON 0G` cannot be rendered from a fabricated or mutated row (docs/17 Threat M8-012).
+   * The registry record id is gated on the same result, since it commits to that same root.
+   */
+  const storagePublication = checkStoragePublicationIntegrity(verification, PUBLICATION_NETWORK);
+
   const canonicalEvidence: CanonicalEvidencePointer =
     verification.canonicalEvidenceSha256 !== null && verification.verifiedAt !== null
       ? {
           status: "AVAILABLE",
           sha256: verification.canonicalEvidenceSha256,
           verifiedAt: verification.verifiedAt,
-          storageRoot: verification.storageRoot,
-          registryRecordId: verification.registryRecordId,
+          // Only ever a root that passed the gate above. Never the raw column value.
+          storageRoot: storagePublication.ok ? storagePublication.storageRoot : null,
+          registryRecordId: storagePublication.ok ? verification.registryRecordId : null,
         }
       : empty.canonicalEvidence;
 
-  return { sourceInspection, correspondence, security, canonicalEvidence, integrity: { present: true, integrityCheckPassed: true } };
+  return {
+    sourceInspection,
+    correspondence,
+    security,
+    canonicalEvidence,
+    integrity: { present: true, integrityCheckPassed: true },
+    storagePublication,
+  };
 }
 
 export function assembleTrustEvidence(
@@ -217,12 +256,12 @@ export function assembleTrustEvidence(
   latestVerification: CapabilityVerification | null,
 ): { trust: CapabilityTrustEvidence; integrity: AssembledIntegrity } {
   const { evidence: sourceAssurance, integrity: sourceAssuranceIntegrity } = assembleSourceAssurance(activeSourceClaims);
-  const { sourceInspection, correspondence, security, canonicalEvidence, integrity: canonicalVerification } =
+  const { sourceInspection, correspondence, security, canonicalEvidence, integrity: canonicalVerification, storagePublication } =
     assembleVerificationEvidence(version, latestVerification);
 
   return {
     trust: { sourceAssurance, sourceInspection, correspondence, security, canonicalEvidence },
-    integrity: { sourceAssurance: sourceAssuranceIntegrity, canonicalVerification },
+    integrity: { sourceAssurance: sourceAssuranceIntegrity, canonicalVerification, storagePublication },
   };
 }
 
@@ -244,6 +283,14 @@ interface AssembledResource {
   readonly version: ResourceVersion | null;
   readonly capability: CapabilityResource;
   readonly integrity: AssembledIntegrity;
+  /**
+   * The raw latest verification row, exposed for the registry-commitment pointers the Evidence
+   * Passport renders. Consumers must NOT read trust dimensions from it — `capability.trust` is the
+   * integrity-checked view and the only one that may drive a state or a verdict. It is safe to read
+   * the registry pointers here only because callers gate them on
+   * `integrity.storagePublication.ok`, which is what binds them to a re-checked root.
+   */
+  readonly latestVerification: CapabilityVerification | null;
 }
 
 export async function loadAssembledResource(store: CatalogStore, resourceId: string): Promise<AssembledResource | null> {
@@ -267,7 +314,7 @@ export async function loadAssembledResource(store: CatalogStore, resourceId: str
   // invariants; this re-validates rather than trusting that by construction.
   validateCapabilityResource(capability);
 
-  return { resource, version, capability, integrity };
+  return { resource, version, capability, integrity, latestVerification };
 }
 
 function requiredPathSegment(raw: string | undefined): string {
@@ -419,6 +466,20 @@ export async function buildEvidenceResponse(store: CatalogStore, resourceId: str
   const capabilityVerifications = verifications.map((verification) => {
     const issues = validateNewCapabilityVerification(verification);
     const integrityCheckPassed = issues.length === 0;
+    /**
+     * The publication pointers get their OWN gate, separately from structural validity.
+     *
+     * Structural validation cannot detect a fabricated publication: a row can be perfectly
+     * well-formed and still carry a storage root for an upload that never happened. Only
+     * `checkStoragePublicationIntegrity` — which recomputes the canonical evidence manifest that
+     * the root is bound into — can. Without this, the evidence-history endpoint would serve a
+     * forged root that `GET /api/v1/resources/:id` correctly refuses, and the two surfaces would
+     * disagree about the same row (regression: `zerog-publication-hostile.test.ts`).
+     */
+    const publication = integrityCheckPassed
+      ? checkStoragePublicationIntegrity(verification, PUBLICATION_NETWORK)
+      : ({ ok: false, reason: "NO_PUBLICATION_RECORDED" } as const);
+    const publicationOk = publication.ok;
     return {
       id: verification.id,
       artifactKind: verification.artifactKind,
@@ -431,14 +492,19 @@ export async function buildEvidenceResponse(store: CatalogStore, resourceId: str
       securityHighestSeverity: integrityCheckPassed ? verification.securityHighestSeverity : null,
       securityFindingCount: integrityCheckPassed ? verification.securityFindingCount : null,
       canonicalEvidenceSha256: integrityCheckPassed ? verification.canonicalEvidenceSha256 : null,
-      storageRoot: integrityCheckPassed ? verification.storageRoot : null,
-      storageTransaction: integrityCheckPassed ? verification.storageTransaction : null,
-      registryContract: integrityCheckPassed ? verification.registryContract : null,
-      registryRecordId: integrityCheckPassed ? verification.registryRecordId : null,
-      registryTransaction: integrityCheckPassed ? verification.registryTransaction : null,
+      // Every 0G pointer below is gated on the publication check, not merely on structural
+      // validity. A row that fails it reports its pointers as absent — the honest statement that
+      // AegisOne holds no publication it is willing to stand behind for this row.
+      storageRoot: publicationOk ? verification.storageRoot : null,
+      storageTransaction: publicationOk ? verification.storageTransaction : null,
+      registryContract: publicationOk ? verification.registryContract : null,
+      registryRecordId: publicationOk ? verification.registryRecordId : null,
+      registryTransaction: publicationOk ? verification.registryTransaction : null,
       verifiedAt: integrityCheckPassed ? verification.verifiedAt : null,
       createdAt: verification.createdAt,
       integrityCheckPassed,
+      /** Explicit, so a consumer can tell "never published" from "published but unverifiable". */
+      publicationIntegrityCheckPassed: publicationOk,
     };
   });
 
