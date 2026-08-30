@@ -105,7 +105,10 @@ function heroArtSvg(): string {
 
 /** Three example *queries* rendered as the hero's category pills (design skill §15 step 6).
  * Deliberately queries, not results: nothing pre-populates the results region. */
-const EXAMPLES = ["Review a pull request", "Audit a Solidity contract", "Deploy a Next.js app"];
+// Every example must describe a SKILL someone is looking for. Earlier copy here advertised
+// "Audit a Solidity contract" and "Deploy a Next.js app", which read as things AegisOne does —
+// it does neither. This page finds skills and points at auditing them; nothing else.
+const EXAMPLES = ["Pull request review", "Code documentation", "Data extraction"];
 
 export function renderSkillsPageHtml(state: SkillsPageState): string {
   const searching = state.searchResponse !== null || state.searchError !== null;
@@ -154,8 +157,8 @@ export function renderSkillsPageHtml(state: SkillsPageState): string {
     <section class="hero">
       <div class="heroCopy">
         <div class="pillRow">${examples}</div>
-        <h1>Browse skills. See what's <span class="mark">actually proven</span> — and what isn't.</h1>
-        <p class="lede">Every entry shows its dimensions separately: audited, verified, hashed, stored. Where AegisOne has no evidence, it says so instead of leaving a reassuring blank.</p>
+        <h1 class="tight">Find a skill. See what's <span class="mark">actually proven</span>.</h1>
+        <p class="lede">Every entry shows audited, verified and stored separately. Where there is no evidence, it says so.</p>
         <form class="searchForm" id="search-form" method="GET" action="/">
           <input type="search" name="q" id="search-input" placeholder="e.g. review a pull request" value="${escapeHtml(state.query)}" autocomplete="off" aria-label="Search capabilities">
           <button class="button button--primary" type="submit">Search <span class="arrow" aria-hidden="true">→</span></button>

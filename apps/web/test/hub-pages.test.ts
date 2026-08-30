@@ -52,7 +52,7 @@ test("GET / renders the SKILLS page in the ADR-015 visual language and is readab
     const response = await fetch(`${running.baseUrl}/`);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /Browse skills\. See what/);
+    assert.match(html, /Find a skill\. See what/);
     assert.match(html, /search-form/);
     // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
     assert.match(html, /--paper:#f7f5ef/);
@@ -109,7 +109,11 @@ test("GET / shows the real catalog library but no search result rows until a sea
     assert.doesNotMatch(html, /class="resultCard/);
     assert.match(html, /<div id="search-results"><\/div>/);
     // Example *queries* are offered, and they are clickable queries, not results.
-    assert.match(html, /class="pill exampleChip" data-example="Review a pull request"/);
+    assert.match(html, /class="pill exampleChip" data-example="Pull request review"/);
+    // Each example must name a skill someone is looking for. It must never advertise a capability
+    // AegisOne does not have: this page finds and audits skills, it does not audit Solidity or
+    // deploy anything.
+    assert.doesNotMatch(html, /data-example="[^"]*(Solidity|Deploy)/i);
     // The live federated strip must not be pre-populated by the server either.
     assert.match(html, /Not loaded yet\. Nothing is shown here until a real federated query/);
   } finally {

@@ -81,13 +81,16 @@ a:hover .brandMark{transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-s
 .railNav a.active{color:var(--ink)}
 .railNum{transition:transform 180ms ease, box-shadow 180ms ease}
 .railEdge{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
-.frame{border:var(--line-thick) solid var(--ink);border-radius:var(--radius-lg);background:var(--card);padding:clamp(22px,3.4vw,52px);margin-bottom:26px;position:relative}
+.frame{border:var(--line-thick) solid var(--ink);border-radius:var(--radius-lg);background:var(--card);padding:clamp(20px,2.6vw,38px);margin-bottom:26px;position:relative}
 .topbar{display:none}
 
 /* ---------- editorial typography ---------- */
 h1,h2,h3{margin:0;letter-spacing:-.04em;font-weight:900}
-h1{font-size:clamp(38px,7vw,92px);line-height:.94;margin:0 0 18px;max-width:16ch}
-h1.tight{max-width:22ch}
+/* The hero previously ran to 92px at 7vw, which pushed the search box and the catalog below the
+   fold on a laptop — the headline became the page instead of introducing it. Still editorial and
+   still the largest thing on screen, just no longer the only thing. */
+h1{font-size:clamp(30px,4.4vw,56px);line-height:1;margin:0 0 14px;max-width:20ch}
+h1.tight{max-width:24ch}
 h2{font-size:clamp(20px,2.4vw,30px);line-height:1.02;margin:0 0 14px}
 h3{font-size:clamp(17px,1.6vw,21px);line-height:1.06}
 p{color:var(--ink-soft);max-width:62ch}
@@ -129,7 +132,7 @@ p{color:var(--ink-soft);max-width:62ch}
 
 /* ---------- hero ---------- */
 .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(20px,3vw,48px);align-items:end;position:relative}
-.heroArt{position:relative;justify-self:center;align-self:center;width:100%;max-width:420px}
+.heroArt{position:relative;justify-self:center;align-self:center;width:100%;max-width:330px}
 .heroArt svg{width:100%;height:auto;display:block;overflow:visible}
 .heroCopy{position:relative;z-index:2}
 .searchForm{display:flex;gap:12px;margin:22px 0 10px;max-width:640px}
