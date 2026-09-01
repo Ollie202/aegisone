@@ -19,7 +19,25 @@ import {
   mainnetAddressUrl,
   mainnetTxUrl,
 } from "../live-evidence.ts";
-import { renderLayoutHtml } from "./layout.ts";
+import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
+
+/**
+ * Three frame-breaking objects. This is the one page where the *proven* end of the vocabulary is
+ * the subject, so the escapes are: a near byte-grid tile past the top-left (the bytes that were
+ * actually compared), a connector past the right edge (a record linked to its published evidence),
+ * and a small far package bottom-right (everything still only indexed).
+ *
+ * The verdict stamp is not used as ornament anywhere, here included: it means AegisOne holds
+ * correspondence evidence for one specific resource, and it only ever appears attached to one.
+ *
+ * The top-CENTRE slot rather than top-left: this page pins an .edgeLabel to the frame's top-left
+ * corner, and a decorative object must not sit on its text.
+ */
+const HERO_ESCAPES = escapeObjectsHtml([
+  { slot: "tc", shape: "bytegrid", depth: "far", drift: "slow" },
+  { slot: "rt", shape: "node", depth: "far" },
+  { slot: "br", shape: "cube", depth: "far", drift: "fast" },
+]);
 
 /**
  * VERIFIED LIBRARY — section 3 of the four-section IA (ADR-016), now the real thing.
@@ -175,8 +193,13 @@ export function renderVerifiedPageHtml(state: VerifiedPageState): string {
   const body = `
     <span class="edgeLabel">03 / Verified library</span>
     <span class="sectionNum" aria-hidden="true">03</span>
-    <h1 class="tight">Everything AegisOne can <span class="mark">actually prove</span>, and everything it cannot.</h1>
-    <p class="lede">Four independent facts per resource. Not a score, not a rating, not a badge that means "fine". Each one is either established by evidence or shown as missing — and the missing ones are printed, not hidden.</p>
+    <section class="hero hero--solo">
+      ${HERO_ESCAPES}
+      <div class="heroCopy">
+        <h1 class="tight">Everything AegisOne can actually <span class="capsule">prove</span>, and everything it cannot.</h1>
+        <p class="lede">Four independent facts per resource. Not a score, not a rating, not a badge that means "fine". Each one is either established by evidence or shown as missing — and the missing ones are printed, not hidden.</p>
+      </div>
+    </section>
 
     <section class="stateKey">
       ${(["INDEXED", "AUDITED", "VERIFIED", "STORED_ON_0G"] as LibraryStateId[])

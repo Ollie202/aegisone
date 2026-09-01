@@ -1,5 +1,23 @@
 import { escapeHtml } from "../ui/escape.mjs";
-import { renderLayoutHtml } from "./layout.ts";
+import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
+
+/**
+ * Three frame-breaking objects for the machine-access page: a connector escaping the top border (an
+ * agent reaching in from outside), a chunky arrow past the right edge (the call travelling), and a
+ * far package bottom-right (the thing being asked about). Same shape family, aria-hidden,
+ * pointer-events:none, removed below 960px.
+ *
+ * Two slots are deliberately avoided here, both found by measuring a real 1440x900 render rather
+ * than by eye: bottom-LEFT, because this hero's CTA pair ends flush with the hero's bottom-left
+ * corner and the object landed on the "Connect it" button; and top-LEFT, because this page carries
+ * an .edgeLabel pinned to the frame's top-left corner and the object covered its text. A decorative
+ * object must never sit on a control or on text, even when it cannot intercept a click.
+ */
+const HERO_ESCAPES = escapeObjectsHtml([
+  { slot: "tc", shape: "node", depth: "far", drift: "slow" },
+  { slot: "rt", shape: "zig", depth: "near", drift: "fast" },
+  { slot: "br", shape: "cube", depth: "far" },
+]);
 
 /**
  * FOR AGENTS — section 4 of the four-section IA (ADR-016), now the real thing (ADR-019, PR 4/4).
@@ -430,8 +448,14 @@ export function renderAgentsPageHtml(state: AgentsPageState): string {
     <span class="sectionNum" aria-hidden="true">04</span>
 
     <section class="hero">
+      ${HERO_ESCAPES}
       <div class="heroCopy">
-        <h1 class="tight">An agent that can <span class="mark">ask before it trusts</span>.</h1>
+        <div class="pillRow">
+          <span class="pill pill--ink"><span class="pill__glyph" aria-hidden="true">◧</span>Read only</span>
+          <span class="pill pill--cyan"><span class="pill__glyph" aria-hidden="true">▤</span>No key, no signup</span>
+          <span class="pill pill--outline"><span class="pill__glyph" aria-hidden="true">◇</span>Refuses without evidence</span>
+        </div>
+        <h1 class="tight">An agent that can <span class="capsule">ask</span> before it trusts.</h1>
         <p class="lede">AegisOne is a service your agent calls. Four read-only tools over MCP, or the same evidence over plain HTTP. It answers with named dimensions and reason codes — and when the evidence it would need is not there, it says no.</p>
         <div class="ctaRow" style="margin-top:20px">
           <a class="button button--primary" href="#connect">Connect it <span class="arrow" aria-hidden="true">→</span></a>

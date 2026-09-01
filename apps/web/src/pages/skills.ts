@@ -2,7 +2,7 @@ import { escapeHtml } from "../ui/escape.mjs";
 import { resultListHtml } from "../ui/result-card.mjs";
 import { skillLibraryHtml, categoryFilterHtml } from "../ui/skill-card.mjs";
 import type { SkillLibrary } from "../library.ts";
-import { renderLayoutHtml } from "./layout.ts";
+import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
 
 /**
  * SKILLS — section 1 of the four-section IA (ADR-016), served at `/`.
@@ -47,58 +47,84 @@ export interface SkillsPageState {
  * no external asset request, no raster art.
  */
 function heroArtSvg(): string {
-  return `<svg viewBox="0 0 440 340" role="img" aria-label="Outlined skill packages on a shelf, with one lifted out and examined under a magnifier; its evidence slots are mostly empty">
+  return `<svg viewBox="0 0 460 360" role="img" aria-label="Outlined skill packages scattered at several depths: three on a shelf, one lifted out under a magnifier with most of its evidence slots still empty, plus far packages, a comparison arrow and a claimed link">
   <g color="#0a0a0a">
-    <!-- shelf -->
-    <rect x="20" y="246" width="292" height="16" rx="8" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3.5"/>
-    <path d="M40 262 V314 M292 262 V314" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
-
-    <!-- packages still on the shelf: indexed, unexamined -->
-    <g transform="rotate(-5 84 198)">
-      <rect x="47" y="150" width="74" height="96" rx="11" fill="#d8e1ff" stroke="#0a0a0a" stroke-width="3.5"/>
-      <rect x="58" y="222" width="52" height="13" rx="6.5" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3"/>
-      <path d="M60 172 H108 M60 188 H94" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- FAR depth: small, thin, low-contrast. A package indexed and nothing more. -->
+    <g transform="rotate(-6 58 42)" opacity=".55">
+      <use href="#ic-cube" x="36" y="16" width="44" height="47"/>
     </g>
-    <g transform="rotate(3 165 192)">
-      <rect x="128" y="138" width="74" height="108" rx="11" fill="#ffd91a" stroke="#0a0a0a" stroke-width="3.5"/>
-      <rect x="139" y="222" width="52" height="13" rx="6.5" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3"/>
-      <path d="M141 162 H189 M141 178 H175" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    <g transform="rotate(5 403 60)" opacity=".55">
+      <use href="#ic-cube" x="384" y="38" width="38" height="40"/>
     </g>
-    <g transform="rotate(-3 247 202)">
-      <rect x="210" y="158" width="74" height="88" rx="11" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3.5"/>
-      <rect x="221" y="222" width="52" height="13" rx="6.5" fill="#efece2" stroke="#0a0a0a" stroke-width="3"/>
-      <path d="M223 182 H271" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- FAR: one record linked to another. Dashed, because a claimed link is not a proven one. -->
+    <g transform="rotate(3 150 40)" opacity=".72">
+      <circle cx="120" cy="40" r="9" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+      <path d="M131 40h30" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 5"/>
+      <rect x="163" y="31" width="18" height="18" rx="5" fill="#0a0a0a"/>
     </g>
 
-    <!-- the lifted package, under examination -->
-    <g class="float" style="transform-origin:352px 112px">
-      <g transform="rotate(7 352 112)">
-        <rect x="296" y="46" width="112" height="132" rx="15" fill="#22dceb" stroke="#0a0a0a" stroke-width="3.5"/>
-        <use href="#ic-bytegrid" x="314" y="62" width="54" height="54"/>
-        <!-- five evidence slots; only two are filled, because most dimensions are genuinely unknown -->
-        <rect x="310" y="132" width="15" height="15" rx="4" fill="#0a0a0a"/>
-        <rect x="329" y="132" width="15" height="15" rx="4" fill="#0a0a0a"/>
-        <rect x="348" y="132" width="15" height="15" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
-        <rect x="367" y="132" width="15" height="15" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
-        <rect x="386" y="132" width="15" height="15" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
-        <rect x="310" y="156" width="66" height="11" rx="5.5" fill="#fffdf7" stroke="#0a0a0a" stroke-width="2.5"/>
+    <!-- MID depth: the shelf of indexed, unexamined packages. -->
+    <rect x="20" y="258" width="292" height="16" rx="8" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3.5"/>
+    <path d="M40 274 V330 M292 274 V330" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    <g transform="rotate(-5 84 210)">
+      <rect x="47" y="162" width="74" height="96" rx="11" fill="#d8e1ff" stroke="#0a0a0a" stroke-width="3.5"/>
+      <rect x="58" y="234" width="52" height="13" rx="6.5" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3"/>
+      <path d="M60 184 H108 M60 200 H94" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <g transform="rotate(3 165 204)">
+      <rect x="128" y="150" width="74" height="108" rx="11" fill="#ffd91a" stroke="#0a0a0a" stroke-width="3.5"/>
+      <rect x="139" y="234" width="52" height="13" rx="6.5" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3"/>
+      <path d="M141 174 H189 M141 190 H175" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <g transform="rotate(-3 247 214)">
+      <rect x="210" y="170" width="74" height="88" rx="11" fill="#fffdf7" stroke="#0a0a0a" stroke-width="3.5"/>
+      <rect x="221" y="234" width="52" height="13" rx="6.5" fill="#efece2" stroke="#0a0a0a" stroke-width="3"/>
+      <path d="M223 194 H271" fill="none" stroke="#0a0a0a" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- The chunky comparison arrow: the act of pulling one out to actually look at it. -->
+    <g transform="rotate(-16 232 121)">
+      <use href="#ic-zig" x="196" y="100" width="72" height="42"/>
+    </g>
+
+    <!-- NEAR depth: the lifted package. Largest, heaviest-outlined object in the cluster. -->
+    <g class="float" style="transform-origin:352px 118px">
+      <g transform="rotate(6 352 118)">
+        <rect x="292" y="48" width="120" height="140" rx="16" fill="#22dceb" stroke="#0a0a0a" stroke-width="4"/>
+        <use href="#ic-bytegrid" x="311" y="64" width="58" height="58"/>
+        <!-- Five evidence slots, two filled: the honest state of almost everything in a discovery
+             catalog is "a couple of dimensions known, most still blank". -->
+        <rect x="306" y="140" width="16" height="16" rx="4" fill="#0a0a0a"/>
+        <rect x="326" y="140" width="16" height="16" rx="4" fill="#0a0a0a"/>
+        <rect x="346" y="140" width="16" height="16" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+        <rect x="366" y="140" width="16" height="16" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+        <rect x="386" y="140" width="16" height="16" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+        <rect x="306" y="166" width="70" height="12" rx="6" fill="#fffdf7" stroke="#0a0a0a" stroke-width="2.5"/>
       </g>
     </g>
 
-    <!-- magnifier doing the examining -->
-    <g transform="rotate(-10 296 152)">
-      <circle cx="296" cy="152" r="40" fill="#b79cff" fill-opacity="0.35" stroke="#0a0a0a" stroke-width="4"/>
-      <path d="M268 180 L242 208" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+    <!-- NEAR: the magnifier doing the examining, deliberately overlapping the lifted package. -->
+    <g transform="rotate(-10 292 164)">
+      <circle cx="292" cy="164" r="43" fill="#b79cff" fill-opacity="0.34" stroke="#0a0a0a" stroke-width="4.5"/>
+      <path d="M262 194 L232 224" fill="none" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round"/>
     </g>
 
-    <!-- decorative objects breaking the composition edge -->
-    <g class="float--slow" style="transform-origin:34px 52px">
-      <circle cx="34" cy="52" r="17" fill="#ffd91a" stroke="#0a0a0a" stroke-width="3.5"/>
-      <path d="M28 46 A6.5 6.5 0 1 1 34 53 V57" fill="none" stroke="#0a0a0a" stroke-width="3.2" stroke-linecap="round"/>
-      <circle cx="34" cy="64" r="2.2" fill="#0a0a0a"/>
+    <!-- NEAR: a detached evidence slot, one filled and one empty, tumbled clear of the cluster. -->
+    <g class="float--slow" style="transform-origin:414px 258px">
+      <g transform="rotate(14 414 258)">
+        <rect x="382" y="236" width="64" height="44" rx="13" fill="#fffdf7" stroke="#0a0a0a" stroke-width="4"/>
+        <rect x="392" y="248" width="16" height="16" rx="4" fill="#0a0a0a"/>
+        <rect x="414" y="248" width="16" height="16" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3.5"/>
+      </g>
     </g>
-    <rect x="404" y="236" width="26" height="26" rx="7" fill="#b79cff" stroke="#0a0a0a" stroke-width="3.5" transform="rotate(16 417 249)"/>
-    <use href="#ic-arrow" x="196" y="96" width="26" height="26" transform="rotate(-24 209 109)"/>
+
+    <!-- MID: the question token. Discovery finds things; it does not answer for them. -->
+    <g class="float--slow" style="transform-origin:34px 118px">
+      <circle cx="34" cy="118" r="18" fill="#ffd91a" stroke="#0a0a0a" stroke-width="3.5"/>
+      <path d="M27 111 A7 7 0 1 1 34 119 V123" fill="none" stroke="#0a0a0a" stroke-width="3.4" stroke-linecap="round"/>
+      <circle cx="34" cy="131" r="2.4" fill="#0a0a0a"/>
+    </g>
+    <use href="#ic-arrow" x="94" y="300" width="30" height="30" transform="rotate(8 109 315)" opacity=".6"/>
   </g>
 </svg>`;
 }
@@ -108,13 +134,52 @@ function heroArtSvg(): string {
 // Every example must describe a SKILL someone is looking for. Earlier copy here advertised
 // "Audit a Solidity contract" and "Deploy a Next.js app", which read as things AegisOne does —
 // it does neither. This page finds skills and points at auditing them; nothing else.
-const EXAMPLES = ["Pull request review", "Code documentation", "Data extraction"];
+//
+// The three carry *varied* treatments — solid ink, solid cyan, outlined — each with its own small
+// glyph (design skill §7 chips). They stay real, clickable queries: the query text is the label,
+// unchanged, and clicking one runs a genuine search against the real backend. The variation is
+// composition only; it encodes no ranking, category or trust meaning, and every chip keeps the
+// same ink outline, the same size and the same interaction.
+const EXAMPLES: ReadonlyArray<{ query: string; tone: "ink" | "cyan" | "outline"; glyph: string }> = [
+  { query: "Pull request review", tone: "ink", glyph: "◧" },
+  { query: "Code documentation", tone: "cyan", glyph: "▤" },
+  { query: "Data extraction", tone: "outline", glyph: "◇" },
+];
+
+/**
+ * The four objects that break the frame boundary on this page (design skill §15 step 9: "two to
+ * five decorative objects breaking the frame boundary").
+ *
+ * Each one has a reason, and each is a member of the page's existing shape family:
+ *   tl  a far, small package — the catalog continues past the edge of what is on screen;
+ *   tr  an outlined byte-grid tile — the bytes, detached from any one record;
+ *   rt  a near, large outlined package — the unit of thing this page is about, tipped out of the
+ *       frame at the point where the illustration cluster runs out of room;
+ *   br  an empty evidence slot — the missing dimension, escaping into the margin.
+ *
+ * The bottom-LEFT slot is deliberately empty here, and this is the reason rather than an oversight:
+ * measured at 1440x900, this page's hero is tall enough that a bottom-left object lands beside the
+ * nav rail's "04 For agents" link, and the clear window between that link's box and the frame's
+ * content edge is 50px against the object's 54px. Four objects that all clear every control and
+ * every piece of text beat five where one grazes the navigation.
+ *
+ * Slot geometry keeps every one of them in the page gutter and away from the search box, the pill
+ * row and the CTA row; all are `pointer-events:none` and `aria-hidden`, and all disappear below
+ * 960px (see `.escape` in `layout.ts`).
+ */
+const HERO_ESCAPES = escapeObjectsHtml([
+  { slot: "tl", shape: "cube", depth: "far", drift: "slow" },
+  { slot: "tr", shape: "bytegrid", depth: "far" },
+  { slot: "rt", shape: "cube", depth: "near", drift: "fast" },
+  { slot: "br", shape: "chip", depth: "near", drift: "slow" },
+]);
 
 export function renderSkillsPageHtml(state: SkillsPageState): string {
   const searching = state.searchResponse !== null || state.searchError !== null;
 
   const examples = EXAMPLES.map(
-    (example) => `<button type="button" class="pill exampleChip" data-example="${escapeHtml(example)}">${escapeHtml(example)}</button>`,
+    (example) =>
+      `<button type="button" class="pill exampleChip pill--${example.tone}" data-example="${escapeHtml(example.query)}"><span class="pill__glyph" aria-hidden="true">${escapeHtml(example.glyph)}</span>${escapeHtml(example.query)}</button>`,
   ).join("");
 
   const resultsHtml = state.searchError
@@ -155,15 +220,17 @@ export function renderSkillsPageHtml(state: SkillsPageState): string {
 
   const body = `
     <section class="hero">
+      ${HERO_ESCAPES}
       <div class="heroCopy">
         <div class="pillRow">${examples}</div>
-        <h1 class="tight">Find a skill. See what's <span class="mark">actually proven</span>.</h1>
+        <h1 class="tight">Find a skill. See what's <span class="capsule">actually</span> proven.</h1>
         <p class="lede">Every entry shows audited, verified and stored separately. Where there is no evidence, it says so.</p>
         <form class="searchForm" id="search-form" method="GET" action="/">
           <input type="search" name="q" id="search-input" placeholder="e.g. review a pull request" value="${escapeHtml(state.query)}" autocomplete="off" aria-label="Search capabilities">
           <button class="button button--primary" type="submit">Search <span class="arrow" aria-hidden="true">→</span></button>
         </form>
         <div class="ctaRow" style="margin-bottom:18px">
+          <a class="button button--primary" href="#library-region">Browse the catalog <span class="arrow" aria-hidden="true">→</span></a>
           <a class="button" href="/audit">Audit a skill you already have <span class="arrow" aria-hidden="true">→</span></a>
         </div>
       </div>
