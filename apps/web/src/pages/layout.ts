@@ -10,6 +10,20 @@
 // every page is built from that one shape family (stamp ring + byte grid + a comparison arrow),
 // per the design skill's Design Restraint Rules ("pick one metaphor, reuse it").
 //
+// That family is *extended*, not replaced, by `#ic-cube` (an outlined package — the unit of thing
+// being indexed), `#ic-zig` (a chunky comparison arrow) and `#ic-lens` (the inspection itself).
+// These are the same flat-outlined geometry at the same stroke weights and exist so the hero can
+// be a scattered cluster at several depths rather than one tidy corner motif. There is still
+// exactly one metaphor.
+//
+// Composition (design skill §3, §9, §15): the page is not a tidy card on an off-white ground. A
+// large flat yellow zone cuts diagonally across the upper-left of the viewport (`body::before`)
+// against a pale lavender ground, the hero carries its own share of that same field
+// (`.hero::before`) so the colour reads as ONE zone continuing through the frame's outlined
+// boundary, and two to five decorative objects (`escapeObjectsHtml`) are translated out past that
+// boundary into the page gutter. All of it is behind content, `pointer-events:none`, `aria-hidden`,
+// and removed below 960px.
+//
 // The **brand mark is a separate thing** and is NOT drawn here: it is the repo owner's real logo
 // file, `apps/web/public/brand/logo.jpg`, served at `/static/brand/logo.jpg` (see `brandLogoImg`
 // below and ADR-015's addendum). Verdict illustration must never be mistaken for brand identity.
@@ -37,6 +51,10 @@ const STYLE = `
 :root{
   --ink:#0a0a0a; --ink-soft:#3d3a34;
   --paper:#f7f5ef; --paper-deep:#efece2; --card:#fffdf7;
+  /* The page ground is a pale lavender-blue, not off-white: the composition needs a cool ground
+     for the warm yellow structural field to cut across (design skill §3 — "colour should separate
+     major visual zones"). Both are pale enough that ink text keeps >12:1 contrast on either. */
+  --ground:#e8ebfa; --ground-dot:#d3d9f2;
   --yellow:#ffd91a; --lavender:#b79cff; --cyan:#22dceb; --periwinkle:#d8e1ff;
   --amber:#f5a524; --alarm:#ff4a3d;
   --tone-neutral:#e6e2d6; --tone-info:var(--lavender); --tone-positive:var(--cyan);
@@ -52,10 +70,33 @@ const STYLE = `
 }
 *{box-sizing:border-box}
 body{
-  margin:0;background:var(--paper);color:var(--ink);line-height:1.5;
+  margin:0;background:var(--ground);color:var(--ink);line-height:1.5;
   -webkit-font-smoothing:antialiased;
-  background-image:radial-gradient(var(--paper-deep) 1.4px, transparent 1.4px);
+  background-image:radial-gradient(var(--ground-dot) 1.4px, transparent 1.4px);
   background-size:22px 22px;
+  position:relative;
+  /* Decorative objects are deliberately translated outside their containers below. `clip` (not
+     `hidden`) keeps them from producing a sideways scrollbar without turning <body> into a scroll
+     container, which would break the sticky nav rail. */
+  overflow-x:clip;
+}
+/* ---------- the structural colour field ----------
+   One large flat yellow zone cutting diagonally across the upper-left of the viewport, meeting the
+   pale lavender ground (design skill §3: "prefer large flat colour fields", "colour should separate
+   major visual zones, not decorate every element"). It is a fixed, pointer-transparent, z-index:-1
+   layer, so it can never sit above text, intercept a click, or change any foreground contrast — all
+   copy still renders on --card / --paper / the hero's own field, never directly on this. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:var(--yellow);
+  clip-path:polygon(0 0, 62vw 0, 0 78vh);
+}
+/* A second, smaller counterweight field in the lower right keeps the composition asymmetric rather
+   than merely diagonal — one dense corner, one sparse corner (design skill §9). */
+body::after{
+  content:"";position:fixed;right:0;bottom:0;width:34vw;height:40vh;z-index:-1;pointer-events:none;
+  background:var(--periwinkle);
+  clip-path:polygon(100% 24%, 100% 100%, 8% 100%);
 }
 a{color:var(--ink);text-decoration:none;text-underline-offset:3px}
 a:hover{text-decoration:underline}
@@ -65,8 +106,12 @@ a:hover{text-decoration:underline}
 :focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 
 /* ---------- page shell: slim vertical rail + one big outlined frame ---------- */
-.page{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;min-height:100vh;padding:18px 20px 0}
-.rail{position:sticky;top:18px;align-self:start;height:calc(100vh - 36px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:0 8px 18px 0}
+/* The side padding is a deliberate *gutter*, not decoration: the escaping decorative objects below
+   (.escape--*) are translated into it, so it must stay wide enough for them to clear the frame's
+   outlined boundary. The top padding is kept small — vertical space above the fold is spent on the
+   search box and the catalog, not on chrome. */
+.page{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;min-height:100vh;padding:26px 34px 0}
+.rail{position:sticky;top:26px;align-self:start;height:calc(100vh - 52px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:0 8px 18px 0}
 /* The real logo file sits in one outlined light frame so its own white ground reads as an
    intentional graphic frame rather than a broken image box on the dotted paper background. */
 .brandMark{display:inline-grid;place-items:center;width:var(--brand-size,56px);height:var(--brand-size,56px);border:var(--border);border-radius:14px;background:#fff;overflow:hidden;flex:none;transition:transform 180ms ease, box-shadow 180ms ease}
@@ -106,6 +151,20 @@ p{color:var(--ink-soft);max-width:62ch}
 .pill{display:inline-flex;align-items:center;gap:6px;border:var(--border);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--card)}
 .pill--yellow{background:var(--yellow)}
 .pill--peri{background:var(--periwinkle)}
+/* Varied pill treatments (design skill §7 chips: "small pill, dark outline, icon or coloured
+   miniature square"). A row of identical chips reads as a filter bar; a solid / accent / outlined
+   trio reads as composition. Each keeps its full ink outline and its own glyph, so the variation is
+   never the only thing distinguishing one from another.
+   Contrast: --paper #f7f5ef on --ink #0a0a0a ≈ 18.7:1; --ink on --cyan #22dceb ≈ 14.4:1; --ink on
+   transparent-over-yellow ≈ 14.6:1. All far past WCAG AA for small bold text. */
+.pill--ink{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pill--cyan{background:var(--cyan)}
+.pill--outline{background:transparent}
+.pill__glyph{font-size:11px;line-height:1;flex:none}
+/* Accent typography (design skill §4 "a single word may use an outlined pill treatment"). Used
+   EXACTLY once per page, on one word of the headline, so the headline itself becomes a graphic
+   object without turning every word into a gimmick. */
+.capsule{display:inline-block;background:var(--lavender);border:var(--line-thick) solid var(--ink);border-radius:999px;padding:0 .3em;transform:rotate(-1.6deg);line-height:.94}
 .pillRow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
 .button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border:var(--border);border-radius:999px;background:var(--card);color:var(--ink);font-weight:800;font-size:14px;letter-spacing:-.01em;cursor:pointer;font-family:inherit;transition:transform 160ms ease, box-shadow 160ms ease}
 .button:hover{text-decoration:none;transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-sm)}
@@ -132,9 +191,47 @@ p{color:var(--ink-soft);max-width:62ch}
 
 /* ---------- hero ---------- */
 .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(20px,3vw,48px);align-items:end;position:relative}
-.heroArt{position:relative;justify-self:center;align-self:center;width:100%;max-width:330px}
+/* The hero's own share of the page colour field. It bleeds out to the frame's inner border on the
+   top and left (negative offsets exactly cancel .frame's padding) and is cut on the same diagonal
+   as body::before, so the yellow reads as ONE zone continuing through the frame boundary rather
+   than as a rectangle painted inside a card. Radius matches the frame's top-left corner.
+   z-index:0 against .heroCopy's z-index:2 — it is always behind text, and it is flat ink-on-yellow
+   underneath, so contrast only ever improves. */
+.hero::before{
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  top:calc(-1 * clamp(20px,2.6vw,38px));left:calc(-1 * clamp(20px,2.6vw,38px));
+  width:min(760px,86%);height:calc(100% + clamp(20px,2.6vw,38px));
+  background:var(--hero-field,var(--yellow));
+  border-radius:calc(var(--radius-lg) - 3px) 0 0 0;
+  clip-path:polygon(0 0, 100% 0, 62% 100%, 0 100%);
+}
+.hero--noField::before{display:none}
+.heroArt{position:relative;z-index:1;justify-self:center;align-self:center;width:100%;max-width:330px}
 .heroArt svg{width:100%;height:auto;display:block;overflow:visible}
 .heroCopy{position:relative;z-index:2}
+/* The search input sits on the yellow field, so it keeps an opaque card fill and a full ink
+   outline rather than the paper fill it had on a plain background. */
+.hero .searchForm input[type="search"]{background:var(--card)}
+
+/* ---------- escaping objects (design skill §9 controlled anti-grid) ----------
+   Decorative SVG objects positioned against .frame and translated PAST its boundary. They are
+   aria-hidden, pointer-events:none, sit at z-index 0/-? behind interactive content, and are removed
+   entirely below 960px. Each one is placed in a margin or empty region — never over a control. */
+.escape{position:absolute;pointer-events:none;z-index:1;display:block}
+.escapeInner{display:block}
+.escape svg{width:100%;height:auto;display:block;overflow:visible}
+/* near: large, high-contrast, straddling the frame edge */
+.escape--near{width:clamp(84px,7vw,116px)}
+/* far: small, further out, reads as depth */
+.escape--far{width:clamp(46px,3.6vw,62px);opacity:.9}
+/* Offsets are measured from .hero, which is inset by .frame's padding (max 38px) plus its 3px
+   border. Anything past ~41px therefore genuinely crosses the frame's outlined boundary and lands
+   in the page gutter, which .page's 34px desktop side padding reserves for exactly this. */
+.escape--tl{top:-58px;left:-62px;transform:rotate(-6deg)}
+.escape--tr{top:-52px;right:64px;transform:rotate(5deg)}
+.escape--rt{top:34%;right:-68px;transform:rotate(-4deg)}
+.escape--bl{bottom:-54px;left:-50px;transform:rotate(4deg)}
+.escape--br{bottom:-44px;right:-44px;transform:rotate(-5deg)}
 .searchForm{display:flex;gap:12px;margin:22px 0 10px;max-width:640px}
 .searchForm input[type="search"]{flex:1;min-width:0;padding:15px 20px;border:var(--border);border-radius:999px;font-size:16px;font-family:inherit;background:var(--paper);color:var(--ink);font-weight:600}
 .searchForm input[type="search"]::placeholder{color:var(--ink-soft);font-weight:500}
@@ -417,6 +514,18 @@ p{color:var(--ink-soft);max-width:62ch}
 @media (max-width:960px){
   .hero{grid-template-columns:1fr}
   .heroArt{order:-1;max-width:280px;margin-bottom:6px;justify-self:start}
+  /* Recomposed, not scaled (design skill §12): every frame-escaping object is REMOVED below the
+     desktop breakpoint — there is no gutter left for them to escape into, and the skill is explicit
+     that decorative objects may be dropped when they would interfere with hierarchy. The single
+     hero illustration cluster and the colour field survive. */
+  .escape{display:none}
+  .page{padding:18px 16px 0}
+  .rail{top:18px;height:calc(100vh - 36px)}
+  /* The diagonal field turns into a shallow top band so it stays a colour ZONE rather than a wedge
+     cutting through the headline on a narrow column. */
+  .hero::before{width:100%;height:60%;clip-path:polygon(0 0, 100% 0, 100% 74%, 0 100%)}
+  body::before{clip-path:polygon(0 0, 100vw 0, 100vw 22vh, 0 44vh)}
+  body::after{display:none}
   .scanGrid{grid-template-columns:1fr}
   .passportHead{grid-template-columns:1fr}
   .passportStamp{width:108px}
@@ -546,6 +655,18 @@ const SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false"><defs>
 <symbol id="ic-arrow" viewBox="0 0 24 24">
   <path d="M3 12h16M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
+<symbol id="ic-cube" viewBox="0 0 64 68">
+  <path d="M32 3 60 18v32L32 65 4 50V18Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M4 18l28 15 28-15M32 33v32" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+</symbol>
+<symbol id="ic-zig" viewBox="0 0 76 44">
+  <path d="M4 32h20l8-20 10 24 7-14h16" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M58 12l10 10-10 10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</symbol>
+<symbol id="ic-lens" viewBox="0 0 64 64">
+  <circle cx="26" cy="26" r="21" fill="none" stroke="currentColor" stroke-width="4.5"/>
+  <path d="M41 41 58 58" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+</symbol>
 </defs></svg>`;
 
 /**
@@ -564,6 +685,87 @@ const SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false"><defs>
  */
 export function brandLogoImg(size = 56): string {
   return `<span class="brandMark" style="--brand-size:${size}px"><img src="/static/brand/logo.jpg" width="${size}" height="${size}" alt="AegisOne" decoding="async"></span>`;
+}
+
+/**
+ * ---------------------------------------------------------------------------------------------
+ * Frame-escaping decorative objects (design skill §9 "Controlled Anti-Grid", §15 hero formula
+ * step 9: "two to five decorative objects breaking the frame boundary").
+ *
+ * These are drawn from the SAME shape family as everything else in the product — outlined cube /
+ * package, byte grid, chunky arrow, connector, lens, stamp ring — so nothing here introduces a
+ * second, unrelated metaphor. All inline SVG; no raster art, no external request.
+ *
+ * Rules enforced here rather than left to each page:
+ *   - every object is `aria-hidden` and `pointer-events:none` (see `.escape` in STYLE), so an
+ *     object that overhangs a control can still never intercept a click or reach a screen reader;
+ *   - slots are fixed named positions in the page gutter, never free-form coordinates, so an
+ *     object cannot be dropped on top of the search box or the CTA row by accident;
+ *   - rotations stay inside the skill's -6°..6° range;
+ *   - all of them are `display:none` below 960px.
+ *
+ * The verdict stamp (`#ic-stamp`) is deliberately NOT offered as a decorative escape object: the
+ * stamp means AegisOne actually holds evidence, and scattering it as ornament would be exactly the
+ * overstatement this product exists to refuse.
+ */
+export type EscapeSlot = "tl" | "tr" | "rt" | "bl" | "br";
+
+export type EscapeShape = "cube" | "bytegrid" | "zig" | "lens" | "node" | "chip";
+
+const ESCAPE_SHAPES: Record<EscapeShape, string> = {
+  // An outlined package/cube: the unit of thing AegisOne indexes.
+  cube: `<svg viewBox="0 0 72 76" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <path d="M36 6 66 22v32L36 70 6 54V22Z" fill="#b79cff" stroke="#0a0a0a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M6 22l30 16 30-16M36 38v32" fill="none" stroke="#0a0a0a" stroke-width="4" stroke-linejoin="round"/>
+  </g></svg>`,
+  // The bytes AegisOne compares, on its own outlined tile.
+  bytegrid: `<svg viewBox="0 0 76 76" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <rect x="3" y="3" width="70" height="70" rx="16" fill="#fffdf7" stroke="#0a0a0a" stroke-width="4"/>
+    <use href="#ic-bytegrid" x="14" y="14" width="48" height="48"/>
+  </g></svg>`,
+  // A chunky zig-zag arrow: the comparison actually travelling somewhere.
+  zig: `<svg viewBox="0 0 92 60" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <rect x="3" y="8" width="86" height="44" rx="22" fill="#22dceb" stroke="#0a0a0a" stroke-width="4"/>
+    <use href="#ic-zig" x="11" y="19" width="70" height="22"/>
+  </g></svg>`,
+  // The inspection itself.
+  lens: `<svg viewBox="0 0 72 72" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <circle cx="30" cy="30" r="22" fill="#ffd91a" stroke="#0a0a0a" stroke-width="4.5"/>
+    <use href="#ic-bytegrid" x="18" y="18" width="24" height="24"/>
+    <path d="M46 46 64 64" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+  </g></svg>`,
+  // A connector node: one record linked to another.
+  node: `<svg viewBox="0 0 84 56" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <circle cx="16" cy="28" r="12" fill="#d8e1ff" stroke="#0a0a0a" stroke-width="4"/>
+    <circle cx="68" cy="28" r="12" fill="#0a0a0a"/>
+    <path d="M28 28h28" fill="none" stroke="#0a0a0a" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 6"/>
+  </g></svg>`,
+  // A small detached slot/chip: one dimension of evidence, still empty.
+  chip: `<svg viewBox="0 0 64 44" aria-hidden="true" focusable="false"><g color="#0a0a0a">
+    <rect x="3" y="3" width="58" height="38" rx="12" fill="#fffdf7" stroke="#0a0a0a" stroke-width="4"/>
+    <rect x="13" y="15" width="14" height="14" rx="4" fill="#0a0a0a"/>
+    <rect x="33" y="15" width="14" height="14" rx="4" fill="none" stroke="#0a0a0a" stroke-width="3.5"/>
+  </g></svg>`,
+};
+
+export interface EscapeObject {
+  slot: EscapeSlot;
+  shape: EscapeShape;
+  /** `near` = large and high-contrast; `far` = small, reads as depth. */
+  depth: "near" | "far";
+  /** Ambient drift. Disabled wholesale under `prefers-reduced-motion` (see STYLE). */
+  drift?: "fast" | "slow";
+}
+
+export function escapeObjectsHtml(objects: readonly EscapeObject[]): string {
+  return objects
+    .map((object) => {
+      // The drift animation lives on an INNER element: the outer .escape--<slot> rule owns
+      // `transform: rotate(...)`, and a keyframe on the same element would silently replace it.
+      const drift = object.drift === "fast" ? " float" : object.drift === "slow" ? " float--slow" : "";
+      return `<span class="escape escape--${object.depth} escape--${object.slot}" aria-hidden="true"><span class="escapeInner${drift}">${ESCAPE_SHAPES[object.shape]}</span></span>`;
+    })
+    .join("");
 }
 
 /**
