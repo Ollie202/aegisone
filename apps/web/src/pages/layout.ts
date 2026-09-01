@@ -75,8 +75,8 @@ body{
   background-image:radial-gradient(var(--ground-dot) 1.4px, transparent 1.4px);
   background-size:22px 22px;
   position:relative;
-  /* Decorative objects are deliberately translated outside their containers below. `clip` (not
-     `hidden`) keeps them from producing a sideways scrollbar without turning <body> into a scroll
+  /* Decorative objects are deliberately translated outside their containers below. overflow-x:clip
+     (not hidden) keeps them from producing a sideways scrollbar without turning body into a scroll
      container, which would break the sticky nav rail. */
   overflow-x:clip;
 }
