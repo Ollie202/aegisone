@@ -143,9 +143,9 @@ p{color:var(--ink-soft);max-width:62ch}
 .mark{background:var(--cyan);border:var(--border);border-radius:8px;padding:0 .18em;display:inline-block;transform:rotate(-1.2deg)}
 .mark--yellow{background:var(--yellow)}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft)}
-.edgeLabel{position:absolute;top:-13px;left:26px;background:var(--ink);color:var(--paper);font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
+.edgeLabel{position:absolute;z-index:3;top:-13px;left:26px;background:var(--ink);color:var(--paper);font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
 .edgeLabel--right{left:auto;right:26px}
-.sectionNum{position:absolute;top:-16px;right:22px;width:34px;height:34px;border:var(--border);border-radius:50%;background:var(--yellow);display:grid;place-items:center;font-size:12px;font-weight:900;transform:rotate(6deg)}
+.sectionNum{position:absolute;z-index:3;top:-16px;right:22px;width:34px;height:34px;border:var(--border);border-radius:50%;background:var(--yellow);display:grid;place-items:center;font-size:12px;font-weight:900;transform:rotate(6deg)}
 
 /* ---------- primitives: pills, buttons, frames, stickers ---------- */
 .pill{display:inline-flex;align-items:center;gap:6px;border:var(--border);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--card)}
@@ -231,11 +231,34 @@ p{color:var(--ink-soft);max-width:62ch}
 /* Offsets are measured from .hero, which is inset by .frame's padding (max 38px) plus its 3px
    border. Anything past ~41px therefore genuinely crosses the frame's outlined boundary and lands
    in the page gutter, which .page's 34px desktop side padding reserves for exactly this. */
-.escape--tl{top:-58px;left:-62px;transform:rotate(-6deg)}
-.escape--tr{top:-52px;right:64px;transform:rotate(5deg)}
+/* ---- top slots ----
+   All three are anchored by their BOTTOM edge, 6px clear of the hero's top, and their width is
+   pinned small regardless of the depth class. Top-anchoring them instead lets a tall object hang
+   down into the hero's first row — measured, it covered a letter of the VERIFIED headline and the
+   first example pill on AUDIT, because different pages open their hero with different first
+   elements. Bottom-anchoring makes that geometrically impossible rather than merely unlikely, on
+   every page and at every viewport width. Only ~26px of page padding sits above the frame, so a top
+   object is necessarily a small one; depth variety comes from the side and bottom slots and from
+   the hero illustration itself.
+   --tl escapes upward rather than leftward: the left gutter at this height holds the nav rail's
+   brand mark, and a decorative object must never sit over the logo even though it is
+   pointer-events:none and cannot intercept the click.
+   --tc is the only top slot usable on a page that carries an .edgeLabel (pinned to the frame's
+   top-left) or a .sectionNum (top-right) — both are text. */
+.escape--tl,.escape--tc,.escape--tr{bottom:calc(100% + 4px);top:auto;width:auto}
+/* Sized by HEIGHT, not width, so every top object clears the frame's top border by the same 18px
+   whatever its shape's aspect ratio. Sizing by width made a wide, short shape (the connector) only
+   just graze the border while a square one (the byte-grid tile) cleared it properly. */
+.escape--tl svg,.escape--tc svg,.escape--tr svg{height:54px;width:auto}
+.escape--tl{left:-18px;transform:rotate(-6deg)}
+.escape--tc{left:38%;transform:rotate(-5deg)}
+.escape--tr{right:64px;transform:rotate(5deg)}
 .escape--rt{top:34%;right:-68px;transform:rotate(-4deg)}
-.escape--bl{bottom:-54px;left:-50px;transform:rotate(4deg)}
-.escape--br{bottom:-44px;right:-44px;transform:rotate(-5deg)}
+/* -52px is the measured window between the nav rail's widest link box on the left and the frame's
+   inner content edge on the right. Wider and the object sits on a rail link; narrower and it
+   touches the first heading below the hero. */
+.escape--bl{bottom:-54px;left:-52px;transform:rotate(4deg)}
+.escape--br{bottom:-44px;right:-60px;transform:rotate(-5deg)}
 .searchForm{display:flex;gap:12px;margin:22px 0 10px;max-width:640px}
 .searchForm input[type="search"]{flex:1;min-width:0;padding:15px 20px;border:var(--border);border-radius:999px;font-size:16px;font-family:inherit;background:var(--paper);color:var(--ink);font-weight:600}
 .searchForm input[type="search"]::placeholder{color:var(--ink-soft);font-weight:500}
@@ -432,7 +455,10 @@ p{color:var(--ink-soft);max-width:62ch}
 .libFact dt{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
 .libFact dd{margin:0}
 .libFactValue{font-size:13px;font-weight:700}
-.libFactValue--mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:6px;padding:1px 6px;display:inline-block}
+/* A 64-character digest must wrap inside its own grid column rather than running under the next
+   fact's label. min-width:0 lets the grid track actually shrink; overflow-wrap breaks the hash. */
+.libFactValue--mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:6px;padding:1px 6px;display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.libFact{min-width:0}
 /* "unknown" is a real rendered word, never an empty cell — a blank would read as "fine". */
 .libFactValue--unknown{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);border:1px dashed var(--ink);border-radius:6px;padding:1px 7px;display:inline-block}
 .libUrl{font-size:12px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-bottom:12px}
@@ -495,7 +521,11 @@ p{color:var(--ink-soft);max-width:62ch}
 .agentArt svg{width:100%;height:auto;display:block;overflow:visible}
 
 /* ---------- upcoming-section notice: honest about what is not built yet ---------- */
-.upcoming{border:var(--line-thick) dashed var(--ink);border-radius:var(--radius-md);background:var(--paper);padding:20px 22px;margin-top:26px}
+/* position:relative is load-bearing, not cosmetic: .edgeLabel is position:absolute, so without a
+   positioned ancestor this section's label escaped all the way up to .frame and stacked on top of
+   the page's own top-left edge label. On FOR AGENTS that meant the frame corner read "Not available
+   today" instead of "04 / For agents". */
+.upcoming{position:relative;border:var(--line-thick) dashed var(--ink);border-radius:var(--radius-md);background:var(--paper);padding:20px 22px;margin-top:26px}
 .upcoming h2{font-size:clamp(17px,1.8vw,22px)}
 .upcoming p{font-size:13.5px;margin:0 0 10px}
 
@@ -712,7 +742,7 @@ export function brandLogoImg(size = 56): string {
  * stamp means AegisOne actually holds evidence, and scattering it as ornament would be exactly the
  * overstatement this product exists to refuse.
  */
-export type EscapeSlot = "tl" | "tr" | "rt" | "bl" | "br";
+export type EscapeSlot = "tl" | "tc" | "tr" | "rt" | "bl" | "br";
 
 export type EscapeShape = "cube" | "bytegrid" | "zig" | "lens" | "node" | "chip";
 

@@ -29,9 +29,12 @@ import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
  *
  * The verdict stamp is not used as ornament anywhere, here included: it means AegisOne holds
  * correspondence evidence for one specific resource, and it only ever appears attached to one.
+ *
+ * The top-CENTRE slot rather than top-left: this page pins an .edgeLabel to the frame's top-left
+ * corner, and a decorative object must not sit on its text.
  */
 const HERO_ESCAPES = escapeObjectsHtml([
-  { slot: "tl", shape: "bytegrid", depth: "near", drift: "slow" },
+  { slot: "tc", shape: "bytegrid", depth: "far", drift: "slow" },
   { slot: "rt", shape: "node", depth: "far" },
   { slot: "br", shape: "cube", depth: "far", drift: "fast" },
 ]);

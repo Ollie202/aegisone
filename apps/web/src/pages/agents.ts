@@ -2,15 +2,21 @@ import { escapeHtml } from "../ui/escape.mjs";
 import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
 
 /**
- * Three frame-breaking objects for the machine-access page: a connector escaping the top-left (an
+ * Three frame-breaking objects for the machine-access page: a connector escaping the top border (an
  * agent reaching in from outside), a chunky arrow past the right edge (the call travelling), and a
- * far package bottom-left (the thing being asked about). Same shape family, aria-hidden,
+ * far package bottom-right (the thing being asked about). Same shape family, aria-hidden,
  * pointer-events:none, removed below 960px.
+ *
+ * Two slots are deliberately avoided here, both found by measuring a real 1440x900 render rather
+ * than by eye: bottom-LEFT, because this hero's CTA pair ends flush with the hero's bottom-left
+ * corner and the object landed on the "Connect it" button; and top-LEFT, because this page carries
+ * an .edgeLabel pinned to the frame's top-left corner and the object covered its text. A decorative
+ * object must never sit on a control or on text, even when it cannot intercept a click.
  */
 const HERO_ESCAPES = escapeObjectsHtml([
-  { slot: "tl", shape: "node", depth: "near", drift: "slow" },
+  { slot: "tc", shape: "node", depth: "far", drift: "slow" },
   { slot: "rt", shape: "zig", depth: "near", drift: "fast" },
-  { slot: "bl", shape: "cube", depth: "far" },
+  { slot: "br", shape: "cube", depth: "far" },
 ]);
 
 /**

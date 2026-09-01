@@ -147,25 +147,30 @@ const EXAMPLES: ReadonlyArray<{ query: string; tone: "ink" | "cyan" | "outline";
 ];
 
 /**
- * The five objects that break the frame boundary on this page (design skill §15 step 9).
+ * The four objects that break the frame boundary on this page (design skill §15 step 9: "two to
+ * five decorative objects breaking the frame boundary").
  *
  * Each one has a reason, and each is a member of the page's existing shape family:
  *   tl  a far, small package — the catalog continues past the edge of what is on screen;
  *   tr  an outlined byte-grid tile — the bytes, detached from any one record;
  *   rt  a near, large outlined package — the unit of thing this page is about, tipped out of the
  *       frame at the point where the illustration cluster runs out of room;
- *   bl  a dashed connector — a claimed link between two records, running off-page;
  *   br  an empty evidence slot — the missing dimension, escaping into the margin.
  *
- * Slot geometry keeps every one of them in the page gutter and away from the search box, the
- * pill row and the CTA row; all are `pointer-events:none` and `aria-hidden`, and all disappear
- * below 960px (see `.escape` in `layout.ts`).
+ * The bottom-LEFT slot is deliberately empty here, and this is the reason rather than an oversight:
+ * measured at 1440x900, this page's hero is tall enough that a bottom-left object lands beside the
+ * nav rail's "04 For agents" link, and the clear window between that link's box and the frame's
+ * content edge is 50px against the object's 54px. Four objects that all clear every control and
+ * every piece of text beat five where one grazes the navigation.
+ *
+ * Slot geometry keeps every one of them in the page gutter and away from the search box, the pill
+ * row and the CTA row; all are `pointer-events:none` and `aria-hidden`, and all disappear below
+ * 960px (see `.escape` in `layout.ts`).
  */
 const HERO_ESCAPES = escapeObjectsHtml([
   { slot: "tl", shape: "cube", depth: "far", drift: "slow" },
   { slot: "tr", shape: "bytegrid", depth: "far" },
   { slot: "rt", shape: "cube", depth: "near", drift: "fast" },
-  { slot: "bl", shape: "node", depth: "far" },
   { slot: "br", shape: "chip", depth: "near", drift: "slow" },
 ]);
 

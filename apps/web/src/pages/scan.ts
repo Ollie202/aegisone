@@ -24,7 +24,7 @@ import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
  * `pointer-events:none`, and removed below 960px.
  */
 const HERO_ESCAPES = escapeObjectsHtml([
-  { slot: "tl", shape: "lens", depth: "near", drift: "slow" },
+  { slot: "tl", shape: "lens", depth: "far", drift: "slow" },
   { slot: "rt", shape: "bytegrid", depth: "far" },
   { slot: "bl", shape: "chip", depth: "far", drift: "fast" },
 ]);
