@@ -12,7 +12,22 @@
 import { scanResultHtml } from "../ui/scan-view.mjs";
 import { verifyResultHtml } from "../ui/verify-view.mjs";
 import { escapeHtml, shortHash } from "../ui/escape.mjs";
-import { renderLayoutHtml } from "./layout.ts";
+import { escapeObjectsHtml, renderLayoutHtml } from "./layout.ts";
+
+/**
+ * Three frame-breaking objects, one fewer than SKILLS so the entry page stays the product's
+ * dominant composition (design skill §16: pick a few visual heroes per viewport, not everywhere).
+ *
+ * Reasons: a lens escaping the top-left (this page is the act of looking), a byte-grid tile past
+ * the right edge (the bytes being screened), a detached empty evidence slot at the bottom (what a
+ * scan cannot tell you). All three are members of the existing shape family, `aria-hidden`,
+ * `pointer-events:none`, and removed below 960px.
+ */
+const HERO_ESCAPES = escapeObjectsHtml([
+  { slot: "tl", shape: "lens", depth: "near", drift: "slow" },
+  { slot: "rt", shape: "bytegrid", depth: "far" },
+  { slot: "bl", shape: "chip", depth: "far", drift: "fast" },
+]);
 import type { VerificationTargetSummary } from "../verify-trigger.ts";
 
 export interface ScanPageState {
@@ -171,13 +186,14 @@ export function renderScanPageHtml(state: ScanPageState): string {
 
   const body = `
     <section class="hero">
+      ${HERO_ESCAPES}
       <div class="heroCopy">
         <div class="pillRow">
-          <span class="pill pill--yellow">No publisher needed</span>
-          <span class="pill">Deterministic rules</span>
-          <span class="pill pill--peri">Nothing is executed</span>
+          <span class="pill pill--ink"><span class="pill__glyph" aria-hidden="true">◧</span>No publisher needed</span>
+          <span class="pill pill--cyan"><span class="pill__glyph" aria-hidden="true">▤</span>Deterministic rules</span>
+          <span class="pill pill--outline"><span class="pill__glyph" aria-hidden="true">◇</span>Nothing is executed</span>
         </div>
-        <h1>Paste a skill. Get the <span class="mark">receipts</span>, not a vibe.</h1>
+        <h1>Paste a skill. Get the <span class="capsule">receipts</span>, not a vibe.</h1>
         <p class="lede">Screen raw Agent Skill content with the same deterministic <code>@aegisone/skill-audit</code> analysis the verification pipeline uses. No GitHub repository, no source claim, no discovery step — and AegisOne never installs, executes, or fetches anything on your behalf.</p>
       </div>
       <div class="heroArt">${scanArtSvg()}</div>

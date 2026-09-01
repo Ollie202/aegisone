@@ -206,6 +206,10 @@ p{color:var(--ink-soft);max-width:62ch}
   clip-path:polygon(0 0, 100% 0, 62% 100%, 0 100%);
 }
 .hero--noField::before{display:none}
+/* VERIFIED has no hero illustration — its dominant object is the state key below the fold. It
+   still carries the colour field and the escaping objects, so the four sections read as one
+   composition rather than one designed page and three plain ones. */
+.hero--solo{grid-template-columns:minmax(0,1fr)}
 .heroArt{position:relative;z-index:1;justify-self:center;align-self:center;width:100%;max-width:330px}
 .heroArt svg{width:100%;height:auto;display:block;overflow:visible}
 .heroCopy{position:relative;z-index:2}
