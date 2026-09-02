@@ -110,22 +110,18 @@ test("GET / shows the real catalog library but no search result rows until a sea
     // ...but nothing is presented as live *search* output before a search has actually run.
     assert.doesNotMatch(html, /class="resultCard/);
     assert.match(html, /<div id="search-results"><\/div>/);
-    // Example *queries* are offered, and they are clickable queries, not results. Each carries a
-    // varied composition treatment (solid ink / solid cyan / outlined) but they stay identical as
-    // *controls*: same button element, same .pill and .exampleChip classes, same data-example
-    // contract that app.js reads. The tone modifier is presentation only and must never be the
-    // thing that tells one example from another, so the query text is asserted independently.
-    for (const [query, tone] of [
-      ["Pull request review", "ink"],
-      ["Code documentation", "cyan"],
-      ["Data extraction", "outline"],
-    ] as const) {
-      assert.match(
-        html,
-        new RegExp(`<button type="button" class="pill exampleChip pill--${tone}" data-example="${query}">`),
-      );
-      // The visible label is still the query itself, after the decorative glyph.
-      assert.match(html, new RegExp(`data-example="${query}">.*?</span>${query}</button>`));
+    // Example *queries* are offered, and they are clickable queries, not results: same button
+    // element, the .pill/.exampleChip classes, the data-example contract app.js reads, and a
+    // visible label that is the query itself.
+    //
+    // This deliberately does NOT pin a per-chip tone modifier. An earlier pass gave each chip a
+    // different fill (ink/cyan/outline); the restructure dropped that, since varying the treatment
+    // of three adjacent controls implies they differ in kind when they do not. Asserting the
+    // modifier would freeze a presentation choice the design is free to make either way — the
+    // load-bearing contract is the element, the classes, the data-example value and the label.
+    for (const query of ["Pull request review", "Code documentation", "Data extraction"] as const) {
+      assert.match(html, new RegExp(`<button type="button" class="pill exampleChip[^"]*" data-example="${query}"`));
+      assert.match(html, new RegExp(`data-example="${query}"[^>]*>[^<]*${query}`));
     }
     // Each example must name a skill someone is looking for. It must never advertise a capability
     // AegisOne does not have: this page finds and audits skills, it does not audit Solidity or
