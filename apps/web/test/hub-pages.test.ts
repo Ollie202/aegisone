@@ -110,8 +110,23 @@ test("GET / shows the real catalog library but no search result rows until a sea
     // ...but nothing is presented as live *search* output before a search has actually run.
     assert.doesNotMatch(html, /class="resultCard/);
     assert.match(html, /<div id="search-results"><\/div>/);
-    // Example *queries* are offered, and they are clickable queries, not results.
-    assert.match(html, /class="pill exampleChip" data-example="Pull request review"/);
+    // Example *queries* are offered, and they are clickable queries, not results. Each carries a
+    // varied composition treatment (solid ink / solid cyan / outlined) but they stay identical as
+    // *controls*: same button element, same .pill and .exampleChip classes, same data-example
+    // contract that app.js reads. The tone modifier is presentation only and must never be the
+    // thing that tells one example from another, so the query text is asserted independently.
+    for (const [query, tone] of [
+      ["Pull request review", "ink"],
+      ["Code documentation", "cyan"],
+      ["Data extraction", "outline"],
+    ] as const) {
+      assert.match(
+        html,
+        new RegExp(`<button type="button" class="pill exampleChip pill--${tone}" data-example="${query}">`),
+      );
+      // The visible label is still the query itself, after the decorative glyph.
+      assert.match(html, new RegExp(`data-example="${query}">.*?</span>${query}</button>`));
+    }
     // Each example must name a skill someone is looking for. It must never advertise a capability
     // AegisOne does not have: this page finds and audits skills, it does not audit Solidity or
     // deploy anything.
