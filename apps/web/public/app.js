@@ -371,10 +371,45 @@ function initVerifyPanel() {
   });
 }
 
+/**
+ * AUDIT's mode switch. The server already rendered both workflows with the inactive one `hidden`,
+ * and the switch is real links, so this page works fully without JavaScript. All this does is
+ * intercept the click and toggle in place — which is the point: navigating would discard whatever
+ * the user had typed in the skill textarea. Nothing is submitted here, and the hidden mode's form
+ * cannot be submitted while it is hidden.
+ */
+function initAuditModeSwitch() {
+  const nav = document.getElementById("audit-mode-switch");
+  const modes = [...document.querySelectorAll(".toolMode[data-mode]")];
+  if (!nav || modes.length === 0) return;
+  const links = [...nav.querySelectorAll("a[data-mode]")];
+
+  function activate(mode, href) {
+    modes.forEach((section) => {
+      section.hidden = section.dataset.mode !== mode;
+    });
+    links.forEach((link) => {
+      if (link.dataset.mode === mode) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    // Keep the URL honest about what is on screen, without a navigation.
+    window.history.replaceState(null, "", href);
+  }
+
+  links.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      activate(link.dataset.mode, link.getAttribute("href"));
+    });
+  });
+}
+
 if (page === "skills") initSkillsPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
 if (page === "audit") {
+  initAuditModeSwitch();
   initScanPage();
   initVerifyPanel();
 }

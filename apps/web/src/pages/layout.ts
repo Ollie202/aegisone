@@ -95,6 +95,9 @@ img,svg{max-width:100%}
 .skiplink:focus{left:12px;top:12px}
 :focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* The hidden attribute is how AUDIT shows one workflow at a time and how the catalog hides
+   filtered rows, so it must beat every later display rule in this stylesheet. */
+[hidden]{display:none !important}
 
 /* ── 3. shell ──────────────────────────────────────────────────────────────
    A slim numbered rail and one content column. Deliberately NOT "one giant white rectangle
@@ -214,6 +217,11 @@ details.disclose > summary:hover{color:var(--ink)}
 .pageHead .eyebrow{margin-bottom:10px}
 .pageHead p{margin:0}
 .pageHeadRow{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.pageHeadRow > *:first-child{min-width:min(100%,32ch);flex:1 1 380px}
+/* One small header object per page: character without a poster. It is the page's single
+   illustration, sized so the tool below it still starts inside the first viewport. */
+.pageHeadArt{width:100%;max-width:230px;flex:0 1 230px}
+.pageHeadArt svg{width:100%;height:auto;display:block;overflow:visible}
 
 /* ── 8. SKILLS: hero, search, catalog ──────────────────────────────────────
    The framed hero is the product's one poster moment, and it exists to hold the search field —
@@ -299,6 +307,9 @@ details.disclose > summary:hover{color:var(--ink)}
    mode switch above swaps them, so neither has to be scrolled past to reach the other. */
 .toolSplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(18px,2.4vw,32px);align-items:start}
 .toolSplit > *{min-width:0}
+.toolMode{display:block}
+/* Capabilities that do not exist get one muted line, never a card, a pill or a dead control. */
+.upcomingLine{font-size:12px;color:var(--ink-soft);margin:clamp(28px,4vw,44px) 0 0;padding-top:12px;border-top:1px dashed var(--ink);max-width:80ch}
 .scanInput{width:100%;min-height:340px;padding:15px 17px;border:var(--line-thick) solid var(--ink);border-radius:var(--radius-md);background:var(--paper);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;resize:vertical}
 .scanControls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px}
 .scanOption{display:flex;gap:9px;align-items:flex-start;border:var(--line) dashed var(--ink);border-radius:var(--radius-sm);padding:9px 12px;background:var(--paper);max-width:42ch}
@@ -544,7 +555,7 @@ details.disclose > summary:hover{color:var(--ink)}
   .searchForm{flex-direction:column;margin-top:16px}
   .searchForm input[type="search"]{width:100%}
   .searchForm .button{width:100%}
-  .heroArt{display:none} /* the drawing stops doing a compositional job at this width */
+  .heroArt,.pageHeadArt{display:none} /* the drawings stop doing a compositional job at this width */
   .resultCard{grid-template-columns:1fr;padding:16px 14px 16px 20px}
   .cardStamp{display:none}
   .libRow{grid-template-columns:1fr;gap:10px;padding:18px 0}

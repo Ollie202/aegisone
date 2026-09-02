@@ -36,7 +36,7 @@ import { renderVerifiedPageHtml } from "./pages/verified.ts";
 import { renderAgentsPageHtml, resolveConnectOrigin } from "./pages/agents.ts";
 import { renderResourcePageHtml, renderResourceNotFoundHtml } from "./pages/resource.ts";
 import { renderSourceClaimPageHtml } from "./pages/source-claim.ts";
-import { renderScanPageHtml } from "./pages/scan.ts";
+import { parseAuditMode, renderScanPageHtml } from "./pages/scan.ts";
 import { seedDemoCatalog, type DemoSeedResult } from "./demo-seed.ts";
 import { SkillLibraryLoader, type SkillLibrary } from "./library.ts";
 import {
@@ -676,6 +676,9 @@ export function createProductRequestHandler(store: JobStore, options: ProductReq
         );
         response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
         response.end(renderScanPageHtml({
+          // AUDIT shows exactly one workflow at a time; ?mode= selects which, so the mode is
+          // linkable and the page still works with JavaScript off.
+          mode: parseAuditMode(url.searchParams.get("mode")),
           advisoryConfigured: zeroGComputeConfig !== null,
           verificationTargets,
           // Stated up front rather than discovered as a 503 mid-run: exact-commit acquisition

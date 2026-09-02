@@ -391,26 +391,38 @@ test("/audit and /scan serve the identical page, so no existing link to /scan br
   }
 });
 
-test("GET /audit presents the Audit Lab four-card selector: two LIVE, two honestly UPCOMING, no dead links", async () => {
+test("GET /audit shows exactly one workflow at a time, and offers no control for an unbuilt audit type", async () => {
   const running = await startServer();
   try {
     const html = await (await fetch(`${running.baseUrl}/audit`)).text();
-    assert.match(html, /Agent Skill Audit/);
-    assert.match(html, /Package \/ Artifact Verification/);
-    assert.match(html, /Smart Contract Audit/);
-    assert.match(html, /MCP \/ Agent Capability Audit/);
-    // ADR-020 made Package / Artifact Verification genuinely live, so there are now two LIVE
-    // pills. Smart Contract Audit and MCP / Agent Capability Audit remain honestly UPCOMING —
-    // still not silently hidden, and still not linked to a route (a dead/fake result would be
-    // worse than an honest "not yet").
-    assert.equal((html.match(/>LIVE</g) ?? []).length, 2);
-    assert.equal((html.match(/>UPCOMING</g) ?? []).length, 2);
-    assert.match(html, /auditTypeCard--upcoming/);
-    // The cards carry no href of their own — they are informational, not clickable stubs. Scoped
-    // to the card grid itself so the live verification panel below it is not swept in.
-    const gridStart = html.indexOf(`<div class="auditTypeGrid">`);
-    const selectorSection = html.slice(gridStart, html.indexOf("</section>", gridStart));
-    assert.doesNotMatch(selectorSection, /<a\s/);
+
+    // Two live workflows, reached through one explicit mode switch. Only one is ever the active,
+    // visible mode — the other is `hidden`, so the user never scrolls past one to reach the other.
+    assert.match(html, /id="audit-mode-switch"/);
+    assert.match(html, /<a href="\/audit" data-mode="skill" aria-current="page">Skill audit<\/a>/);
+    assert.match(html, /<a href="\/audit\?mode=package" data-mode="package">Package verification<\/a>/);
+    assert.match(html, /<section class="toolMode" id="mode-skill" data-mode="skill">/);
+    assert.match(html, /<section class="toolMode" id="mode-package" data-mode="package" hidden>/);
+    const switchBlock = html.match(/<nav class="modeSwitch"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    assert.equal((switchBlock.match(/aria-current="page"/g) ?? []).length, 1, "exactly one mode may be active");
+
+    // `?mode=package` swaps which one is hidden, and nothing else about the page.
+    const packageHtml = await (await fetch(`${running.baseUrl}/audit?mode=package`)).text();
+    assert.match(packageHtml, /<section class="toolMode" id="mode-skill" data-mode="skill" hidden>/);
+    assert.match(packageHtml, /<section class="toolMode" id="mode-package" data-mode="package">/);
+
+    // Smart-contract and MCP capability audit are NOT built. They may be mentioned once, in a
+    // single muted line — never as a card, a status pill, or a control that cannot do anything.
+    assert.doesNotMatch(html, /auditTypeCard|auditTypeGrid/);
+    assert.doesNotMatch(html, />LIVE<|>UPCOMING</);
+    assert.match(html, /<p class="upcomingLine">Coming later, and not built today: smart-contract audit, and MCP \/ agent capability audit\./);
+    assert.equal((html.match(/smart-contract audit/gi) ?? []).length, 1);
+
+    // Every rendered form control belongs to one of the two workflows that genuinely runs.
+    const controls = [...html.matchAll(/<(?:button|input|textarea)\b[^>]*>/g)].map((match) => match[0]);
+    for (const control of controls) {
+      assert.doesNotMatch(control, /disabled/, `no disabled placeholder control may be rendered: ${control}`);
+    }
   } finally {
     await stopServer(running.server);
   }
