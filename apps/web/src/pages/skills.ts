@@ -164,7 +164,7 @@ export function renderSkillsPageHtml(state: SkillsPageState): string {
         <h1 class="hero">Find agent skills.<br>Know what's <span class="mark">actually proven</span>.</h1>
         <p class="lede">Audited, verified and stored are shown separately for every entry. Where there is no evidence, it says so.</p>
         <form class="searchForm" id="search-form" method="GET" action="/">
-          <input type="search" name="q" id="search-input" placeholder="e.g. review a pull request" value="${escapeHtml(state.query)}" autocomplete="off" aria-label="Search capabilities">
+          <input type="search" name="q" id="search-input" placeholder="e.g. pull request review" value="${escapeHtml(state.query)}" autocomplete="off" aria-label="Search capabilities">
           <button class="button button--primary button--lg" type="submit">Search</button>
         </form>
         <div class="exampleRow"><span>Try</span>${examples}</div>
