@@ -372,6 +372,48 @@ function initVerifyPanel() {
 }
 
 /**
+ * VERIFIED's registry filter. Presentation only, and structurally incapable of being anything else:
+ * it toggles the `hidden` attribute on rows the server already classified from real evidence, using
+ * the same `data-*` booleans the row's own state chips were rendered from. It never fetches, never
+ * recomputes a state, and never rewrites a row — the strongest thing a filter can do here is show
+ * fewer rows. Filtering must never manufacture evidence.
+ */
+function initVerifiedPage() {
+  const bar = document.getElementById("registry-filters");
+  const rows = [...document.querySelectorAll("#registry-list .libRow")];
+  const empty = document.getElementById("registry-empty");
+  if (!bar || rows.length === 0) return;
+  const chips = [...bar.querySelectorAll(".filterChip[data-filter]")];
+
+  const MATCHES = {
+    all: () => true,
+    audited: (row) => row.dataset.audited === "true",
+    verified: (row) => row.dataset.verified === "true",
+    stored: (row) => row.dataset.stored === "true",
+  };
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      if (chip.hasAttribute("disabled")) return;
+      const selected = chip.dataset.filter ?? "all";
+      const matches = MATCHES[selected] ?? MATCHES.all;
+      chips.forEach((other) => {
+        const isActive = other === chip;
+        other.classList.toggle("filterChip--active", isActive);
+        other.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+      let shown = 0;
+      rows.forEach((row) => {
+        const visible = matches(row);
+        row.hidden = !visible;
+        if (visible) shown += 1;
+      });
+      if (empty) empty.hidden = shown > 0;
+    });
+  });
+}
+
+/**
  * AUDIT's mode switch. The server already rendered both workflows with the inactive one `hidden`,
  * and the switch is real links, so this page works fully without JavaScript. All this does is
  * intercept the click and toggle in place — which is the point: navigating would discard whatever
@@ -406,6 +448,7 @@ function initAuditModeSwitch() {
 }
 
 if (page === "skills") initSkillsPage();
+if (page === "verified") initVerifiedPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
 if (page === "audit") {

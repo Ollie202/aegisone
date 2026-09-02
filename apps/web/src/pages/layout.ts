@@ -367,6 +367,11 @@ details.disclose > summary:hover{color:var(--ink)}
 .filterChip{font-family:inherit;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12.5px;transition:transform 150ms ease, box-shadow 150ms ease}
 .filterChip:hover{transform:translate(-2px,-2px);box-shadow:var(--hard-shadow-sm)}
 .filterChip--active{background:var(--yellow);box-shadow:var(--hard-shadow-sm)}
+/* A filter with nothing behind it is disabled rather than offering an empty view. */
+.filterChip[disabled]{opacity:.4;cursor:not-allowed}
+.filterChip[disabled]:hover{transform:none;box-shadow:none}
+.filterChip .catCount{background:var(--paper)}
+.filterChip--active .catCount{background:var(--card)}
 .stateLedger{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .stateChip{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--ink);border-radius:999px;padding:4px 11px;background:var(--paper)}
 .stateChip__glyph{font-size:8px;line-height:1}
