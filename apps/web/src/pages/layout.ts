@@ -267,11 +267,14 @@ details.disclose > summary:hover{color:var(--ink)}
 .libBy--unknown{border:1px dashed var(--ink);border-radius:999px;padding:2px 8px}
 .libDims{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .libFacts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 10px}
-.libFact{display:flex;gap:8px;align-items:baseline}
+.libFact{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;max-width:100%;min-width:0}
 .libFact dt{font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
-.libFact dd{margin:0}
+.libFact dd{margin:0;min-width:0;max-width:100%}
 .libFactValue{font-size:12.5px;font-weight:700}
-.libFactValue--mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:5px;padding:1px 6px;display:inline-block}
+/* A 64-char SHA-256 digest is one unbroken token: without a wrap rule it runs past its own flex
+   item and visually collides with whatever sits below (a #62 leftover). break-all lets a long
+   hash wrap onto a second line instead of overflowing its container. */
+.libFactValue--mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--paper-deep);border:1px solid var(--ink);border-radius:5px;padding:1px 6px;display:inline-block;max-width:100%;overflow-wrap:anywhere;word-break:break-all}
 /* "unknown" is a real rendered word, never an empty cell — a blank would read as "fine". */
 .libFactValue--unknown{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);border:1px dashed var(--ink);border-radius:5px;padding:1px 7px;display:inline-block}
 .libUrl{font-size:11.5px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0}
@@ -507,7 +510,10 @@ details.disclose > summary:hover{color:var(--ink)}
 .claimResult--error{background:var(--paper-deep)}
 .claimPreview{border:var(--border);border-radius:var(--radius-sm);background:var(--paper);padding:12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;max-height:240px;margin:0}
 .demoBanner{border:var(--border);border-radius:var(--radius-sm);padding:11px 15px;font-size:13px;font-weight:700;margin:18px 0 0;background:var(--periwinkle)}
-.upcoming{border:1px dashed var(--ink);border-radius:var(--radius-sm);background:transparent;padding:12px 16px;margin-top:24px}
+/* position:relative so any absolutely-positioned label a child carries (e.g. .edgeLabel used as a
+   corner tag elsewhere) is contained here rather than escaping to the nearest positioned ancestor,
+   .frame (a #62 leftover: .upcoming previously had no positioning context at all). */
+.upcoming{position:relative;border:1px dashed var(--ink);border-radius:var(--radius-sm);background:transparent;padding:12px 16px;margin-top:24px}
 .upcoming h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px}
 .upcoming p{font-size:12.5px;margin:0}
 
