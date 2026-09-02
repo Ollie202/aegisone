@@ -171,11 +171,10 @@ function initLiveFederated() {
     }
   }
 
+  // Strictly on request. External discovery is a *scope* the user opts into, not a second product
+  // that loads itself below the catalog — and a page load must never fan out to three upstream
+  // APIs nobody asked about (AGENTS.md: discovery stays cheap and read-only).
   button.addEventListener("click", load);
-  // Deferred to idle so the SKILLS page paints its real catalog library immediately and never
-  // waits on three upstream APIs (AGENTS.md: discovery stays cheap and read-only).
-  const defer = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 400));
-  defer(() => load());
 }
 
 function escapeForDisplay(text) {
@@ -372,10 +371,88 @@ function initVerifyPanel() {
   });
 }
 
+/**
+ * VERIFIED's registry filter. Presentation only, and structurally incapable of being anything else:
+ * it toggles the `hidden` attribute on rows the server already classified from real evidence, using
+ * the same `data-*` booleans the row's own state chips were rendered from. It never fetches, never
+ * recomputes a state, and never rewrites a row — the strongest thing a filter can do here is show
+ * fewer rows. Filtering must never manufacture evidence.
+ */
+function initVerifiedPage() {
+  const bar = document.getElementById("registry-filters");
+  const rows = [...document.querySelectorAll("#registry-list .libRow")];
+  const empty = document.getElementById("registry-empty");
+  if (!bar || rows.length === 0) return;
+  const chips = [...bar.querySelectorAll(".filterChip[data-filter]")];
+
+  const MATCHES = {
+    all: () => true,
+    audited: (row) => row.dataset.audited === "true",
+    verified: (row) => row.dataset.verified === "true",
+    stored: (row) => row.dataset.stored === "true",
+  };
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      if (chip.hasAttribute("disabled")) return;
+      const selected = chip.dataset.filter ?? "all";
+      const matches = MATCHES[selected] ?? MATCHES.all;
+      chips.forEach((other) => {
+        const isActive = other === chip;
+        other.classList.toggle("filterChip--active", isActive);
+        other.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+      let shown = 0;
+      rows.forEach((row) => {
+        const visible = matches(row);
+        row.hidden = !visible;
+        if (visible) shown += 1;
+      });
+      if (empty) empty.hidden = shown > 0;
+    });
+  });
+}
+
+/**
+ * AUDIT's mode switch. The server already rendered both workflows with the inactive one `hidden`,
+ * and the switch is real links, so this page works fully without JavaScript. All this does is
+ * intercept the click and toggle in place — which is the point: navigating would discard whatever
+ * the user had typed in the skill textarea. Nothing is submitted here, and the hidden mode's form
+ * cannot be submitted while it is hidden.
+ */
+function initAuditModeSwitch() {
+  const nav = document.getElementById("audit-mode-switch");
+  const modes = [...document.querySelectorAll(".toolMode[data-mode]")];
+  if (!nav || modes.length === 0) return;
+  const links = [...nav.querySelectorAll("a[data-mode]")];
+
+  function activate(mode, href) {
+    modes.forEach((section) => {
+      section.hidden = section.dataset.mode !== mode;
+    });
+    links.forEach((link) => {
+      if (link.dataset.mode === mode) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    // Keep the URL honest about what is on screen, without a navigation.
+    window.history.replaceState(null, "", href);
+  }
+
+  links.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      activate(link.dataset.mode, link.getAttribute("href"));
+    });
+  });
+}
+
 if (page === "skills") initSkillsPage();
+if (page === "verified") initVerifiedPage();
 if (page === "resource") initResourcePage();
 if (page === "source-claim") initSourceClaimPage();
 if (page === "audit") {
+  initAuditModeSwitch();
   initScanPage();
   initVerifyPanel();
 }

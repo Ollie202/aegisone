@@ -38,21 +38,29 @@ const BASIS_NOTE = {
   none: "No category keyword matched. Left explicitly uncategorized rather than guessed.",
 };
 
-function factRow(label, value, { mono = false } = {}) {
+function factRow(label, value, { mono = false, abbreviate = true } = {}) {
   const known = typeof value === "string" && value.trim() !== "";
+  const shown = mono && abbreviate ? shortHash(value, 8) : value;
   const valueHtml = known
-    ? `<span class="libFactValue${mono ? " libFactValue--mono" : ""}"${mono ? ` title="${escapeHtml(value)}"` : ""}>${escapeHtml(mono ? shortHash(value, 8) : value)}</span>`
+    ? `<span class="libFactValue${mono ? " libFactValue--mono" : ""}"${mono ? ` title="${escapeHtml(value)}"` : ""}>${escapeHtml(shown)}</span>`
     : `<span class="libFactValue libFactValue--unknown">unknown</span>`;
   return `<div class="libFact"><dt>${escapeHtml(label)}</dt><dd>${valueHtml}</dd></div>`;
 }
 
 /**
- * One library entry. `featured` gives the lead entry a larger, flat-colour-field treatment so the
- * list has a single dominant element instead of N identical rectangles (design skill §16 Design
- * Restraint Rules, §17 Anti-Patterns "endless three-column feature cards").
+ * One catalog row.
+ *
+ * DIRECTORY = SUMMARY, PASSPORT = PROOF. This row answers "is this the thing I am looking for, and
+ * what does AegisOne actually know about it?" — name, description, category, publisher, the
+ * independent evidence states, the one identity fact that pins it (its exact source commit), and a
+ * link to the Passport. It deliberately does NOT reprint the version label, the content digest or
+ * the caveats attached to each dimension: that is the Evidence Passport's job, and putting all of
+ * it here is what made the directory unscannable.
+ *
+ * The oversized index numeral and the flat-colour "featured lead entry" treatment are gone too:
+ * they ranked one row above the others for no evidential reason.
  */
 export function skillEntryHtml(entry, index, options = {}) {
-  const featured = options.featured === true;
   const trust = entry?.trust ?? null;
   const category = entry?.category ?? { id: "uncategorized", label: CATEGORY_LABELS.uncategorized, basis: "none" };
   const categoryLabel = CATEGORY_LABELS[category.id] ?? category.label ?? CATEGORY_LABELS.uncategorized;
@@ -73,12 +81,9 @@ export function skillEntryHtml(entry, index, options = {}) {
       ${zeroGStorageBadge(trust.canonicalEvidence?.storageRoot)}`
     : `${discoveryBadge(entry?.discoveryStatus ?? "INDEXED")}<span class="cardNote">Discovery only — AegisOne holds no evidence for this resource yet.</span>`;
 
-  const facts = `
-    <dl class="libFacts">
-      ${factRow("Version", entry?.versionLabel ?? "")}
-      ${factRow("Content hash (SHA-256)", entry?.contentSha256 ?? "", { mono: true })}
-      ${factRow("Exact source commit", entry?.sourceCommitSha ?? "", { mono: true })}
-    </dl>`;
+  // One identity fact only, and the one that matters for finding the same thing twice: an
+  // immutable source revision is an exact commit SHA, never a mutable branch. Shown in full.
+  const facts = `<dl class="libFacts">${factRow("Exact source commit", entry?.sourceCommitSha ?? "", { mono: true, abbreviate: false })}</dl>`;
 
   const repoUrl = entry?.sourceRepositoryUrl ?? null;
   const repoLine = repoUrl
@@ -86,16 +91,15 @@ export function skillEntryHtml(entry, index, options = {}) {
     : "";
 
   const passportLink = href
-    ? `<a class="button libCta" href="${href}">Evidence passport <span class="arrow" aria-hidden="true">→</span></a>`
+    ? `<a class="button libCta" href="${href}">Evidence Passport <span class="arrow" aria-hidden="true">→</span></a>`
     : `<span class="libCta libCta--none">No catalog row — no passport to open.</span>`;
 
   const publisher = entry?.publisherLabel
     ? `<span class="libBy">by ${escapeHtml(entry.publisherLabel)}</span>`
     : `<span class="libBy libBy--unknown">author unknown</span>`;
 
-  return `<li class="libRow${featured ? " libRow--feature" : ""}" data-category="${escapeHtml(category.id)}">
-    <span class="libIndex" aria-hidden="true">${ordinal}</span>
-    <span class="libArt${featured ? " libArt--lg" : ""}">${categoryArtSvg(category.id)}</span>
+  return `<li class="libRow" data-category="${escapeHtml(category.id)}" data-index="${ordinal}">
+    <span class="libArt">${categoryArtSvg(category.id)}</span>
     <div class="libBody">
       <div class="libHead">
         <h3>${title}</h3>
@@ -109,17 +113,17 @@ export function skillEntryHtml(entry, index, options = {}) {
       <div class="libDims">${dimensions}</div>
       ${facts}
       ${repoLine}
-      <div class="libActions">${passportLink}</div>
     </div>
+    <div class="libActions">${passportLink}</div>
   </li>`;
 }
 
-/** The library itself. `entries` are already ordered by the server; index 0 is the featured lead. */
+/** The catalog itself. `entries` are already ordered by the server. */
 export function skillLibraryHtml(entries) {
   if (!Array.isArray(entries) || entries.length === 0) {
     return `<p class="emptyState">The AegisOne catalog holds no library resources on this deployment yet. Nothing is invented to fill the space.</p>`;
   }
-  const rows = entries.map((entry, index) => skillEntryHtml(entry, index, { featured: index === 0 })).join("");
+  const rows = entries.map((entry, index) => skillEntryHtml(entry, index)).join("");
   return `<ol class="library">${rows}</ol>`;
 }
 

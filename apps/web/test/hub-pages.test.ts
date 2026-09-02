@@ -52,7 +52,9 @@ test("GET / renders the SKILLS page in the ADR-015 visual language and is readab
     const response = await fetch(`${running.baseUrl}/`);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /Find a skill\. See what/);
+    // The page's one job, stated in its headline: find skills, and know what is actually proven.
+    assert.match(html, /Find agent skills\./);
+    assert.match(html, /actually proven/);
     assert.match(html, /search-form/);
     // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
     assert.match(html, /--paper:#f7f5ef/);
@@ -108,22 +110,18 @@ test("GET / shows the real catalog library but no search result rows until a sea
     // ...but nothing is presented as live *search* output before a search has actually run.
     assert.doesNotMatch(html, /class="resultCard/);
     assert.match(html, /<div id="search-results"><\/div>/);
-    // Example *queries* are offered, and they are clickable queries, not results. Each carries a
-    // varied composition treatment (solid ink / solid cyan / outlined) but they stay identical as
-    // *controls*: same button element, same .pill and .exampleChip classes, same data-example
-    // contract that app.js reads. The tone modifier is presentation only and must never be the
-    // thing that tells one example from another, so the query text is asserted independently.
-    for (const [query, tone] of [
-      ["Pull request review", "ink"],
-      ["Code documentation", "cyan"],
-      ["Data extraction", "outline"],
-    ] as const) {
-      assert.match(
-        html,
-        new RegExp(`<button type="button" class="pill exampleChip pill--${tone}" data-example="${query}">`),
-      );
-      // The visible label is still the query itself, after the decorative glyph.
-      assert.match(html, new RegExp(`data-example="${query}">.*?</span>${query}</button>`));
+    // Example *queries* are offered, and they are clickable queries, not results: same button
+    // element, the .pill/.exampleChip classes, the data-example contract app.js reads, and a
+    // visible label that is the query itself.
+    //
+    // This deliberately does NOT pin a per-chip tone modifier. An earlier pass gave each chip a
+    // different fill (ink/cyan/outline); the restructure dropped that, since varying the treatment
+    // of three adjacent controls implies they differ in kind when they do not. Asserting the
+    // modifier would freeze a presentation choice the design is free to make either way — the
+    // load-bearing contract is the element, the classes, the data-example value and the label.
+    for (const query of ["Pull request review", "Code documentation", "Data extraction"] as const) {
+      assert.match(html, new RegExp(`<button type="button" class="pill exampleChip[^"]*" data-example="${query}"`));
+      assert.match(html, new RegExp(`data-example="${query}"[^>]*>[^<]*${query}`));
     }
     // Each example must name a skill someone is looking for. It must never advertise a capability
     // AegisOne does not have: this page finds and audits skills, it does not audit Solidity or
@@ -404,26 +402,38 @@ test("/audit and /scan serve the identical page, so no existing link to /scan br
   }
 });
 
-test("GET /audit presents the Audit Lab four-card selector: two LIVE, two honestly UPCOMING, no dead links", async () => {
+test("GET /audit shows exactly one workflow at a time, and offers no control for an unbuilt audit type", async () => {
   const running = await startServer();
   try {
     const html = await (await fetch(`${running.baseUrl}/audit`)).text();
-    assert.match(html, /Agent Skill Audit/);
-    assert.match(html, /Package \/ Artifact Verification/);
-    assert.match(html, /Smart Contract Audit/);
-    assert.match(html, /MCP \/ Agent Capability Audit/);
-    // ADR-020 made Package / Artifact Verification genuinely live, so there are now two LIVE
-    // pills. Smart Contract Audit and MCP / Agent Capability Audit remain honestly UPCOMING —
-    // still not silently hidden, and still not linked to a route (a dead/fake result would be
-    // worse than an honest "not yet").
-    assert.equal((html.match(/>LIVE</g) ?? []).length, 2);
-    assert.equal((html.match(/>UPCOMING</g) ?? []).length, 2);
-    assert.match(html, /auditTypeCard--upcoming/);
-    // The cards carry no href of their own — they are informational, not clickable stubs. Scoped
-    // to the card grid itself so the live verification panel below it is not swept in.
-    const gridStart = html.indexOf(`<div class="auditTypeGrid">`);
-    const selectorSection = html.slice(gridStart, html.indexOf("</section>", gridStart));
-    assert.doesNotMatch(selectorSection, /<a\s/);
+
+    // Two live workflows, reached through one explicit mode switch. Only one is ever the active,
+    // visible mode — the other is `hidden`, so the user never scrolls past one to reach the other.
+    assert.match(html, /id="audit-mode-switch"/);
+    assert.match(html, /<a href="\/audit" data-mode="skill" aria-current="page">Skill audit<\/a>/);
+    assert.match(html, /<a href="\/audit\?mode=package" data-mode="package">Package verification<\/a>/);
+    assert.match(html, /<section class="toolMode" id="mode-skill" data-mode="skill">/);
+    assert.match(html, /<section class="toolMode" id="mode-package" data-mode="package" hidden>/);
+    const switchBlock = html.match(/<nav class="modeSwitch"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    assert.equal((switchBlock.match(/aria-current="page"/g) ?? []).length, 1, "exactly one mode may be active");
+
+    // `?mode=package` swaps which one is hidden, and nothing else about the page.
+    const packageHtml = await (await fetch(`${running.baseUrl}/audit?mode=package`)).text();
+    assert.match(packageHtml, /<section class="toolMode" id="mode-skill" data-mode="skill" hidden>/);
+    assert.match(packageHtml, /<section class="toolMode" id="mode-package" data-mode="package">/);
+
+    // Smart-contract and MCP capability audit are NOT built. They may be mentioned once, in a
+    // single muted line — never as a card, a status pill, or a control that cannot do anything.
+    assert.doesNotMatch(html, /auditTypeCard|auditTypeGrid/);
+    assert.doesNotMatch(html, />LIVE<|>UPCOMING</);
+    assert.match(html, /<p class="upcomingLine">Coming later, and not built today: smart-contract audit, and MCP \/ agent capability audit\./);
+    assert.equal((html.match(/smart-contract audit/gi) ?? []).length, 1);
+
+    // Every rendered form control belongs to one of the two workflows that genuinely runs.
+    const controls = [...html.matchAll(/<(?:button|input|textarea)\b[^>]*>/g)].map((match) => match[0]);
+    for (const control of controls) {
+      assert.doesNotMatch(control, /disabled/, `no disabled placeholder control may be rendered: ${control}`);
+    }
   } finally {
     await stopServer(running.server);
   }
