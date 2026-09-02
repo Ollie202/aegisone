@@ -32,8 +32,9 @@ function unknownEntry(overrides = {}) {
 
 test("unknown dimensions render the literal word 'unknown', never a blank cell", () => {
   const html = skillEntryHtml(unknownEntry(), 0);
-  // Three facts, all unknown, all explicitly stated.
-  assert.equal((html.match(/libFactValue--unknown">unknown</g) ?? []).length, 3);
+  // The directory row carries one identity fact (the exact source commit). Unknown is stated as
+  // the word "unknown" — a blank cell would read as "fine".
+  assert.equal((html.match(/libFactValue--unknown">unknown</g) ?? []).length, 1);
   // An unknown author is stated, not omitted.
   assert.match(html, /author unknown/);
   // And a blank is never emitted in a fact slot.
@@ -110,13 +111,23 @@ test("a hostile category id cannot break out of the data attribute", () => {
   assert.match(html, /data-category="&quot; onmouseover=&quot;alert\(1\)"/);
 });
 
-test("the first entry is featured, giving the list one dominant element instead of a card grid", () => {
+test("the catalog is a uniform editorial list — no row is decoratively promoted above the others", () => {
   const html = skillLibraryHtml([unknownEntry({ resourceId: "a" }), unknownEntry({ resourceId: "b" })]);
-  assert.equal((html.match(/libRow--feature/g) ?? []).length, 1);
   assert.match(html, /^<ol class="library">/);
-  // Numbered editorial rows, not repeated identical cards.
-  assert.match(html, /libIndex" aria-hidden="true">01</);
-  assert.match(html, /libIndex" aria-hidden="true">02</);
+  assert.equal((html.match(/class="libRow"/g) ?? []).length, 2);
+  // The old "featured lead entry" treatment ranked row 1 above row 2 for no evidential reason.
+  assert.doesNotMatch(html, /libRow--feature/);
+});
+
+test("a directory row is a summary, not a reprint of the Evidence Passport", () => {
+  const html = skillEntryHtml(unknownEntry({ resourceId: "a" }), 0);
+  // Deep evidence belongs to the Passport. The row must still link there...
+  assert.match(html, /Evidence Passport/);
+  // ...but must not carry the content digest or version label, which is what made it unscannable.
+  assert.doesNotMatch(html, /Content hash/i);
+  assert.doesNotMatch(html, />Version</);
+  // The identity fact that pins the row is kept, because it is what makes the row findable twice.
+  assert.match(html, /Exact source commit/);
 });
 
 test("an empty library says so plainly rather than inventing filler", () => {

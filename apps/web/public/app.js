@@ -171,11 +171,10 @@ function initLiveFederated() {
     }
   }
 
+  // Strictly on request. External discovery is a *scope* the user opts into, not a second product
+  // that loads itself below the catalog — and a page load must never fan out to three upstream
+  // APIs nobody asked about (AGENTS.md: discovery stays cheap and read-only).
   button.addEventListener("click", load);
-  // Deferred to idle so the SKILLS page paints its real catalog library immediately and never
-  // waits on three upstream APIs (AGENTS.md: discovery stays cheap and read-only).
-  const defer = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 400));
-  defer(() => load());
 }
 
 function escapeForDisplay(text) {

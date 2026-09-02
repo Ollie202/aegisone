@@ -52,7 +52,9 @@ test("GET / renders the SKILLS page in the ADR-015 visual language and is readab
     const response = await fetch(`${running.baseUrl}/`);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /Find a skill\. See what/);
+    // The page's one job, stated in its headline: find skills, and know what is actually proven.
+    assert.match(html, /Find agent skills\./);
+    assert.match(html, /actually proven/);
     assert.match(html, /search-form/);
     // ADR-015 palette tokens, not the dark M1-M7 proof-first palette.
     assert.match(html, /--paper:#f7f5ef/);
